@@ -17,6 +17,12 @@
 <link rel="icon" type="image/png" sizes="512x512" href="./pelus-assets/pelus-icon-512.png">
 <link rel="icon" type="image/svg+xml" href="./pelus-assets/pelus-icon.svg">
 
+  <script>
+if("serviceWorker" in navigator){
+  navigator.serviceWorker.register("/sw.js");
+}
+  </script>
+
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
