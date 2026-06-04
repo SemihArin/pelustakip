@@ -1576,58 +1576,52 @@
       }
     }
 
-    async function publishCurrentPhoto() {
-      if (!currentPhotoImage) {
-        showToast("Fotoğraf yok");
-        return;
-      }
-      try {
-        showToast("Yayınlanıyor...");
-        const response = await fetch(currentPhotoImage);
-        const blob = await response.blob();
-        const fileName = `pelus-${Date.now()}.jpg`;
-        const fileRef = storageRef(storageFirebase, `published/${fileName}`);
-        await uploadBytes(fileRef, blob, { contentType: blob.type || "image/jpeg" });
-        const imageUrl = await getDownloadURL(fileRef);
-        const payload = {
-          image: imageUrl,
-          note: noteInput.value.trim(),
-          locationLabel: currentLocationLabel || "",
-          mapsUrl: currentLocationMapsUrl || "",
-          favorite: !!currentPhotoFavorite,
-          originalLocalId: currentPhotoId || null,
-          source: "pelus-takip",
-          created: serverTimestamp(),
-          createdAtClient: Date.now()
-        };
-        if (currentPhotoPublishedId) {
-          await updateDoc(doc(dbFirebase, firebaseCollectionName, currentPhotoPublishedId), payload);
-          showToast("Yayın güncellendi");
-        } else {
-          const docRef = await addDoc(collection(dbFirebase, firebaseCollectionName), payload);
-          currentPhotoPublishedId = docRef.id;
-          if (currentPhotoId !== null && currentPhotoId !== undefined) {
-            await savePhoto({
-              id: currentPhotoId,
-              image: currentPhotoImage,
-              note: noteInput.value.trim(),
-              locationLabel: currentLocationLabel || "Konum: Seçilmedi",
-              mapsUrl: currentLocationMapsUrl || "",
-              favorite: !!currentPhotoFavorite,
-              published: true,
-              publishedId: docRef.id,
-              created: currentPhotoCreated || Date.now()
-            });
-          }
-          showToast("Yayınlandı");
-        }
-        await loadPhotos();
-        await loadPublishedPhotos();
-      } catch (err) {
-        console.error(err);
-        showToast("Yayınlama başarısız");
-      }
+   async function publishCurrentPhoto() {
+  if (!currentPhotoImage) {
+    showToast("Fotoğraf yok");
+    return;
+  }
+
+  try {
+    showToast("Yayınlanıyor...");
+    const response = await fetch(currentPhotoImage);
+    if (!response.ok) throw new Error(`Fotoğraf okunamadı: ${response.status}`);
+
+    const blob = await response.blob();
+    const fileName = `pelus-${Date.now()}.jpg`;
+    const fileRef = storageRef(storageFirebase, `published/${fileName}`);
+
+    await uploadBytes(fileRef, blob, { contentType: blob.type || "image/jpeg" });
+    const imageUrl = await getDownloadURL(fileRef);
+
+    const payload = {
+      image: imageUrl,
+      note: noteInput.value.trim(),
+      locationLabel: currentLocationLabel || "",
+      mapsUrl: currentLocationMapsUrl || "",
+      favorite: !!currentPhotoFavorite,
+      originalLocalId: currentPhotoId || null,
+      source: "pelus-takip",
+      created: serverTimestamp(),
+      createdAtClient: Date.now()
+    };
+
+    if (currentPhotoPublishedId) {
+      await updateDoc(doc(dbFirebase, firebaseCollectionName, currentPhotoPublishedId), payload);
+      showToast("Yayın güncellendi");
+    } else {
+      const docRef = await addDoc(collection(dbFirebase, firebaseCollectionName), payload);
+      currentPhotoPublishedId = docRef.id;
+      showToast("Yayınlandı");
     }
+
+    await loadPhotos();
+    await loadPublishedPhotos();
+  } catch (err) {
+    console.error("publishCurrentPhoto error:", err);
+    showToast(`Yayınlama başarısız${err?.code ? `: ${err.code}` : ""}`);
+  }
+}
 
     function openConfirmDelete() {
       confirmTitle.textContent = "Fotoğraf silinsin mi?";
