@@ -1,0 +1,1805 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+  <title>Pelus Takip</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400..700&display=swap" rel="stylesheet">
+  <style>
+    /* ═══════════════════════════════════════════
+       TOKENS
+    ═══════════════════════════════════════════ */
+    :root {
+      --bg:            #F7BDD6;
+      --surface:       rgba(255,255,255,.92);
+      --surface-dim:   rgba(255,255,255,.72);
+      --pink-dark:     #4d2438;
+      --pink-mid:      #c0648a;
+      --pink-light:    #f0c8da;
+      --danger:        #d94f62;
+      --gold:          #e3b84a;
+      --text-primary:  #1a0e14;
+      --text-secondary:#6a3d52;
+      --text-muted:    #9a7585;
+      --shadow-card:   0 2px 12px rgba(140,50,90,.13);
+      --shadow-modal:  0 24px 64px rgba(60,10,30,.22);
+      --radius-sm:     12px;
+      --radius-md:     18px;
+      --radius-lg:     26px;
+      --radius-xl:     32px;
+      --safe-bottom:   max(16px, env(safe-area-inset-bottom));
+      --safe-top:      max(0px,  env(safe-area-inset-top));
+      --ease-spring:   cubic-bezier(.34,1.18,.64,1);
+      --ease-out:      cubic-bezier(.22,1,.36,1);
+    }
+
+    /* ═══════════════════════════════════════════
+       RESET & BASE
+    ═══════════════════════════════════════════ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      width: 100%; height: 100%;
+      background: var(--bg);
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+      font-size: 15px;
+      color: var(--text-primary);
+      -webkit-tap-highlight-color: transparent;
+      -webkit-text-size-adjust: 100%;
+    }
+    body {
+      background-image:
+        radial-gradient(ellipse at 15% 0%,   rgba(255,200,220,.7) 0%, transparent 55%),
+        radial-gradient(ellipse at 85% 100%,  rgba(190,130,165,.5) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 50%,   rgba(255,230,240,.3) 0%, transparent 70%);
+    }
+    button, textarea, input, select { font: inherit; color: inherit; }
+    img { display: block; }
+    svg { display: block; pointer-events: none; flex-shrink: 0; }
+    button { cursor: pointer; border: none; background: none; }
+
+    /* ═══════════════════════════════════════════
+       UTILITY
+    ═══════════════════════════════════════════ */
+    .sr-only { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0,0,0,0); }
+
+    @keyframes spin      { to { transform: rotate(360deg); } }
+    @keyframes sheetUp   { from { transform: translateY(48px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    @keyframes fadeIn    { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes scaleIn   { from { transform: scale(.78); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    @keyframes focusPop  {
+      0%   { opacity:0; transform: translate(-50%,-50%) scale(.5); }
+      30%  { opacity:1; transform: translate(-50%,-50%) scale(1.05); }
+      100% { opacity:0; transform: translate(-50%,-50%) scale(1.1); }
+    }
+    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:.5; } }
+
+    /* ═══════════════════════════════════════════
+       LOGIN
+    ═══════════════════════════════════════════ */
+    #loginOverlay {
+      position: fixed; inset: 0;
+      background: var(--bg);
+      background-image:
+        radial-gradient(ellipse at 15% 0%, rgba(255,200,220,.7) 0%, transparent 55%),
+        radial-gradient(ellipse at 85% 100%, rgba(190,130,165,.5) 0%, transparent 50%);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 10000; padding: 20px;
+    }
+    .login-box {
+      width: 100%; max-width: 360px;
+      background: var(--surface);
+      border-radius: var(--radius-xl);
+      padding: 36px 28px 32px;
+      text-align: center;
+      box-shadow: var(--shadow-modal);
+      backdrop-filter: blur(20px);
+      animation: scaleIn .45s var(--ease-spring) both;
+    }
+    .login-paw { font-size: 48px; display: block; margin-bottom: 12px; animation: pulse 2s ease-in-out infinite; }
+    .login-box h2  { font-size: 26px; font-weight: 800; color: var(--pink-dark); margin-bottom: 6px; }
+    .login-sub { font-size: 13px; color: var(--text-muted); line-height: 1.5; margin-bottom: 24px; }
+    .google-btn {
+      width: 100%; border: 1.5px solid rgba(0,0,0,.08);
+      border-radius: var(--radius-md); padding: 14px 18px;
+      font-size: 15px; font-weight: 700;
+      background: #fff; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      transition: background .15s, box-shadow .15s, transform .1s;
+      box-shadow: 0 2px 8px rgba(0,0,0,.06);
+    }
+    .google-btn:hover  { background: #fafafa; box-shadow: 0 4px 14px rgba(0,0,0,.1); }
+    .google-btn:active { transform: scale(.97); }
+    .google-btn:disabled { opacity: .55; pointer-events: none; }
+    .login-warning {
+      display: none; margin-top: 14px; padding: 11px 14px;
+      border-radius: var(--radius-sm); background: #fff3f5;
+      color: #b34d5c; font-size: 12.5px; line-height: 1.5;
+      border: 1px solid rgba(185,70,90,.15);
+    }
+    .login-loader { display: none; margin-top: 18px; }
+    .login-loader .spinner {
+      width: 26px; height: 26px;
+      border: 3px solid rgba(0,0,0,.08);
+      border-top-color: var(--pink-mid);
+      border-radius: 50%;
+      animation: spin .65s linear infinite; margin: 0 auto;
+    }
+
+    /* ═══════════════════════════════════════════
+       APP SHELL
+    ═══════════════════════════════════════════ */
+    #container { width: 100%; height: 100%; display: flex; flex-direction: column; }
+
+    /* Header */
+    .header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: calc(var(--safe-top) + 6px) 16px 8px;
+      background: rgba(247,189,214,.85);
+      flex-shrink: 0; z-index: 200;
+      border-bottom: 1px solid rgba(255,255,255,.4);
+    }
+    .header-title {
+      font-family: "Caveat", cursive;
+      font-size: 30px; font-weight: 900;
+      color: var(--pink-dark);
+      letter-spacing: .3px;
+    }
+    .user-btn {
+      width: 38px; height: 38px; border-radius: 50%;
+      border: 2.5px solid rgba(255,255,255,.9);
+      background: rgba(255,255,255,.6);
+      overflow: hidden;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 13px; color: var(--pink-dark);
+      transition: transform .15s, box-shadow .15s;
+      box-shadow: 0 2px 8px rgba(160,60,100,.15);
+    }
+    .user-btn:hover  { transform: scale(1.05); }
+    .user-btn:active { transform: scale(.93); }
+    .user-btn img    { width: 100%; height: 100%; object-fit: cover; }
+
+    /* Pages wrapper */
+    .pages { flex: 1; position: relative; overflow: hidden; min-height: 0; }
+
+    /* Scroll pages */
+    .scroll-page {
+      position: absolute; inset: 0;
+      overflow-y: auto; overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+      padding: 16px 14px calc(88px + var(--safe-bottom));
+      opacity: 0; pointer-events: none;
+      transition: opacity .2s var(--ease-out);
+    }
+    .scroll-page.active { opacity: 1; pointer-events: auto; }
+
+    /* Perf: GPU-composited page transitions */
+    .scroll-page, #cameraPage { will-change: opacity; }
+
+    /* Camera page */
+    #cameraPage {
+      position: absolute; inset: 0;
+      background: #000;
+      opacity: 0; pointer-events: none;
+      transition: opacity .2s var(--ease-out);
+      z-index: 5;
+    }
+    #cameraPage.active { opacity: 1; pointer-events: auto; }
+
+    /* ═══════════════════════════════════════════
+       GALLERY
+    ═══════════════════════════════════════════ */
+    .gallery, .published-gallery { display: flex; flex-direction: column; gap: 22px; }
+
+    .group-head {
+      display: flex; justify-content: space-between; align-items: baseline;
+      color: var(--text-secondary); font-weight: 800;
+      font-size: 14px; margin-bottom: 10px;
+      padding-bottom: 8px;
+      border-bottom: 1.5px solid rgba(160,60,100,.1);
+    }
+    .group-count { font-weight: 600; font-size: 12px; color: var(--text-muted); }
+
+    .group-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: 9px;
+    }
+
+    /* Card */
+    .card {
+      aspect-ratio: 1/1;
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      background: #fff;
+      box-shadow: var(--shadow-card);
+      cursor: pointer;
+      position: relative;
+      transition: transform .16s var(--ease-out), box-shadow .16s;
+      -webkit-user-select: none; user-select: none;
+      contain: layout style paint;
+    }
+    .card:active { transform: scale(.93); box-shadow: 0 1px 4px rgba(140,50,90,.1); }
+
+    .card img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      display: block;
+      will-change: transform;
+      image-rendering: auto;
+    }
+
+    .fav-badge {
+      position: absolute; top: 6px; right: 6px;
+      width: 22px; height: 22px; border-radius: 50%;
+      background: rgba(255,255,255,.92);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.12);
+    }
+    .pub-badge-pill {
+      position: absolute; top: 6px; left: 6px;
+      background: rgba(80,130,255,.88);
+      color: #fff; font-size: 9.5px; font-weight: 700;
+      padding: 3px 7px; border-radius: 999px;
+      letter-spacing: .3px;
+    }
+    .card-gradient {
+      position: absolute; left: 0; right: 0; bottom: 0;
+      padding: 22px 9px 8px;
+      background: linear-gradient(transparent, rgba(0,0,0,.6));
+      color: #fff; font-size: 11px; line-height: 1.3;
+      overflow: hidden; display: -webkit-box;
+      -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    }
+    .new-dot {
+      position: absolute; top: 7px; right: 7px;
+      width: 10px; height: 10px;
+      background: var(--danger); border-radius: 50%;
+      box-shadow: 0 0 0 2.5px #fff;
+    }
+
+    .empty-state {
+      display: flex; flex-direction: column; align-items: center;
+      padding: 56px 24px; color: var(--text-secondary);
+      text-align: center; gap: 12px;
+    }
+    .empty-state .empty-icon { font-size: 44px; }
+    .empty-state strong { font-size: 16px; font-weight: 700; }
+    .empty-state small   { font-size: 13px; color: var(--text-muted); }
+
+    /* ═══════════════════════════════════════════
+       CAMERA
+    ═══════════════════════════════════════════ */
+    #cameraVideo { width: 100%; height: 100%; object-fit: cover; display: block; }
+    #cameraVideo.front-cam { transform: scaleX(-1); }
+
+    .cam-badge {
+      position: absolute; top: calc(var(--safe-top) + 14px); left: 14px; z-index: 20;
+      padding: 7px 13px; border-radius: 999px;
+      background: rgba(255,255,255,.9);
+      font-size: 12px; font-weight: 700;
+      box-shadow: 0 2px 8px rgba(0,0,0,.15);
+    }
+    .focus-ring {
+      position: absolute; width: 68px; height: 68px;
+      border-radius: 50%; border: 2px solid rgba(255,255,255,.9);
+      transform: translate(-50%,-50%) scale(.8);
+      opacity: 0; pointer-events: none; z-index: 21;
+    }
+    .focus-ring.pop { animation: focusPop .6s ease forwards; }
+
+    #captureBtn {
+      position: absolute; bottom: calc(var(--safe-bottom) + 24px);
+      left: 50%; transform: translateX(-50%);
+      width: 68px; height: 68px; border-radius: 50%;
+      background: #fff;
+      border: 4px solid rgba(255,255,255,.5);
+      outline: 3px solid rgba(255,255,255,.3);
+      z-index: 20;
+      box-shadow: 0 4px 20px rgba(0,0,0,.3);
+      transition: transform .1s;
+    }
+    #captureBtn:active { transform: translateX(-50%) scale(.88); }
+
+    .cam-switch-btn {
+      position: absolute; top: calc(var(--safe-top) + 14px); right: 14px;
+      width: 46px; height: 46px; border-radius: 50%;
+      background: rgba(255,255,255,.9);
+      z-index: 20;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,.15);
+      transition: transform .15s;
+    }
+    .cam-switch-btn:active { transform: scale(.88); }
+
+    .cam-zoom-bar {
+      position: absolute; left: 14px; right: 14px;
+      bottom: calc(var(--safe-bottom) + 108px);
+      z-index: 20; display: none;
+      gap: 10px; align-items: center;
+      padding: 10px 16px;
+      border-radius: var(--radius-md);
+      background: rgba(255,255,255,.9);
+    }
+    .cam-zoom-bar.show { display: flex; }
+    .cam-zoom-bar label { font-size: 12px; font-weight: 600; white-space: nowrap; color: var(--text-secondary); }
+    .cam-zoom-bar input { flex: 1; accent-color: var(--pink-mid); }
+    .cam-zoom-bar span  { font-size: 12px; font-weight: 700; white-space: nowrap; color: var(--pink-dark); }
+
+    /* ═══════════════════════════════════════════
+       BOTTOM BAR
+    ═══════════════════════════════════════════ */
+    .bottombar {
+      position: fixed;
+      bottom: var(--safe-bottom);
+      left: 14px; right: 14px;
+      height: 62px;
+      background: rgba(255,255,255,.88);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-radius: 24px;
+      display: flex; gap: 6px; padding: 7px;
+      z-index: 300;
+      box-shadow: 0 4px 24px rgba(140,50,90,.14), inset 0 1px 0 rgba(255,255,255,.6);
+      contain: layout style;
+    }
+    .nav-btn {
+      flex: 1; border-radius: 18px;
+      background: transparent; color: var(--text-secondary);
+      display: flex; align-items: center; justify-content: center;
+      position: relative;
+      transition: background .18s var(--ease-out), color .18s, transform .1s;
+    }
+    .nav-btn:active { transform: scale(.88); }
+    .nav-btn.active {
+      background: #fff;
+      color: var(--pink-mid);
+      box-shadow: 0 2px 10px rgba(192,100,138,.18);
+    }
+    .nav-badge {
+      position: absolute; top: 3px; right: 8px;
+      min-width: 16px; height: 16px; border-radius: 999px;
+      background: var(--danger); color: #fff;
+      font-size: 9.5px; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      pointer-events: none;
+      box-shadow: 0 0 0 2px rgba(247,189,214,.8);
+    }
+
+    /* ═══════════════════════════════════════════
+       MODAL BASE
+    ═══════════════════════════════════════════ */
+    .modal {
+      position: fixed; inset: 0;
+      display: none; align-items: flex-end; justify-content: center;
+      background: rgba(15,5,12,.5);
+      z-index: 500;
+      contain: layout style;
+    }
+    .modal.open { display: flex; animation: fadeIn .2s ease both; }
+
+    /* Sheet (bottom sheet style) */
+    .sheet {
+      width: min(100%, 540px);
+      max-height: 92dvh;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+      background: linear-gradient(170deg, #fce8f0 0%, #f5b8d0 100%);
+      padding: 6px 18px 32px;
+      animation: sheetUp .3s var(--ease-spring) both;
+      box-shadow: 0 -4px 32px rgba(160,60,100,.18);
+    }
+
+    /* Drag handle */
+    .sheet-handle {
+      width: 40px; height: 4px; border-radius: 999px;
+      background: rgba(140,60,100,.22); margin: 10px auto 16px;
+    }
+
+    .sheet-head {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .sheet-title { font-size: 19px; font-weight: 800; color: var(--pink-dark); }
+
+    .icon-btn {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: rgba(255,255,255,.7);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; color: var(--text-secondary);
+      transition: background .15s, transform .1s;
+      flex-shrink: 0;
+    }
+    .icon-btn:active { transform: scale(.88); }
+
+    /* ═══════════════════════════════════════════
+       PHOTO MODAL
+    ═══════════════════════════════════════════ */
+    #photoModal { z-index: 500; }
+
+    .modal-img-wrap {
+      position: relative; width: 100%;
+      aspect-ratio: 4/3;
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      cursor: zoom-in;
+      margin-bottom: 14px;
+      box-shadow: 0 4px 18px rgba(0,0,0,.12);
+    }
+    .modal-img-wrap img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      transition: transform .2s var(--ease-out);
+    }
+    .modal-img-wrap:active img { transform: scale(.98); }
+
+    .modal-field { margin-top: 10px; }
+    .modal-field label { display: block; font-size: 11.5px; font-weight: 700; color: var(--text-muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: .5px; }
+    .modal-field textarea {
+      width: 100%; border: 1.5px solid rgba(160,60,100,.15);
+      border-radius: var(--radius-sm); padding: 11px 13px;
+      background: rgba(255,255,255,.85);
+      min-height: 78px; resize: none;
+      font-size: 14.5px; line-height: 1.5;
+      transition: border-color .15s, box-shadow .15s;
+      outline: none;
+    }
+    .modal-field textarea:focus {
+      border-color: var(--pink-mid);
+      box-shadow: 0 0 0 3px rgba(192,100,138,.12);
+    }
+
+    /* Chips row */
+    .chips-row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+    .chip {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 8px 14px; border-radius: 999px;
+      background: rgba(255,255,255,.72);
+      font-size: 13px; font-weight: 600;
+      transition: background .15s, color .15s, transform .1s;
+      border: 1.5px solid rgba(160,60,100,.1);
+    }
+    .chip:active { transform: scale(.93); }
+    .chip.active { background: var(--pink-mid); color: #fff; border-color: transparent; }
+
+    .location-chip {
+      width: 100%; justify-content: flex-start;
+      border-radius: var(--radius-sm);
+      padding: 11px 14px; margin-top: 8px;
+    }
+    .location-chip .loc-label { font-weight: 400; color: var(--text-muted); font-size: 13px; }
+
+    /* Action buttons */
+    .modal-actions { display: flex; flex-direction: column; gap: 9px; margin-top: 16px; }
+
+    .btn-row { display: grid; gap: 9px; }
+    .btn-row-3 { grid-template-columns: 1fr 1fr 1fr; }
+    .btn-row-2 { grid-template-columns: 1fr 1fr; }
+
+    .btn {
+      height: 48px; border-radius: var(--radius-md);
+      font-weight: 700; font-size: 14px;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      transition: opacity .15s, transform .1s, box-shadow .15s;
+    }
+    .btn:active    { transform: scale(.95); opacity: .88; }
+    .btn-primary   { background: var(--pink-mid); color: #fff; box-shadow: 0 3px 14px rgba(192,100,138,.35); }
+    .btn-secondary { background: rgba(255,255,255,.72); color: var(--text-primary); border: 1.5px solid rgba(160,60,100,.12); }
+    .btn-danger    { background: var(--danger); color: #fff; box-shadow: 0 3px 14px rgba(217,79,98,.3); }
+    .btn-full      { width: 100%; }
+
+    /* ═══════════════════════════════════════════
+       CONFIRM DIALOG
+    ═══════════════════════════════════════════ */
+    #confirmModal { z-index: 1000; align-items: center; }
+
+    .confirm-card {
+      width: min(92%, 340px);
+      background: #fff;
+      border-radius: var(--radius-xl);
+      padding: 30px 24px 24px;
+      text-align: center;
+      box-shadow: var(--shadow-modal);
+      transform: scale(.8) translateY(20px); opacity: 0;
+      transition: transform .32s var(--ease-spring), opacity .22s ease;
+    }
+    #confirmModal.open .confirm-card { transform: scale(1) translateY(0); opacity: 1; }
+    .confirm-icon { font-size: 36px; margin-bottom: 14px; display: block; }
+    .confirm-title { font-size: 18px; font-weight: 800; color: var(--pink-dark); margin-bottom: 8px; }
+    .confirm-text  { font-size: 13.5px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 22px; }
+    .confirm-btns  { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .confirm-btns .btn { height: 46px; }
+
+    /* ═══════════════════════════════════════════
+       FULLSCREEN VIEWER
+    ═══════════════════════════════════════════ */
+    #fullscreenModal {
+      z-index: 2000;
+      background: rgba(0,0,0,.97);
+      align-items: center;
+      justify-content: center;
+    }
+    .fs-inner {
+      position: relative; width: 100%; height: 100%;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .fs-img {
+      max-width: 100%; max-height: 100%;
+      object-fit: contain;
+      animation: fadeIn .22s ease;
+      border-radius: 4px;
+    }
+    /* Controls overlay */
+    .fs-controls {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column; justify-content: space-between;
+      pointer-events: none;
+      padding: calc(var(--safe-top) + 12px) 16px calc(var(--safe-bottom) + 12px);
+    }
+    .fs-top { display: flex; justify-content: flex-start; align-items: center; pointer-events: auto; }
+    .fs-bottom { display: flex; justify-content: center; align-items: center; pointer-events: auto; }
+    .fs-close-btn { display: none; }
+    .fs-btn {
+      width: 44px; height: 44px; border-radius: 50%;
+      background: rgba(255,255,255,.15);
+      border: 1.5px solid rgba(255,255,255,.2);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 18px;
+      backdrop-filter: blur(8px);
+      transition: background .15s, transform .1s;
+    }
+    .fs-btn:active { transform: scale(.88); background: rgba(255,255,255,.25); }
+    /* Back button for Apple (prominent, left side) */
+    .fs-back-btn {
+      display: flex; align-items: center; gap: 6px;
+      padding: 10px 16px; border-radius: 999px;
+      background: rgba(255,255,255,.15);
+      border: 1.5px solid rgba(255,255,255,.2);
+      color: #fff; font-size: 14px; font-weight: 600;
+      backdrop-filter: blur(8px);
+      transition: background .15s, transform .1s;
+    }
+    .fs-back-btn:active { transform: scale(.93); background: rgba(255,255,255,.25); }
+    .fs-close-btn { /* X button top right */ }
+    .fs-caption {
+      position: absolute; bottom: calc(var(--safe-bottom) + 64px); left: 0; right: 0;
+      text-align: center; color: rgba(255,255,255,.65);
+      font-size: 12px; pointer-events: none;
+      padding: 0 24px;
+    }
+
+    /* ═══════════════════════════════════════════
+       PUBLISHED MODAL
+    ═══════════════════════════════════════════ */
+    #pubModal { z-index: 600; align-items: center; }
+
+    .pub-card {
+      width: min(96%, 460px);
+      max-height: 88dvh; overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      background: #fff;
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-modal);
+      animation: scaleIn .28s var(--ease-spring) both;
+    }
+    .pub-img-wrap {
+      position: relative; width: 100%;
+      aspect-ratio: 1/1; background: #111;
+      overflow: hidden; cursor: zoom-in;
+    }
+    .pub-img-wrap img {
+      width: 100%; height: 100%; object-fit: cover;
+      display: block;
+      transition: transform .25s var(--ease-out);
+    }
+    .pub-img-wrap:active img { transform: scale(.98); }
+    .pub-img-close {
+      position: absolute; top: 12px; right: 12px;
+      width: 36px; height: 36px; border-radius: 50%;
+      background: rgba(0,0,0,.45); backdrop-filter: blur(6px);
+      color: #fff; font-size: 16px;
+      display: flex; align-items: center; justify-content: center;
+      transition: transform .1s, background .15s;
+    }
+    .pub-img-close:active { transform: scale(.88); }
+    .pub-body { padding: 18px 18px 20px; }
+    .pub-author-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 10px; }
+    .pub-author { font-size: 14.5px; font-weight: 800; color: var(--pink-dark); }
+    .pub-date   { font-size: 11.5px; color: var(--text-muted); white-space: nowrap; }
+    .pub-note   { font-size: 14.5px; color: var(--text-primary); line-height: 1.55; }
+    .pub-loc-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(80,120,255,.1); color: #4060d4;
+      border: 1px solid rgba(80,120,255,.2);
+      padding: 8px 13px; border-radius: var(--radius-sm);
+      font-size: 13px; font-weight: 600; margin-top: 12px;
+      transition: background .15s;
+    }
+    .pub-loc-btn:active { background: rgba(80,120,255,.18); }
+    .pub-delete-btn {
+      width: 100%; height: 46px; border-radius: var(--radius-sm);
+      background: var(--danger); color: #fff;
+      font-size: 14px; font-weight: 700; margin-top: 14px;
+      box-shadow: 0 3px 12px rgba(217,79,98,.25);
+      transition: opacity .15s, transform .1s;
+    }
+    .pub-delete-btn:active { transform: scale(.97); opacity: .88; }
+
+    /* ═══════════════════════════════════════════
+       SETTINGS MODAL
+    ═══════════════════════════════════════════ */
+    #settingsModal { z-index: 700; }
+
+    .settings-body { text-align: center; padding-bottom: 8px; }
+    .settings-avatar {
+      width: 76px; height: 76px; border-radius: 50%;
+      object-fit: cover; margin: 0 auto 14px;
+      border: 3px solid rgba(255,255,255,.9);
+      box-shadow: 0 4px 16px rgba(160,60,100,.2);
+      display: none;
+    }
+    .settings-initials {
+      width: 76px; height: 76px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--pink-mid), #e07ba8);
+      color: #fff; font-size: 24px; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 14px;
+      box-shadow: 0 4px 16px rgba(160,60,100,.25);
+    }
+    .settings-name  { font-size: 19px; font-weight: 800; color: var(--pink-dark); }
+    .settings-email { font-size: 13px; color: var(--text-muted); margin-top: 3px; margin-bottom: 20px; }
+    .settings-divider { height: 1px; background: rgba(160,60,100,.1); margin: 0 -18px 16px; }
+    .settings-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; font-size: 14px; color: var(--text-secondary); }
+    .settings-row svg { color: var(--text-muted); }
+    .btn-logout { background: #fff5f7; color: var(--danger); border: 1.5px solid rgba(217,79,98,.15); }
+
+    /* ═══════════════════════════════════════════
+       TOAST
+    ═══════════════════════════════════════════ */
+    #toast {
+      position: fixed; bottom: calc(var(--safe-bottom) + 80px);
+      left: 50%; transform: translateX(-50%) translateY(8px);
+      background: rgba(26,14,20,.92); color: #fff;
+      padding: 11px 20px; border-radius: var(--radius-md);
+      z-index: 5000; opacity: 0; pointer-events: none;
+      transition: opacity .22s ease, transform .22s ease;
+      max-width: min(88vw, 320px); text-align: center;
+      font-size: 14px; font-weight: 500; line-height: 1.4;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 4px 20px rgba(0,0,0,.25);
+    }
+    #toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* ═══════════════════════════════════════════
+       RESPONSIVE
+    ═══════════════════════════════════════════ */
+    @media (min-width: 700px) {
+      .bottombar {
+        width: 520px; left: 50%; right: auto;
+        transform: translateX(-50%);
+      }
+      .scroll-page {
+        padding-left: max(14px, calc(50% - 380px));
+        padding-right: max(14px, calc(50% - 380px));
+      }
+    }
+    @media (min-width: 900px) {
+      .group-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+    }
+  </style>
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#F7BDD6">
+</head>
+<body>
+
+<!-- ═══ LOGIN ═══ -->
+<div id="loginOverlay">
+  <div class="login-box">
+    <span class="login-paw">🐾</span>
+    <h2>Pelus Takip</h2>
+    <p class="login-sub">Google hesabınızla giriş yapın.<br>Fotoğraflarınız bulutta güvende saklansın.</p>
+    <button id="googleLoginBtn" class="google-btn" type="button">
+      <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/>
+        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+      </svg>
+      Google ile Giriş Yap
+    </button>
+    <div class="login-loader" id="loginLoader"><div class="spinner"></div></div>
+    <div id="loginWarning" class="login-warning" role="alert"></div>
+  </div>
+</div>
+
+<!-- ═══ APP ═══ -->
+<div id="container" style="display:none;">
+
+  <header class="header">
+    <span></span>
+    <span class="header-title">Pelus Takip</span>
+    <button id="userBtn" class="user-btn" type="button" aria-label="Profil">?</button>
+  </header>
+
+  <div class="pages">
+    <!-- Galeri -->
+    <div id="localPage" class="scroll-page active" role="main">
+      <div id="galleryPage" class="gallery"></div>
+    </div>
+
+    <!-- Yayınlar -->
+    <div id="publishedPage" class="scroll-page" role="main">
+      <div id="publishedGallery" class="published-gallery"></div>
+    </div>
+
+    <!-- Kamera -->
+    <div id="cameraPage">
+      <div class="cam-badge" id="camBadge">Arka Kamera</div>
+      <div class="focus-ring" id="focusRing"></div>
+      <video id="cameraVideo" autoplay playsinline muted></video>
+      <canvas id="canvas" style="display:none;"></canvas>
+      <button id="switchCamBtn" class="cam-switch-btn" type="button" aria-label="Kamera Değiştir">
+        <svg viewBox="0 0 24 24" width="22" height="22">
+          <path fill="currentColor" d="M7 7h4l1.2-2h-.4A2 2 0 0 0 10 6H7a3 3 0 0 0-3 3v2h2V9a1 1 0 0 1 1-1Zm10 8h-4l-1.2 2h.4a2 2 0 0 0 1.8-1H17a3 3 0 0 0 3-3v-2h-2v2a1 1 0 0 1-1 1Zm-3.5-7L17 12l-3.5 4v-3H10v-2h3.5V8Zm-3 8L7 12l3.5-4v3H14v2h-3.5v3Z"/>
+        </svg>
+      </button>
+      <div class="cam-zoom-bar" id="camZoomBar">
+        <label>Zoom</label>
+        <input id="zoomRange" type="range" min="1" max="1" step="0.1" value="1">
+        <span id="zoomLabel">1.0x</span>
+      </div>
+      <button id="captureBtn" type="button" aria-label="Fotoğraf Çek"></button>
+    </div>
+  </div>
+
+  <!-- Alt Bar -->
+  <nav class="bottombar" aria-label="Navigasyon">
+    <button id="navLocal"     class="nav-btn active" type="button" aria-label="Galerim">
+      <svg viewBox="0 0 24 24" width="22" height="22">
+        <path fill="currentColor" d="M4 5.5A1.5 1.5 0 0 1 5.5 4h13A1.5 1.5 0 0 1 20 5.5v13A1.5 1.5 0 0 1 18.5 20h-13A1.5 1.5 0 0 1 4 18.5v-13Zm2 1v11h12v-11H6Zm1 9 2.8-3.7a1 1 0 0 1 1.6 0L13 14l2.1-2.8a1 1 0 0 1 1.6 0L18 14.5V16H7v-.5Z"/>
+      </svg>
+    </button>
+    <button id="navPublished" class="nav-btn" type="button" aria-label="Yayınlar">
+      <svg viewBox="0 0 24 24" width="22" height="22">
+        <path fill="currentColor" d="M12 3 4 7v10l8 4 8-4V7l-8-4Zm0 2.2 5.8 2.9L12 11 6.2 8.1 12 5.2ZM6 9.2l5 2.5v7l-5-2.5v-7Zm12 0v7l-5 2.5v-7l5-2.5Z"/>
+      </svg>
+    </button>
+    <button id="navCamera"    class="nav-btn" type="button" aria-label="Kamera">
+      <svg viewBox="0 0 24 24" width="22" height="22">
+        <path fill="currentColor" d="M9 5.5a1.5 1.5 0 0 1 1.27-.7h3.46a1.5 1.5 0 0 1 1.27.7L16 7h2.5A2.5 2.5 0 0 1 21 9.5v8A2.5 2.5 0 0 1 18.5 20h-13A2.5 2.5 0 0 1 3 17.5v-8A2.5 2.5 0 0 1 5.5 7H8l1-1.5Zm3 4.5a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm0 2a2 2 0 1 1 0 4 2 2 0 0 1 0-4Z"/>
+      </svg>
+    </button>
+  </nav>
+</div>
+
+<!-- ═══ FULLSCREEN VIEWER ═══ -->
+<div id="fullscreenModal" class="modal" role="dialog" aria-modal="true" aria-label="Tam ekran görüntü">
+  <div class="fs-inner">
+    <img id="fsImg" class="fs-img" src="" alt="Tam ekran">
+    <div class="fs-controls">
+      <!-- Top row: back button -->
+      <div class="fs-top">
+        <button class="fs-back-btn" id="fsBackBtn" type="button">
+          <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M15.5 19 8 12l7.5-7"/></svg>
+          Geri
+        </button>
+      </div>
+      <!-- Bottom row: hint -->
+      <div class="fs-bottom">
+        <span style="font-size:11px; color:rgba(255,255,255,.4);">Kapatmak için dışına dokun</span>
+      </div>
+    </div>
+    <div class="fs-caption" id="fsCaption"></div>
+  </div>
+</div>
+
+<!-- ═══ PHOTO MODAL ═══ -->
+<div id="photoModal" class="modal" role="dialog" aria-modal="true">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-head">
+      <h2 class="sheet-title" id="photoModalTitle">Fotoğraf</h2>
+      <button class="icon-btn" id="photoModalClose" type="button" aria-label="Kapat">✕</button>
+    </div>
+
+    <div class="modal-img-wrap" id="photoImgWrap">
+      <img id="modalPreview" src="" alt="Önizleme">
+    </div>
+
+    <div class="modal-field">
+      <label>Not</label>
+      <textarea id="noteInput" placeholder="Bu anı anlat…" rows="3"></textarea>
+    </div>
+
+    <div class="chips-row">
+      <button id="favoriteBtn" class="chip" type="button">⭐ Favori</button>
+    </div>
+
+    <button id="locationBtn" class="chip location-chip" type="button">
+      📍 <span id="locationLabel" class="loc-label">Konum ekle</span>
+    </button>
+
+    <div class="modal-actions">
+      <!-- Delete: only visible for existing photos -->
+      <button id="deleteBtn" class="btn btn-danger btn-full" style="display:none;" type="button">🗑 Fotoğrafı Sil</button>
+      <!-- Row: İptal · Paylaş · Yayınla -->
+      <div class="btn-row btn-row-3">
+        <button id="cancelBtn"  class="btn btn-secondary" type="button">İptal</button>
+        <button id="shareBtn"   class="btn btn-secondary" type="button">Paylaş</button>
+        <button id="publishBtn" class="btn btn-primary"   type="button">Yayınla</button>
+      </div>
+      <button id="saveBtn" class="btn btn-primary btn-full" type="button">💾 Kaydet</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ CONFIRM DIALOG ═══ -->
+<div id="confirmModal" class="modal" role="alertdialog" aria-modal="true">
+  <div class="confirm-card">
+    <span class="confirm-icon" id="confirmIcon">❗</span>
+    <div class="confirm-title" id="confirmTitle">Emin misiniz?</div>
+    <p class="confirm-text" id="confirmText"></p>
+    <div class="confirm-btns">
+      <button id="confirmCancel" class="btn btn-secondary" type="button">Vazgeç</button>
+      <button id="confirmOk"     class="btn btn-danger"    type="button">Sil</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PUBLISHED PHOTO MODAL ═══ -->
+<div id="pubModal" class="modal" role="dialog" aria-modal="true">
+  <div class="pub-card">
+    <div class="pub-img-wrap" id="pubImgWrap">
+      <img id="pubImg" src="" alt="">
+      <button class="pub-img-close" id="pubClose" type="button" aria-label="Kapat">✕</button>
+    </div>
+    <div class="pub-body">
+      <div class="pub-author-row">
+        <span class="pub-author" id="pubAuthor">Yayın</span>
+        <span class="pub-date"   id="pubDate"></span>
+      </div>
+      <p class="pub-note" id="pubNote"></p>
+      <button id="pubLocBtn" class="pub-loc-btn" style="display:none;" type="button">
+        📍 <span id="pubLocText"></span>
+      </button>
+      <div id="pubOwnerActions" style="display:none;">
+        <button id="pubDeleteBtn" class="pub-delete-btn" type="button">🗑 Yayını Sil</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SETTINGS MODAL ═══ -->
+<div id="settingsModal" class="modal" role="dialog" aria-modal="true">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-head">
+      <h2 class="sheet-title">Profil &amp; Ayarlar</h2>
+      <button class="icon-btn" id="settingsClose" type="button" aria-label="Kapat">✕</button>
+    </div>
+    <div class="settings-body">
+      <img   id="settingsAvatar"   class="settings-avatar"   alt="">
+      <div   id="settingsInitials" class="settings-initials" style="display:none;">?</div>
+      <div   id="settingsName"     class="settings-name"></div>
+      <div   id="settingsEmail"    class="settings-email"></div>
+      <div class="settings-divider"></div>
+      <div class="settings-row">
+        <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M3 13h8V3H3v10Zm0 8h8v-6H3v6Zm10 0h8V11h-8v10Zm0-18v6h8V3h-8Z"/></svg>
+        Depolama: Google Cloud Firestore
+      </div>
+      <button id="logoutBtn" class="btn btn-secondary btn-logout btn-full" type="button">
+        <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M17 7 15.6 8.4l2.6 2.6H9v2h9.2l-2.6 2.6L17 17l5-5-5-5ZM5 5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h7v-2H5V5Z"/></svg>
+        Çıkış Yap
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" role="status" aria-live="polite"></div>
+
+<!-- ═══════════════════════════════════════════
+     JAVASCRIPT
+═══════════════════════════════════════════ -->
+<script type="module">
+import { initializeApp }       from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
+import {
+  getFirestore, collection, addDoc, query, orderBy,
+  onSnapshot, deleteDoc, doc, updateDoc, setDoc, getDoc
+} from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+import {
+  getAuth, signInWithPopup, signInWithRedirect, getRedirectResult,
+  GoogleAuthProvider, signOut, onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
+
+/* ─── Firebase ─── */
+const FB = initializeApp({
+  apiKey:            "AIzaSyBu3fMWUupz6EIbRyB4FBOfplF7GFDToMc",
+  authDomain:        "pelustakip-3be95.firebaseapp.com",
+  projectId:         "pelustakip-3be95",
+  storageBucket:     "pelustakip-3be95.firebasestorage.app",
+  messagingSenderId: "1080638886274",
+  appId:             "1:1080638886274:web:ccc5ca53699e4d0fa53f9b"
+});
+const db       = getFirestore(FB);
+const auth     = getAuth(FB);
+const provider = new GoogleAuthProvider();
+
+/* ─── DOM refs ─── */
+const q     = id => document.getElementById(id);
+const EL = {
+  loginOverlay:    q("loginOverlay"),
+  container:       q("container"),
+  googleLoginBtn:  q("googleLoginBtn"),
+  loginLoader:     q("loginLoader"),
+  loginWarning:    q("loginWarning"),
+  userBtn:         q("userBtn"),
+
+  galleryPage:     q("galleryPage"),
+  publishedGallery:q("publishedGallery"),
+
+  cameraPage:      q("cameraPage"),
+  cameraVideo:     q("cameraVideo"),
+  canvas:          q("canvas"),
+  camBadge:        q("camBadge"),
+  focusRing:       q("focusRing"),
+  switchCamBtn:    q("switchCamBtn"),
+  captureBtn:      q("captureBtn"),
+  camZoomBar:      q("camZoomBar"),
+  zoomRange:       q("zoomRange"),
+  zoomLabel:       q("zoomLabel"),
+
+  navLocal:        q("navLocal"),
+  navPublished:    q("navPublished"),
+  navCamera:       q("navCamera"),
+  localPage:       q("localPage"),
+  publishedPage:   q("publishedPage"),
+
+  // Fullscreen
+  fullscreenModal: q("fullscreenModal"),
+  fsImg:           q("fsImg"),
+  fsBackBtn:       q("fsBackBtn"),
+  fsCaption:       q("fsCaption"),
+
+  // Photo modal
+  photoModal:      q("photoModal"),
+  photoModalTitle: q("photoModalTitle"),
+  photoModalClose: q("photoModalClose"),
+  photoImgWrap:    q("photoImgWrap"),
+  modalPreview:    q("modalPreview"),
+  noteInput:       q("noteInput"),
+  favoriteBtn:     q("favoriteBtn"),
+  locationBtn:     q("locationBtn"),
+  locationLabel:   q("locationLabel"),
+  deleteBtn:       q("deleteBtn"),
+  cancelBtn:       q("cancelBtn"),
+  shareBtn:        q("shareBtn"),
+  publishBtn:      q("publishBtn"),
+  saveBtn:         q("saveBtn"),
+
+  // Confirm
+  confirmModal:    q("confirmModal"),
+  confirmIcon:     q("confirmIcon"),
+  confirmTitle:    q("confirmTitle"),
+  confirmText:     q("confirmText"),
+  confirmCancel:   q("confirmCancel"),
+  confirmOk:       q("confirmOk"),
+
+  // Pub modal
+  pubModal:        q("pubModal"),
+  pubImg:          q("pubImg"),
+  pubImgWrap:      q("pubImgWrap"),
+  pubClose:        q("pubClose"),
+  pubAuthor:       q("pubAuthor"),
+  pubDate:         q("pubDate"),
+  pubNote:         q("pubNote"),
+  pubLocBtn:       q("pubLocBtn"),
+  pubLocText:      q("pubLocText"),
+  pubOwnerActions: q("pubOwnerActions"),
+  pubDeleteBtn:    q("pubDeleteBtn"),
+
+  // Settings
+  settingsModal:   q("settingsModal"),
+  settingsClose:   q("settingsClose"),
+  settingsAvatar:  q("settingsAvatar"),
+  settingsInitials:q("settingsInitials"),
+  settingsName:    q("settingsName"),
+  settingsEmail:   q("settingsEmail"),
+  logoutBtn:       q("logoutBtn"),
+
+  toast:           q("toast"),
+};
+
+/* ─── App state ─── */
+let currentUser       = null;
+let activePage        = "local";
+
+// Camera
+let camStream         = null;
+let camTrack          = null;
+let camGen            = 0;
+let facingMode        = "environment";
+let zoomMin = 1, zoomMax = 1, currentZoom = 1;
+
+// Photo modal state — single source of truth
+const pm = {
+  id:            null,   // Firestore doc id (null = new)
+  image:         "",
+  created:       null,
+  note:          "",
+  favorite:      false,
+  publishedId:   null,
+  locationLabel: "",
+  mapsUrl:       "",
+  isNew:         false,  // just captured, not yet saved
+};
+
+// Subscriptions
+let unsubPhotos     = null;
+let unsubPublished  = null;
+let pubCache        = [];
+let lastSeen        = 0;
+
+// Confirm resolver
+let confirmResolve  = null;
+
+/* ═══════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════ */
+let toastTimer;
+function toast(msg) {
+  clearTimeout(toastTimer);
+  EL.toast.textContent = msg;
+  EL.toast.classList.add("show");
+  toastTimer = setTimeout(() => EL.toast.classList.remove("show"), 2800);
+}
+
+/* ═══════════════════════════════════════════
+   MODAL HELPERS
+═══════════════════════════════════════════ */
+function openModal(el)  { el.classList.add("open"); }
+function closeModal(el) { el.classList.remove("open"); }
+
+// Trap Escape key
+document.addEventListener("keydown", e => {
+  if (e.key !== "Escape") return;
+  // Close topmost open modal
+  for (const id of ["fullscreenModal","confirmModal","pubModal","photoModal","settingsModal"]) {
+    const el = q(id);
+    if (el.classList.contains("open")) { closeModal(el); break; }
+  }
+});
+
+// Back button (Android hardware + iOS gesture back simulation via popstate)
+function pushModalState(name) {
+  history.pushState({ modal: name }, "");
+}
+window.addEventListener("popstate", e => {
+  // Close topmost open modal
+  for (const id of ["fullscreenModal","confirmModal","pubModal","photoModal","settingsModal"]) {
+    const el = q(id);
+    if (el.classList.contains("open")) { closeModal(el); return; }
+  }
+});
+
+/* ═══════════════════════════════════════════
+   FULLSCREEN VIEWER
+   — single-tap opens detail, double-tap opens fullscreen
+   — Galeri cards: single-tap = photo modal, double-tap = fullscreen
+   — Published cards: single-tap = pub modal, double-tap = fullscreen
+   — Both modals' preview: single-tap = fullscreen
+═══════════════════════════════════════════ */
+function openFullscreen(src, caption = "") {
+  EL.fsImg.src            = src;
+  EL.fsCaption.textContent= caption || "";
+  openModal(EL.fullscreenModal);
+  pushModalState("fullscreen");
+}
+function closeFullscreen() { closeModal(EL.fullscreenModal); }
+
+EL.fsBackBtn.addEventListener("click", closeFullscreen);
+// Tap backdrop (outside image) to close
+EL.fullscreenModal.addEventListener("click", e => {
+  if (e.target === EL.fullscreenModal || e.target.classList.contains("fs-inner")) {
+    closeFullscreen();
+  }
+});
+
+/* ═══════════════════════════════════════════
+   CONFIRM DIALOG
+═══════════════════════════════════════════ */
+function openConfirm({ title = "Emin misiniz?", text = "", okLabel = "Tamam", cancelLabel = "Vazgeç", icon = "❗" } = {}) {
+  // Resolve any pending confirm first
+  if (confirmResolve) { confirmResolve(false); confirmResolve = null; }
+  EL.confirmTitle.textContent  = title;
+  EL.confirmText.textContent   = text;
+  EL.confirmOk.textContent     = okLabel;
+  EL.confirmCancel.textContent = cancelLabel;
+  EL.confirmIcon.textContent   = icon;
+  openModal(EL.confirmModal);
+  pushModalState("confirm");
+  return new Promise(res => { confirmResolve = res; });
+}
+function resolveConfirm(val) {
+  closeModal(EL.confirmModal);
+  const r = confirmResolve;
+  confirmResolve = null;
+  r?.(val);
+}
+EL.confirmOk.addEventListener("click",     () => resolveConfirm(true));
+EL.confirmCancel.addEventListener("click", () => resolveConfirm(false));
+
+/* ═══════════════════════════════════════════
+   DATE HELPERS
+═══════════════════════════════════════════ */
+const pad  = n => String(n).padStart(2, "0");
+const dtKey = ts => {
+  const d = new Date(ts);
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+};
+const dtStr  = ts => new Date(ts).toLocaleString("tr-TR");
+const dayLabel = key => {
+  const today = dtKey(Date.now()), yest = dtKey(Date.now() - 86400000);
+  if (key === today) return "Bugün";
+  if (key === yest)  return "Dün";
+  const [y,m,d] = key.split("-").map(Number);
+  return new Date(y,m-1,d).toLocaleDateString("tr-TR", { day:"2-digit", month:"long", year:"numeric" });
+};
+const initials = n => (n||"").split(" ").map(s=>s[0]).join("").toUpperCase().slice(0,2) || "?";
+
+/* ═══════════════════════════════════════════
+   LAST-SEEN / BADGE
+═══════════════════════════════════════════ */
+async function loadLastSeen(uid) {
+  try {
+    const snap = await getDoc(doc(db, "users", uid, "settings", "prefs"));
+    lastSeen = snap.exists() ? (snap.data().lastSeen || 0) : 0;
+  } catch { lastSeen = 0; }
+}
+async function markSeen() {
+  if (!currentUser) return;
+  lastSeen = Date.now();
+  try {
+    await setDoc(doc(db, "users", currentUser.uid, "settings", "prefs"), { lastSeen }, { merge: true });
+  } catch {}
+  renderPublished();
+}
+function setBadge(count) {
+  let b = EL.navPublished.querySelector(".nav-badge");
+  if (count > 0) {
+    if (!b) { b = document.createElement("span"); b.className = "nav-badge"; EL.navPublished.appendChild(b); }
+    b.textContent = count > 99 ? "99+" : String(count);
+  } else b?.remove();
+}
+
+/* ═══════════════════════════════════════════
+   FIRESTORE LISTENERS
+═══════════════════════════════════════════ */
+function listenPhotos(uid) {
+  unsubPhotos?.(); unsubPhotos = null;
+  const q2 = query(collection(db, "users", uid, "photos"), orderBy("createdAtClient", "desc"));
+  unsubPhotos = onSnapshot(q2,
+    snap => renderGallery(snap.docs.map(d => ({ id: d.id, ...d.data() }))),
+    err  => console.error("photos:", err)
+  );
+}
+function listenPublished() {
+  unsubPublished?.(); unsubPublished = null;
+  const q2 = query(collection(db, "publishedPhotos"), orderBy("createdAtClient", "desc"));
+  unsubPublished = onSnapshot(q2,
+    snap => { pubCache = snap.docs.map(d => ({ id: d.id, ...d.data() })); renderPublished(); },
+    err  => console.error("published:", err)
+  );
+}
+
+/* ═══════════════════════════════════════════
+   GALLERY RENDER
+═══════════════════════════════════════════ */
+
+// Double-tap detection helper (touch + mouse)
+function addDoubleTapListener(el, onSingle, onDouble, delay = 280) {
+  let timer = null, lastTouch = 0;
+  let startX = 0, startY = 0, didMove = false;
+
+  el.addEventListener("touchstart", e => {
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    didMove = false;
+  }, { passive: true });
+
+  el.addEventListener("touchmove", e => {
+    const dx = Math.abs(e.touches[0].clientX - startX);
+    const dy = Math.abs(e.touches[0].clientY - startY);
+    if (dx > 6 || dy > 6) didMove = true;
+  }, { passive: true });
+
+  // Touch: detect double-tap by time gap
+  el.addEventListener("touchend", e => {
+    if (didMove) return; // user was scrolling — ignore
+    const now = Date.now();
+    if (now - lastTouch < delay) {
+      clearTimeout(timer);
+      lastTouch = 0;
+      onDouble(e);
+    } else {
+      lastTouch = now;
+      timer = setTimeout(() => { lastTouch = 0; onSingle(e); }, delay);
+    }
+  }, { passive: true });
+
+  // Mouse: rely on native dblclick
+  el.addEventListener("click",    e => { if (!('ontouchstart' in window)) { clearTimeout(timer); timer = setTimeout(() => onSingle(e), delay / 2); } });
+  el.addEventListener("dblclick", e => { if (!('ontouchstart' in window)) { clearTimeout(timer); onDouble(e); } });
+}
+
+function renderGallery(photos) {
+  EL.galleryPage.innerHTML = "";
+  if (!photos.length) {
+    EL.galleryPage.innerHTML = `
+      <div class="empty-state">
+        <span class="empty-icon">📷</span>
+        <strong>Henüz fotoğraf yok</strong>
+        <small>Kamera sekmesinden ilk anı yakala</small>
+      </div>`;
+    return;
+  }
+  const groups = new Map();
+  photos.forEach(p => {
+    const k = dtKey(p.createdAtClient || Date.now());
+    (groups.get(k) || groups.set(k, []).get(k)).push(p);
+  });
+  const frag = document.createDocumentFragment();
+  [...groups.entries()].sort((a,b) => b[0].localeCompare(a[0])).forEach(([key, items]) => {
+    const sec = document.createElement("section");
+    sec.innerHTML = `
+      <div class="group-head">
+        <span>${dayLabel(key)}</span>
+        <span class="group-count">${items.length} fotoğraf</span>
+      </div>`;
+    const grid = document.createElement("div");
+    grid.className = "group-grid";
+    items.forEach(p => {
+      const card = document.createElement("div");
+      card.className = "card";
+      const img = document.createElement("img");
+      img.src = p.image; img.loading = "lazy"; img.alt = "";
+      img.decoding = "async";
+      card.appendChild(img);
+      if (p.favorite) { const b = document.createElement("div"); b.className = "fav-badge"; b.textContent = "⭐"; card.appendChild(b); }
+      addDoubleTapListener(
+        card,
+        () => openPhotoModal(p),
+        () => openFullscreen(p.image, p.note)
+      );
+      grid.appendChild(card);
+    });
+    sec.appendChild(grid);
+    frag.appendChild(sec);
+  });
+  EL.galleryPage.appendChild(frag);
+}
+
+function renderPublished() {
+  EL.publishedGallery.innerHTML = "";
+  if (!pubCache.length) {
+    EL.publishedGallery.innerHTML = `
+      <div class="empty-state">
+        <span class="empty-icon">🌐</span>
+        <strong>Henüz yayın yok</strong>
+        <small>Fotoğraf düzenleme ekranından yayınla</small>
+      </div>`;
+    setBadge(0); return;
+  }
+  const frag = document.createDocumentFragment();
+  pubCache.forEach(item => {
+    const isNew = (item.createdAtClient || 0) > lastSeen;
+    const card  = document.createElement("div");
+    card.className = "card";
+    const img = document.createElement("img");
+    img.src = item.image; img.loading = "lazy"; img.alt = "";
+    img.decoding = "async";
+    card.appendChild(img);
+    const pill = document.createElement("div");
+    pill.className = "pub-badge-pill"; pill.textContent = "Yayın";
+    card.appendChild(pill);
+    if (isNew) { const dot = document.createElement("div"); dot.className = "new-dot"; card.appendChild(dot); }
+    if (item.note) { const g = document.createElement("div"); g.className = "card-gradient"; g.textContent = item.note; card.appendChild(g); }
+    addDoubleTapListener(
+      card,
+      () => openPubModal(item),
+      () => openFullscreen(item.image, item.note)
+    );
+    frag.appendChild(card);
+  });
+  EL.publishedGallery.appendChild(frag);
+  setBadge(pubCache.filter(i => (i.createdAtClient||0) > lastSeen).length);
+}
+
+/* ═══════════════════════════════════════════
+   PHOTO MODAL
+═══════════════════════════════════════════ */
+function resetPM() {
+  Object.assign(pm, { id:null, image:"", created:null, note:"", favorite:false,
+                      publishedId:null, locationLabel:"", mapsUrl:"", isNew:false });
+}
+
+function applyPMtoUI() {
+  EL.modalPreview.src = pm.image;
+  EL.noteInput.value  = pm.note;
+  EL.favoriteBtn.classList.toggle("active", pm.favorite);
+  EL.locationLabel.textContent = pm.locationLabel || "Konum ekle";
+  // Show/hide location hint for edit mode
+  if (!pm.isNew && pm.mapsUrl) {
+    EL.locationLabel.textContent = pm.locationLabel;
+    EL.locationBtn.title = "Haritada aç";
+  }
+  EL.deleteBtn.style.display  = pm.id ? "" : "none";
+  EL.publishBtn.textContent   = pm.publishedId ? "Yayını Güncelle" : "Yayınla";
+}
+
+function openPhotoModal(photo) {
+  resetPM();
+  Object.assign(pm, {
+    id:            photo.id,
+    image:         photo.image,
+    created:       photo.createdAtClient,
+    note:          photo.note || "",
+    favorite:      !!photo.favorite,
+    publishedId:   photo.publishedId || null,
+    locationLabel: photo.locationLabel || "",
+    mapsUrl:       photo.mapsUrl || "",
+    isNew:         false,
+  });
+  EL.photoModalTitle.textContent = "Fotoğraf Detayı";
+  applyPMtoUI();
+  openModal(EL.photoModal);
+  pushModalState("photoModal");
+}
+
+function openNewPhotoModal(imageData) {
+  resetPM();
+  pm.image   = imageData;
+  pm.created = Date.now();
+  pm.isNew   = true;
+  EL.photoModalTitle.textContent = "Yeni Fotoğraf";
+  applyPMtoUI();
+  openModal(EL.photoModal);
+  pushModalState("photoModal");
+}
+
+// Preview → fullscreen on single tap
+EL.photoImgWrap.addEventListener("click", () => { if (pm.image) openFullscreen(pm.image, pm.note); });
+
+EL.photoModalClose.addEventListener("click", () => closeModal(EL.photoModal));
+EL.cancelBtn.addEventListener("click",       () => closeModal(EL.photoModal));
+
+EL.favoriteBtn.addEventListener("click", () => {
+  pm.favorite = !pm.favorite;
+  EL.favoriteBtn.classList.toggle("active", pm.favorite);
+});
+
+EL.locationBtn.addEventListener("click", handleLocationTap);
+
+EL.saveBtn.addEventListener("click",    savePhoto);
+EL.deleteBtn.addEventListener("click",  deletePhoto);
+EL.publishBtn.addEventListener("click", publishPhoto);
+EL.shareBtn.addEventListener("click",   sharePhoto);
+
+async function handleLocationTap() {
+  // Existing photo with a location → open in maps
+  if (!pm.isNew && pm.mapsUrl) {
+    window.open(pm.mapsUrl, "_blank", "noopener");
+    return;
+  }
+  if (!navigator.geolocation) { toast("⚠️ Konum desteklenmiyor"); return; }
+  EL.locationLabel.textContent = "Konum alınıyor…";
+  EL.locationBtn.disabled = true;
+  try {
+    const pos = await new Promise((res, rej) =>
+      navigator.geolocation.getCurrentPosition(res, rej, { timeout: 14000, enableHighAccuracy: true })
+    );
+    pm.locationLabel = `${pos.coords.latitude.toFixed(6)}, ${pos.coords.longitude.toFixed(6)}`;
+    pm.mapsUrl       = `https://maps.google.com/?q=${pos.coords.latitude},${pos.coords.longitude}`;
+    EL.locationLabel.textContent = pm.locationLabel;
+    toast("📍 Konum alındı");
+  } catch {
+    EL.locationLabel.textContent = pm.locationLabel || "Konum ekle";
+    toast("⚠️ Konum alınamadı. İzin verdiğinizden emin olun.");
+  } finally {
+    EL.locationBtn.disabled = false;
+  }
+}
+
+async function savePhoto() {
+  if (!pm.image || !currentUser) return;
+  pm.note = EL.noteInput.value.trim();
+  EL.saveBtn.disabled = true;
+  EL.saveBtn.textContent = "Kaydediliyor…";
+  const payload = {
+    image:           pm.image,
+    note:            EL.noteInput.value.trim(),
+    locationLabel:   pm.locationLabel,
+    mapsUrl:         pm.mapsUrl,
+    favorite:        pm.favorite,
+    createdAtClient: pm.created || Date.now(),
+    publishedId:     pm.publishedId || null,
+  };
+  try {
+    if (pm.id) {
+      await updateDoc(doc(db, "users", currentUser.uid, "photos", pm.id), payload);
+    } else {
+      await addDoc(collection(db, "users", currentUser.uid, "photos"), payload);
+    }
+    toast("✅ Kaydedildi");
+    closeModal(EL.photoModal);
+  } catch (err) {
+    toast("❌ Kayıt hatası: " + err.message);
+  } finally {
+    EL.saveBtn.disabled = false;
+    EL.saveBtn.textContent = "💾 Kaydet";
+  }
+}
+
+async function deletePhoto() {
+  if (!pm.id || !currentUser) return;
+  const ok = await openConfirm({
+    title: "Fotoğraf silinsin mi?",
+    text:  "Bu işlem geri alınamaz.",
+    okLabel: "Sil", icon: "🗑"
+  });
+  if (!ok) return;
+  try {
+    await deleteDoc(doc(db, "users", currentUser.uid, "photos", pm.id));
+    if (pm.publishedId) await deleteDoc(doc(db, "publishedPhotos", pm.publishedId)).catch(()=>{});
+    toast("🗑 Silindi");
+    closeModal(EL.photoModal);
+  } catch (err) { toast("❌ Silme hatası: " + err.message); }
+}
+
+async function publishPhoto() {
+  if (!pm.image || !currentUser) return;
+  pm.note = EL.noteInput.value.trim();
+  const ok = await openConfirm({
+    title:    pm.publishedId ? "Yayını Güncelle" : "Yayınla",
+    text:     "Bu fotoğraf herkese açık olacak.",
+    okLabel:  pm.publishedId ? "Güncelle" : "Yayınla",
+    icon:     "🌐"
+  });
+  if (!ok) return;
+  EL.publishBtn.disabled = true;
+  try {
+    const compressed = await compressImage(pm.image);
+    const payload = {
+      image:           compressed,
+      note:            EL.noteInput.value.trim(),
+      locationLabel:   pm.locationLabel,
+      mapsUrl:         pm.mapsUrl,
+      favorite:        pm.favorite,
+      createdAtClient: Date.now(),
+      uid:             currentUser.uid,
+      displayName:     currentUser.displayName || "Anonim",
+    };
+    if (pm.publishedId) {
+      await updateDoc(doc(db, "publishedPhotos", pm.publishedId), payload);
+      toast("✅ Yayın güncellendi");
+    } else {
+      const ref = await addDoc(collection(db, "publishedPhotos"), payload);
+      pm.publishedId = ref.id;
+      if (pm.id) {
+        await updateDoc(doc(db, "users", currentUser.uid, "photos", pm.id), { publishedId: ref.id }).catch(()=>{});
+      }
+      toast("🌐 Yayınlandı");
+    }
+    EL.publishBtn.textContent = "Yayını Güncelle";
+  } catch (err) { toast("❌ Yayın hatası: " + err.message); }
+  finally { EL.publishBtn.disabled = false; }
+}
+
+function compressImage(dataUrl, maxPx = 800, q = .65) {
+  return new Promise(res => {
+    const img = new Image();
+    img.onload = () => {
+      let w = img.width, h = img.height;
+      if (w > maxPx || h > maxPx) {
+        if (w >= h) { h = Math.round(h*maxPx/w); w = maxPx; }
+        else        { w = Math.round(w*maxPx/h); h = maxPx; }
+      }
+      const c = document.createElement("canvas"); c.width = w; c.height = h;
+      c.getContext("2d").drawImage(img, 0, 0, w, h);
+      res(c.toDataURL("image/jpeg", q));
+    };
+    img.onerror = () => res(dataUrl);
+    img.src = dataUrl;
+  });
+}
+
+function dataURLtoBlob(dataUrl) {
+  const [header, data] = dataUrl.split(",");
+  const mime = header.match(/:(.*?);/)[1];
+  const bytes = atob(data);
+  const arr = new Uint8Array(bytes.length);
+  for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
+  return new Blob([arr], { type: mime });
+}
+
+async function sharePhoto() {
+  if (!pm.image) return;
+  try {
+    const blob = pm.image.startsWith("data:") ? dataURLtoBlob(pm.image) : await fetch(pm.image).then(r => r.blob());
+    const file = new File([blob], "pelus.jpg", { type: blob.type });
+    if (navigator.share && navigator.canShare?.({ files:[file] })) {
+      await navigator.share({ files:[file] }); toast("Paylaşıldı");
+    } else if (navigator.share) {
+      await navigator.share({ title:"Pelus Takip", text: EL.noteInput.value }); toast("Paylaşıldı");
+    } else toast("⚠️ Paylaşım desteklenmiyor");
+  } catch(e) { if (e.name !== "AbortError") toast("❌ Paylaşım hatası"); }
+}
+
+/* ═══════════════════════════════════════════
+   PUBLISHED MODAL
+═══════════════════════════════════════════ */
+function openPubModal(item) {
+  EL.pubImg.src          = item.image;
+  EL.pubImg.dataset.id   = item.id;
+  EL.pubAuthor.textContent = item.displayName ? item.displayName + " paylaşımı" : "Yayın";
+  EL.pubDate.textContent   = item.createdAtClient ? dtStr(item.createdAtClient) : "";
+  EL.pubNote.textContent   = item.note || "";
+  const hasLoc = !!(item.mapsUrl?.trim());
+  EL.pubLocBtn.style.display    = hasLoc ? "inline-flex" : "none";
+  if (hasLoc) EL.pubLocText.textContent = item.locationLabel || "Konumu gör";
+  EL.pubOwnerActions.style.display = (currentUser && item.uid === currentUser.uid) ? "" : "none";
+  openModal(EL.pubModal);
+  pushModalState("pubModal");
+}
+
+// Tap pub image → fullscreen
+EL.pubImgWrap.addEventListener("click", () => {
+  const src = EL.pubImg.src;
+  if (src) openFullscreen(src);
+});
+
+EL.pubClose.addEventListener("click", e => { e.stopPropagation(); closeModal(EL.pubModal); });
+EL.pubLocBtn.addEventListener("click", () => {
+  const item = pubCache.find(p => p.id === EL.pubImg.dataset.id);
+  if (item?.mapsUrl) window.open(item.mapsUrl, "_blank", "noopener");
+});
+EL.pubDeleteBtn.addEventListener("click", async () => {
+  const id   = EL.pubImg.dataset.id;
+  const item = pubCache.find(p => p.id === id);
+  if (!item || !currentUser || item.uid !== currentUser.uid) { toast("⚠️ Bu yayını silemezsiniz"); return; }
+  const ok = await openConfirm({ title:"Yayın silinsin mi?", text:"Kalıcı olarak silinir.", okLabel:"Sil", icon:"🗑" });
+  if (!ok) return;
+  try {
+    await deleteDoc(doc(db, "publishedPhotos", id));
+    toast("🗑 Yayın silindi"); closeModal(EL.pubModal);
+  } catch(err) { toast("❌ Silme hatası: " + err.message); }
+});
+
+/* ═══════════════════════════════════════════
+   SETTINGS
+═══════════════════════════════════════════ */
+EL.userBtn.addEventListener("click", () => { openModal(EL.settingsModal); pushModalState("settings"); });
+EL.settingsClose.addEventListener("click", () => closeModal(EL.settingsModal));
+EL.logoutBtn.addEventListener("click", async () => {
+  const ok = await openConfirm({ title:"Çıkış Yap", text:"Çıkış yapmak istediğinize emin misiniz?", okLabel:"Çıkış Yap", cancelLabel:"Vazgeç", icon:"👋" });
+  if (!ok) return;
+  await signOut(auth);
+  closeModal(EL.settingsModal);
+  toast("Çıkış yapıldı");
+});
+
+/* ═══════════════════════════════════════════
+   NAVIGATION
+═══════════════════════════════════════════ */
+function showPage(page) {
+  if (page === activePage && page !== "camera") return;
+  if (page !== "camera") stopCamera();
+  activePage = page;
+
+  EL.localPage.classList.toggle("active",     page === "local");
+  EL.publishedPage.classList.toggle("active", page === "published");
+  EL.cameraPage.classList.toggle("active",    page === "camera");
+  EL.navLocal.classList.toggle("active",      page === "local");
+  EL.navPublished.classList.toggle("active",  page === "published");
+  EL.navCamera.classList.toggle("active",     page === "camera");
+
+  if (page === "camera")    openCamera("environment");
+  if (page === "published") markSeen();
+}
+
+EL.navLocal.addEventListener("click",     () => showPage("local"));
+EL.navPublished.addEventListener("click", () => showPage("published"));
+EL.navCamera.addEventListener("click",    () => showPage("camera"));
+
+/* ═══════════════════════════════════════════
+   CAMERA
+═══════════════════════════════════════════ */
+async function openCamera(mode) {
+  const gen = ++camGen;
+  // Clean up existing stream
+  if (camStream) {
+    camStream.getTracks().forEach(t => t.stop());
+    camStream = null; camTrack = null;
+    EL.cameraVideo.srcObject = null;
+  }
+  await new Promise(r => setTimeout(r, 80));
+  if (gen !== camGen) return;
+
+  try {
+    camStream = await navigator.mediaDevices.getUserMedia({
+      video: mode === "user"
+        ? { facingMode: "user" }
+        : { facingMode: { ideal: "environment" } }
+    });
+    if (gen !== camGen) { camStream.getTracks().forEach(t => t.stop()); camStream = null; return; }
+    EL.cameraVideo.srcObject = camStream;
+    await EL.cameraVideo.play().catch(()=>{});
+    camTrack    = camStream.getVideoTracks()[0];
+    facingMode  = mode;
+    EL.camBadge.textContent = mode === "user" ? "Ön Kamera" : "Arka Kamera";
+    EL.cameraVideo.classList.toggle("front-cam", mode === "user");
+
+    // Zoom
+    try {
+      const caps = camTrack?.getCapabilities?.();
+      if (caps?.zoom) {
+        zoomMin = caps.zoom.min ?? 1; zoomMax = caps.zoom.max ?? 1;
+        currentZoom = zoomMin;
+        EL.zoomRange.min = zoomMin; EL.zoomRange.max = zoomMax;
+        EL.zoomRange.step = caps.zoom.step ?? 0.1;
+        EL.zoomRange.value = currentZoom;
+        EL.zoomLabel.textContent = currentZoom.toFixed(1) + "x";
+        EL.camZoomBar.classList.add("show");
+      } else EL.camZoomBar.classList.remove("show");
+    } catch { EL.camZoomBar.classList.remove("show"); }
+
+  } catch (err) {
+    console.error("Camera:", err);
+    toast("⚠️ Kamera açılamadı. Lütfen izin verin.");
+  }
+}
+
+function stopCamera() {
+  camGen++;
+  if (camStream) {
+    camStream.getTracks().forEach(t => t.stop());
+    camStream = null; camTrack = null;
+    EL.cameraVideo.srcObject = null;
+  }
+}
+
+async function capture() {
+  if (!EL.cameraVideo.videoWidth) { toast("⚠️ Kamera hazır değil"); return; }
+  const c = EL.canvas;
+  c.width  = EL.cameraVideo.videoWidth;
+  c.height = EL.cameraVideo.videoHeight;
+  const ctx = c.getContext("2d");
+  if (facingMode === "user") { ctx.save(); ctx.translate(c.width, 0); ctx.scale(-1, 1); }
+  ctx.drawImage(EL.cameraVideo, 0, 0, c.width, c.height);
+  if (facingMode === "user") ctx.restore();
+  const data = c.toDataURL("image/jpeg", .85);
+  stopCamera();
+  showPage("local");
+  openNewPhotoModal(data);
+}
+
+EL.captureBtn.addEventListener("click",   capture);
+EL.switchCamBtn.addEventListener("click", () => openCamera(facingMode === "user" ? "environment" : "user"));
+EL.zoomRange.addEventListener("input", () => {
+  if (!camTrack) return;
+  const z = Math.max(zoomMin, Math.min(zoomMax, +EL.zoomRange.value));
+  currentZoom = z;
+  EL.zoomLabel.textContent = z.toFixed(1) + "x";
+  camTrack.applyConstraints({ advanced: [{ zoom: z }] }).catch(()=>{});
+});
+
+// Focus ring
+EL.cameraVideo.addEventListener("pointerdown", e => {
+  const r = EL.cameraVideo.getBoundingClientRect();
+  EL.focusRing.style.left = ((e.clientX - r.left) / r.width  * 100) + "%";
+  EL.focusRing.style.top  = ((e.clientY - r.top)  / r.height * 100) + "%";
+  EL.focusRing.classList.remove("pop");
+  void EL.focusRing.offsetWidth;
+  EL.focusRing.classList.add("pop");
+});
+
+/* ═══════════════════════════════════════════
+   AUTH
+═══════════════════════════════════════════ */
+function applyUser(user) {
+  currentUser = user;
+  if (user) {
+    EL.loginOverlay.style.display = "none";
+    EL.container.style.display    = "flex";
+    // Header avatar
+    if (user.photoURL) EL.userBtn.innerHTML = `<img src="${user.photoURL}" alt="">`;
+    else               EL.userBtn.textContent = initials(user.displayName || user.email);
+    // Settings
+    EL.settingsName.textContent  = user.displayName || "";
+    EL.settingsEmail.textContent = user.email || "";
+    if (user.photoURL) {
+      EL.settingsAvatar.src = user.photoURL;
+      EL.settingsAvatar.style.display   = "block";
+      EL.settingsInitials.style.display = "none";
+    } else {
+      EL.settingsAvatar.style.display   = "none";
+      EL.settingsInitials.style.display = "flex";
+      EL.settingsInitials.textContent   = initials(user.displayName || user.email);
+    }
+    loadLastSeen(user.uid).then(() => {
+      listenPhotos(user.uid);
+      listenPublished();
+    });
+  } else {
+    EL.loginOverlay.style.display = "flex";
+    EL.container.style.display    = "none";
+    stopCamera();
+    unsubPhotos?.();    unsubPhotos    = null;
+    unsubPublished?.(); unsubPublished = null;
+    EL.galleryPage.innerHTML      = "";
+    EL.publishedGallery.innerHTML = "";
+    setBadge(0); pubCache = [];
+    EL.loginLoader.style.display  = "none";
+    EL.googleLoginBtn.disabled    = false;
+  }
+}
+
+async function login() {
+  EL.googleLoginBtn.disabled    = true;
+  EL.loginWarning.style.display = "none";
+  EL.loginLoader.style.display  = "block";
+  try {
+    if (window.self !== window.top) { await signInWithRedirect(auth, provider); return; }
+    await signInWithPopup(auth, provider);
+  } catch (err) {
+    if (err.code === "auth/popup-blocked" || err.code === "auth/cancelled-popup-request") {
+      try { await signInWithRedirect(auth, provider); }
+      catch(e2) {
+        EL.loginWarning.textContent   = "Giriş başarısız: " + e2.message;
+        EL.loginWarning.style.display = "block";
+        EL.loginLoader.style.display  = "none";
+        EL.googleLoginBtn.disabled    = false;
+      }
+    } else {
+      EL.loginWarning.textContent   = err.message;
+      EL.loginWarning.style.display = "block";
+      EL.loginLoader.style.display  = "none";
+      EL.googleLoginBtn.disabled    = false;
+    }
+  }
+}
+
+EL.googleLoginBtn.addEventListener("click", login);
+
+// Auth state — handle redirect result once
+let redirectHandled = false;
+onAuthStateChanged(auth, async user => {
+  if (!redirectHandled) {
+    redirectHandled = true;
+    try {
+      const r = await getRedirectResult(auth);
+      if (r?.user) { applyUser(r.user); return; }
+    } catch {}
+  }
+  applyUser(user);
+});
+
+window.addEventListener("beforeunload", () => {
+  stopCamera();
+  unsubPhotos?.();
+  unsubPublished?.();
+});
+
+showPage("local");
+</script>
+</body>
+</html>
