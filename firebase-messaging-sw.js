@@ -36,7 +36,7 @@ self.addEventListener("notificationclick", e => {
       for (const c of list) {
         if (c.url.includes("pelustakip") && "focus" in c) return c.focus();
       }
-      return clients.openWindow("./pelustakip.html");
+      return clients.openWindow("./");
     })
   );
 });
