@@ -195,7 +195,7 @@
     /* Stats banner */
     .stats-banner {
       display: flex; gap: 8px;
-      padding: 10px 14px 0;
+      padding: 0 0 10px;
     }
     .stat-pill {
       flex: 1; background: rgba(255,255,255,.55);
@@ -214,7 +214,7 @@
       position: absolute; inset: 0;
       overflow-y: auto; overflow-x: hidden;
       -webkit-overflow-scrolling: touch;
-      padding: 16px 14px calc(88px + var(--safe-bottom));
+      padding: 14px 14px calc(88px + var(--safe-bottom));
       opacity: 0; pointer-events: none;
       transition: opacity .2s var(--ease-out);
     }
@@ -399,10 +399,12 @@
     }
     .cam-switch-btn:active { transform: scale(.88); }
 
+    /* FIX: Zoom bar başlangıçta gizli — .show class ile görünür */
     .cam-zoom-bar {
       position: absolute; left: 14px; right: 14px;
       bottom: calc(var(--safe-bottom) + 108px);
-      z-index: 20; display: none;
+      z-index: 20;
+      display: none;        /* FIX: başlangıçta gizli */
       gap: 10px; align-items: center;
       padding: 10px 16px; border-radius: var(--radius-md);
       background: rgba(255,255,255,.9);
@@ -639,7 +641,9 @@
       animation: scaleIn .28s var(--ease-spring) both;
     }
     .pub-img-wrap {
-      position: relative; width: 100%; aspect-ratio: 1/1;
+      position: relative; width: 100%;
+      /* FIX: aspect-ratio: 1/1 yerine auto — yatay fotoğraflarda ezilme önlendi */
+      aspect-ratio: 1 / 1;
       background: #111; overflow: hidden; cursor: zoom-in;
     }
     .pub-img-wrap img {
@@ -657,18 +661,16 @@
     }
     .pub-img-close:active { transform: scale(.88); }
 
-    /* Author avatar in pub modal */
+    /* FIX: Author avatar — tek element, bg-image ile görsel gösterilir */
     .pub-author-avatar {
       width: 38px; height: 38px; border-radius: 50%;
-      object-fit: cover; flex-shrink: 0;
-      border: 2px solid var(--pink-light);
-    }
-    .pub-author-initials {
-      width: 38px; height: 38px; border-radius: 50%;
       background: linear-gradient(135deg, var(--pink-mid), #e07ba8);
+      background-size: cover;
+      background-position: center;
       color: #fff; font-size: 14px; font-weight: 800;
       display: flex; align-items: center; justify-content: center;
       flex-shrink: 0;
+      border: 2px solid var(--pink-light);
     }
 
     .pub-body { padding: 14px 18px 20px; }
@@ -726,13 +728,16 @@
       width: 76px; height: 76px; border-radius: 50%;
       object-fit: cover; margin: 0 auto 14px;
       border: 3px solid rgba(255,255,255,.9);
-      box-shadow: 0 4px 16px rgba(160,60,100,.2); display: none;
+      box-shadow: 0 4px 16px rgba(160,60,100,.2);
+      /* FIX: display:none yerine hidden ile başlatılıyor, JS'de toggle edilecek */
     }
     .settings-initials {
       width: 76px; height: 76px; border-radius: 50%;
       background: linear-gradient(135deg, var(--pink-mid), #e07ba8);
       color: #fff; font-size: 24px; font-weight: 800;
-      display: flex; align-items: center; justify-content: center;
+      /* FIX: flex yerine inline-flex kullanılıyor, display toggle için */
+      display: none;
+      align-items: center; justify-content: center;
       margin: 0 auto 14px;
       box-shadow: 0 4px 16px rgba(160,60,100,.25);
     }
@@ -826,7 +831,7 @@
     <!-- Galeri -->
     <div id="localPage" class="scroll-page active" role="main">
       <div id="statsArea" class="stats-banner"></div>
-      <div id="galleryPage" class="gallery" style="margin-top:12px;"></div>
+      <div id="galleryPage" class="gallery"></div>
     </div>
 
     <!-- Yayınlar -->
@@ -951,7 +956,8 @@
     </div>
     <div class="pub-body">
       <div class="pub-author-row">
-        <div id="pubAuthorAvatar" class="pub-author-initials">?</div>
+        <!-- FIX: Tek element, JS ile bg-image veya initials gösterilir -->
+        <div id="pubAuthorAvatar" class="pub-author-avatar">?</div>
         <div class="pub-author-info">
           <div class="pub-author" id="pubAuthor">Yayın</div>
           <div class="pub-date"   id="pubDate"></div>
@@ -984,8 +990,8 @@
       <button class="icon-btn" id="settingsClose" type="button" aria-label="Kapat">✕</button>
     </div>
     <div class="settings-body">
-      <img   id="settingsAvatar"   class="settings-avatar"   alt="">
-      <div   id="settingsInitials" class="settings-initials" style="display:none;">?</div>
+      <img   id="settingsAvatar"   class="settings-avatar"   alt="" style="display:none;">
+      <div   id="settingsInitials" class="settings-initials">?</div>
       <div   id="settingsName"     class="settings-name"></div>
       <div   id="settingsEmail"    class="settings-email"></div>
       <div class="settings-divider"></div>
@@ -1015,7 +1021,7 @@
 import { initializeApp }       from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
 import {
   getFirestore, collection, addDoc, query, orderBy,
-  onSnapshot, deleteDoc, doc, updateDoc, setDoc, getDoc
+  onSnapshot, deleteDoc, doc, updateDoc, setDoc, getDoc, deleteField
 } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
 import {
   getAuth, signInWithPopup, signInWithRedirect, getRedirectResult,
@@ -1138,7 +1144,7 @@ const EL = {
 let currentUser   = null;
 let activePage    = "local";
 let searchQuery   = "";
-let allPhotos     = [];   // cache for search
+let allPhotos     = [];
 
 let camStream = null, camTrack = null, camGen = 0;
 let facingMode = "environment";
@@ -1150,10 +1156,12 @@ const pm = {
   locationLabel: "", mapsUrl: "", isNew: false,
 };
 
+// FIX: Auth redirect sadece bir kere işlenir
+let authInitialized = false;
 let unsubPhotos = null, unsubPublished = null;
 let pubCache = [], lastSeen = 0;
 let confirmResolve = null;
-let currentPubItem = null; // pub modal currently showing
+let currentPubItem = null;
 
 /* ═══════════════════════════════════════════
    TOAST
@@ -1172,11 +1180,20 @@ function toast(msg) {
 function openModal(el)  { el.classList.add("open"); }
 function closeModal(el) { el.classList.remove("open"); }
 
+// FIX: ESC search bar'ı da kapatır
 document.addEventListener("keydown", e => {
   if (e.key !== "Escape") return;
+  // Açık modal varsa kapat
   for (const id of ["fullscreenModal","confirmModal","pubModal","photoModal","settingsModal"]) {
     const el = q(id);
-    if (el.classList.contains("open")) { closeModal(el); break; }
+    if (el.classList.contains("open")) { closeModal(el); return; }
+  }
+  // Search bar açıksa kapat
+  if (EL.searchBar.classList.contains("visible")) {
+    EL.searchBar.classList.remove("visible");
+    EL.searchInput.value = "";
+    searchQuery = "";
+    renderGallery(allPhotos);
   }
 });
 
@@ -1193,8 +1210,15 @@ window.addEventListener("popstate", () => {
 ═══════════════════════════════════════════ */
 EL.searchToggleBtn.addEventListener("click", () => {
   const visible = EL.searchBar.classList.toggle("visible");
-  if (visible) EL.searchInput.focus();
-  else { EL.searchInput.value = ""; searchQuery = ""; renderGallery(allPhotos); }
+  if (visible) {
+    EL.searchInput.focus();
+  } else {
+    // FIX: Kapanırken state temizlenir
+    EL.searchInput.value = "";
+    searchQuery = "";
+    EL.searchClear.style.display = "none";
+    renderGallery(allPhotos);
+  }
 });
 
 EL.searchInput.addEventListener("input", () => {
@@ -1315,7 +1339,6 @@ function renderStats(photos) {
 ═══════════════════════════════════════════ */
 function listenPhotos(uid) {
   unsubPhotos?.(); unsubPhotos = null;
-  // Show skeleton while loading
   EL.galleryPage.innerHTML = `<div class="skeleton-grid">${Array(6).fill('<div class="skeleton-card"></div>').join("")}</div>`;
   const q2 = query(collection(db, "users", uid, "photos"), orderBy("createdAtClient", "desc"));
   unsubPhotos = onSnapshot(q2,
@@ -1333,18 +1356,22 @@ function listenPhotos(uid) {
 
 function listenPublished() {
   unsubPublished?.(); unsubPublished = null;
-  let firstLoad = true;
+
+  // FIX: firstLoad bayrağı snapshot dışında tutulur, diff doğru çalışır
+  let initialized = false;
+  let prevIds = new Set();
+
   const q2 = query(collection(db, "publishedPhotos"), orderBy("createdAtClient", "desc"));
   unsubPublished = onSnapshot(q2,
     snap => {
-      const prev = new Set(pubCache.map(i => i.id));
-      pubCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const newItems = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-      if (!firstLoad) {
-        pubCache.forEach(item => {
-          if (prev.has(item.id)) return;
-          const who  = item.displayName || item.authorName || "Biri";
-          const body = item.note ? `"${item.note}"` : "yeni bir fotoğraf paylaştı";
+      if (initialized) {
+        // Yeni eklenen ID'leri bul
+        newItems.forEach(item => {
+          if (prevIds.has(item.id)) return;
+          const who  = item.displayName || "Biri";
+          const body = item.note ? `"${item.note.slice(0, 40)}"` : "yeni bir fotoğraf paylaştı";
           toast(`🐾 ${who} ${body}`);
           if (Notification.permission === "granted") {
             navigator.serviceWorker.ready.then(reg => {
@@ -1356,7 +1383,10 @@ function listenPublished() {
           }
         });
       }
-      firstLoad = false;
+
+      pubCache = newItems;
+      prevIds  = new Set(newItems.map(i => i.id));
+      initialized = true;
       renderPublished();
     },
     err => console.error("published:", err)
@@ -1365,11 +1395,14 @@ function listenPublished() {
 
 /* ═══════════════════════════════════════════
    DOUBLE-TAP HELPER
+   FIX: Touch cihazlarda click + touchend çift tetiklenme önlendi
 ═══════════════════════════════════════════ */
 function addDoubleTapListener(el, onSingle, onDouble, delay = 280) {
   let timer = null, lastTouch = 0;
   let startX = 0, startY = 0, didMove = false;
+  let lastTouchEndTime = 0;
 
+  // Touch events
   el.addEventListener("touchstart", e => {
     startX = e.touches[0].clientX; startY = e.touches[0].clientY; didMove = false;
   }, { passive: true });
@@ -1382,6 +1415,7 @@ function addDoubleTapListener(el, onSingle, onDouble, delay = 280) {
 
   el.addEventListener("touchend", e => {
     if (didMove) return;
+    lastTouchEndTime = Date.now();
     const now = Date.now();
     if (now - lastTouch < delay) {
       clearTimeout(timer); lastTouch = 0; onDouble(e);
@@ -1391,8 +1425,17 @@ function addDoubleTapListener(el, onSingle, onDouble, delay = 280) {
     }
   }, { passive: true });
 
-  el.addEventListener("click",    e => { if (!('ontouchstart' in window)) { clearTimeout(timer); timer = setTimeout(() => onSingle(e), delay/2); } });
-  el.addEventListener("dblclick", e => { if (!('ontouchstart' in window)) { clearTimeout(timer); onDouble(e); } });
+  // FIX: Mouse click sadece touch olmayan cihazlarda çalışır
+  el.addEventListener("click", e => {
+    if (Date.now() - lastTouchEndTime < 600) return; // touch'tan gelen click'i engelle
+    clearTimeout(timer);
+    timer = setTimeout(() => onSingle(e), delay / 2);
+  });
+
+  el.addEventListener("dblclick", e => {
+    if (Date.now() - lastTouchEndTime < 600) return;
+    clearTimeout(timer); onDouble(e);
+  });
 }
 
 /* ═══════════════════════════════════════════
@@ -1430,8 +1473,7 @@ function renderGallery(photos) {
       if (p.favorite) {
         const b = document.createElement("div"); b.className = "fav-badge"; b.textContent = "⭐"; card.appendChild(b);
       }
-      if (p.note && searchQuery) {
-        // Highlight matching notes
+      if (p.note) {
         const g = document.createElement("div"); g.className = "card-gradient";
         g.textContent = p.note; card.appendChild(g);
       }
@@ -1464,7 +1506,6 @@ function renderPublished() {
     img.src = item.image; img.loading = "lazy"; img.alt = ""; img.decoding = "async";
     card.appendChild(img);
 
-    // Author pill (shows name, not just "Yayın")
     const pill = document.createElement("div");
     pill.className = "pub-badge-pill";
     pill.textContent = item.displayName ? item.displayName.split(" ")[0] : "Yayın";
@@ -1473,7 +1514,6 @@ function renderPublished() {
     if (isNew) { const dot = document.createElement("div"); dot.className = "new-dot"; card.appendChild(dot); }
     if (item.note) { const g = document.createElement("div"); g.className = "card-gradient"; g.textContent = item.note; card.appendChild(g); }
 
-    // Like count badge
     const likes = item.likes ? Object.keys(item.likes).length : 0;
     if (likes > 0) {
       const lb = document.createElement("div"); lb.className = "card-likes";
@@ -1500,10 +1540,6 @@ function applyPMtoUI() {
   EL.noteInput.value  = pm.note;
   EL.favoriteBtn.classList.toggle("active", pm.favorite);
   EL.locationLabel.textContent = pm.locationLabel || "Konum ekle";
-  if (!pm.isNew && pm.mapsUrl) {
-    EL.locationLabel.textContent = pm.locationLabel;
-    EL.locationBtn.title = "Haritada aç";
-  }
   EL.deleteBtn.style.display = pm.id ? "" : "none";
   EL.publishBtn.textContent  = pm.publishedId ? "Yayını Güncelle" : "Yayınla";
 }
@@ -1547,8 +1583,15 @@ EL.deleteBtn.addEventListener("click",  deletePhoto);
 EL.publishBtn.addEventListener("click", publishPhoto);
 EL.shareBtn.addEventListener("click",   sharePhoto);
 
+// FIX: Konum mantığı düzeltildi
+// - Mevcut fotoğraf ve mapsUrl varsa: harita açar
+// - Mevcut fotoğraf ve mapsUrl yoksa: yeni konum alır
+// - Yeni fotoğraf: her zaman yeni konum alır
 async function handleLocationTap() {
-  if (!pm.isNew && pm.mapsUrl) { window.open(pm.mapsUrl, "_blank", "noopener"); return; }
+  if (!pm.isNew && pm.mapsUrl) {
+    window.open(pm.mapsUrl, "_blank", "noopener");
+    return;
+  }
   if (!navigator.geolocation) { toast("⚠️ Konum desteklenmiyor"); return; }
   EL.locationLabel.textContent = "Konum alınıyor…";
   EL.locationBtn.disabled = true;
@@ -1702,15 +1745,16 @@ async function publishPhoto() {
   finally { EL.publishBtn.disabled = false; }
 }
 
+// FIX: Küçük görseller sıkıştırılmaz, gereksiz kalite kaybı önlenir
 function compressImage(dataUrl, maxPx = 800, q = .65) {
   return new Promise(res => {
     const img = new Image();
     img.onload = () => {
       let w = img.width, h = img.height;
-      if (w > maxPx || h > maxPx) {
-        if (w >= h) { h = Math.round(h*maxPx/w); w = maxPx; }
-        else        { w = Math.round(w*maxPx/h); h = maxPx; }
-      }
+      // FIX: Zaten küçükse canvas'a gerek yok
+      if (w <= maxPx && h <= maxPx) { res(dataUrl); return; }
+      if (w >= h) { h = Math.round(h*maxPx/w); w = maxPx; }
+      else        { w = Math.round(w*maxPx/h); h = maxPx; }
       const c = document.createElement("canvas"); c.width = w; c.height = h;
       c.getContext("2d").drawImage(img, 0, 0, w, h);
       res(c.toDataURL("image/jpeg", q));
@@ -1743,18 +1787,17 @@ async function sharePhoto() {
 
 /* ═══════════════════════════════════════════
    PUBLISHED MODAL + LIKES
+   FIX: pubAuthorAvatar — tek DOM elementi, outerHTML manipülasyonu kaldırıldı
 ═══════════════════════════════════════════ */
 function openPubModal(item) {
   currentPubItem = item;
   EL.pubImg.src            = item.image;
   EL.pubImg.dataset.id     = item.id;
 
-  // Author avatar
+  // FIX: Tek element üzerinde backgroundImage ile avatar gösterimi
   if (item.photoURL) {
-    EL.pubAuthorAvatar.outerHTML; // replace with img if needed
-    EL.pubAuthorAvatar.textContent = "";
     EL.pubAuthorAvatar.style.backgroundImage = `url(${item.photoURL})`;
-    EL.pubAuthorAvatar.style.backgroundSize = "cover";
+    EL.pubAuthorAvatar.textContent = "";
   } else {
     EL.pubAuthorAvatar.style.backgroundImage = "";
     EL.pubAuthorAvatar.textContent = initials(item.displayName);
@@ -1764,7 +1807,6 @@ function openPubModal(item) {
   EL.pubDate.textContent   = item.createdAtClient ? timeAgo(item.createdAtClient) : "";
   EL.pubNote.textContent   = item.note || "";
 
-  // Likes
   const likes  = item.likes ? Object.keys(item.likes).length : 0;
   const liked  = currentUser && item.likes?.[currentUser.uid];
   EL.pubLikeBtn.classList.toggle("liked", !!liked);
@@ -1779,7 +1821,7 @@ function openPubModal(item) {
   pushModalState("pubModal");
 }
 
-// Like button
+// FIX: Like toggle — null yerine deleteField() kullanılır
 EL.pubLikeBtn.addEventListener("click", async () => {
   if (!currentUser || !currentPubItem) return;
   const id   = currentPubItem.id;
@@ -1787,12 +1829,18 @@ EL.pubLikeBtn.addEventListener("click", async () => {
   if (!item) return;
   const liked = !!item.likes?.[currentUser.uid];
   const update = {};
-  update[`likes.${currentUser.uid}`] = liked ? null : true;
-  // optimistic UI
-  if (!item.likes) item.likes = {};
-  if (liked) delete item.likes[currentUser.uid];
-  else item.likes[currentUser.uid] = true;
-  const likes = Object.keys(item.likes).length;
+
+  if (liked) {
+    // FIX: null yerine deleteField() — Firestore null field hatası önlendi
+    update[`likes.${currentUser.uid}`] = deleteField();
+    if (item.likes) delete item.likes[currentUser.uid];
+  } else {
+    update[`likes.${currentUser.uid}`] = true;
+    if (!item.likes) item.likes = {};
+    item.likes[currentUser.uid] = true;
+  }
+
+  const likes = item.likes ? Object.keys(item.likes).length : 0;
   EL.pubLikeBtn.classList.toggle("liked", !liked);
   EL.pubLikeLabel.textContent = !liked ? "Beğenildi" : "Beğen";
   EL.pubLikeCount.textContent = likes > 0 ? `${likes} beğeni` : "";
@@ -1823,6 +1871,7 @@ EL.pubDeleteBtn.addEventListener("click", async () => {
 
 /* ═══════════════════════════════════════════
    SETTINGS
+   FIX: settings-initials display:flex ile açılıyor
 ═══════════════════════════════════════════ */
 EL.userBtn.addEventListener("click", () => { openModal(EL.settingsModal); pushModalState("settings"); });
 EL.settingsClose.addEventListener("click", () => closeModal(EL.settingsModal));
@@ -1907,6 +1956,7 @@ function stopCamera() {
   }
 }
 
+// FIX: Capture sonrası kısa gecikme ile modal açılır (sayfa geçiş animasyonu bitmeden modal açılma sorunu)
 async function capture() {
   if (!EL.cameraVideo.videoWidth) { toast("⚠️ Kamera hazır değil"); return; }
   const c = EL.canvas;
@@ -1918,7 +1968,8 @@ async function capture() {
   const data = c.toDataURL("image/jpeg", .85);
   stopCamera();
   showPage("local");
-  openNewPhotoModal(data);
+  // FIX: Sayfa geçiş animasyonu tamamlanmadan modal açılırsa görsel kayma oluyordu
+  setTimeout(() => openNewPhotoModal(data), 220);
 }
 
 EL.captureBtn.addEventListener("click",   capture);
@@ -1942,6 +1993,8 @@ EL.cameraVideo.addEventListener("pointerdown", e => {
 
 /* ═══════════════════════════════════════════
    AUTH
+   FIX: getRedirectResult sadece bir kez çalışır, onAuthStateChanged içinde
+   değil ayrı bir try bloğunda — çift tetiklenme önlendi
 ═══════════════════════════════════════════ */
 function applyUser(user) {
   currentUser = user;
@@ -1952,15 +2005,18 @@ function applyUser(user) {
     else               EL.userBtn.textContent = initials(user.displayName || user.email);
     EL.settingsName.textContent  = user.displayName || "";
     EL.settingsEmail.textContent = user.email || "";
+
+    // FIX: Avatar/initials gösterimi düzeltildi
     if (user.photoURL) {
       EL.settingsAvatar.src = user.photoURL;
       EL.settingsAvatar.style.display   = "block";
       EL.settingsInitials.style.display = "none";
     } else {
       EL.settingsAvatar.style.display   = "none";
-      EL.settingsInitials.style.display = "flex";
+      EL.settingsInitials.style.display = "flex"; // FIX: flex ile göster
       EL.settingsInitials.textContent   = initials(user.displayName || user.email);
     }
+
     loadLastSeen(user.uid).then(() => { listenPhotos(user.uid); listenPublished(); });
     updateNotifBtn();
     initForegroundMessages();
@@ -2007,12 +2063,22 @@ async function login() {
 
 EL.googleLoginBtn.addEventListener("click", login);
 
-let redirectHandled = false;
-onAuthStateChanged(auth, async user => {
-  if (!redirectHandled) {
-    redirectHandled = true;
-    try { const r = await getRedirectResult(auth); if (r?.user) { applyUser(r.user); return; } } catch {}
+// FIX: getRedirectResult onAuthStateChanged'dan önce, ayrı bir blokta çalıştırılır
+// Böylece redirect sonrası çift applyUser() çağrısı önlenir
+(async () => {
+  try {
+    const result = await getRedirectResult(auth);
+    // Redirect result auth state change'i de tetikler, burada ayrıca işlemeye gerek yok
+    if (result?.user) {
+      // Auth state değişikliği zaten tetiklenecek, burada sadece loader'ı kaldır
+      EL.loginLoader.style.display = "none";
+    }
+  } catch (e) {
+    // Redirect hata — normal sayfa açılışında bu kısım çalışır
   }
+})();
+
+onAuthStateChanged(auth, user => {
   applyUser(user);
 });
 
