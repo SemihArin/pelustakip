@@ -561,34 +561,110 @@
     }
     .focus-ring.pop { animation: focusPop .6s ease forwards; }
 
+    /* Mod Toggle (Fotoğraf / Video) */
+    .cam-mode-toggle {
+      position: absolute; bottom: calc(var(--safe-bottom) + 108px);
+      left: 50%; transform: translateX(-50%);
+      z-index: 20;
+      display: flex; gap: 0;
+      background: rgba(0,0,0,.45); border-radius: 999px;
+      padding: 4px; backdrop-filter: blur(8px);
+    }
+    .cam-mode-btn {
+      padding: 7px 20px; border-radius: 999px;
+      font-size: 12px; font-weight: 700; color: rgba(255,255,255,.65);
+      transition: background .2s, color .2s;
+      display: flex; align-items: center; gap: 5px;
+    }
+    .cam-mode-btn.active { background: rgba(255,255,255,.2); color: #fff; }
+    .cam-mode-btn svg { flex-shrink: 0; }
+
+    /* Capture / Record butonu */
     #captureBtn {
       position: absolute; bottom: calc(var(--safe-bottom) + 24px);
       left: 50%; transform: translateX(-50%);
-      width: 68px; height: 68px; border-radius: 50%;
+      width: 72px; height: 72px; border-radius: 50%;
       background: #fff;
       border: 4px solid rgba(255,255,255,.5);
       outline: 3px solid rgba(255,255,255,.3);
       z-index: 20;
       box-shadow: 0 4px 20px rgba(0,0,0,.3);
       transition: transform .1s;
+      display: flex; align-items: center; justify-content: center;
     }
     #captureBtn:active { transform: translateX(-50%) scale(.88); }
+
+    /* Video modunda iç kare */
+    #captureBtnInner {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: transparent;
+      transition: background .2s, border-radius .2s, width .2s, height .2s;
+    }
+    .cam-video-mode #captureBtnInner {
+      background: var(--danger);
+      width: 26px; height: 26px; border-radius: 50%;
+    }
+    .cam-video-mode.recording #captureBtnInner {
+      background: var(--danger);
+      width: 22px; height: 22px; border-radius: 6px; /* Kare = dur */
+    }
+
+    /* Kayıt halkası animasyonu */
+    @keyframes recRing {
+      0%   { stroke-dashoffset: 201; }
+      100% { stroke-dashoffset: 0; }
+    }
+    .rec-ring-svg {
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%,-50%) rotate(-90deg);
+      width: 84px; height: 84px; z-index: 19;
+      opacity: 0; transition: opacity .2s;
+      pointer-events: none;
+    }
+    .cam-video-mode.recording .rec-ring-svg { opacity: 1; }
+    .rec-ring-circle {
+      fill: none; stroke: var(--danger); stroke-width: 4;
+      stroke-linecap: round;
+      stroke-dasharray: 201;
+      stroke-dashoffset: 201;
+    }
+    .cam-video-mode.recording .rec-ring-circle {
+      animation: recRing 6s linear forwards;
+    }
+
+    /* Kayıt süresi göstergesi */
+    .rec-timer {
+      position: absolute; top: calc(var(--safe-top) + 14px);
+      left: 50%; transform: translateX(-50%);
+      z-index: 22; display: none;
+      background: var(--danger); color: #fff;
+      padding: 5px 14px; border-radius: 999px;
+      font-size: 13px; font-weight: 800; letter-spacing: .05em;
+      align-items: center; gap: 6px;
+      box-shadow: 0 2px 10px rgba(217,79,98,.4);
+    }
+    .rec-timer.show { display: flex; }
+    .rec-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: #fff; animation: pulse 1s ease-in-out infinite;
+    }
 
     .cam-switch-btn {
       position: absolute; top: calc(var(--safe-top) + 14px); right: 14px;
       width: 46px; height: 46px; border-radius: 50%;
       background: rgba(255,255,255,.9); z-index: 20;
       display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 2px 8px rgba(0,0,0,.15); transition: transform .15s;
+      box-shadow: 0 2px 8px rgba(0,0,0,.15); transition: transform .15s, opacity .2s;
     }
     .cam-switch-btn:active { transform: scale(.88); }
+    .cam-video-mode.recording .cam-switch-btn { opacity: .3; pointer-events: none; }
 
     /* FIX: Zoom bar başlangıçta gizli — .show class ile görünür */
     .cam-zoom-bar {
       position: absolute; left: 14px; right: 14px;
-      bottom: calc(var(--safe-bottom) + 108px);
+      bottom: calc(var(--safe-bottom) + 156px);
       z-index: 20;
-      display: none;        /* FIX: başlangıçta gizli */
+      display: none;
       gap: 10px; align-items: center;
       padding: 10px 16px; border-radius: var(--radius-md);
       background: rgba(255,255,255,.9);
@@ -597,6 +673,15 @@
     .cam-zoom-bar label { font-size: 12px; font-weight: 600; white-space: nowrap; color: var(--text-secondary); }
     .cam-zoom-bar input { flex: 1; accent-color: var(--pink-mid); }
     .cam-zoom-bar span  { font-size: 12px; font-weight: 700; white-space: nowrap; color: var(--pink-dark); }
+
+    /* Galeri kartında video oynatma işareti */
+    .card-video-badge {
+      position: absolute; bottom: 6px; left: 6px;
+      background: rgba(0,0,0,.55); color: #fff;
+      font-size: 10px; font-weight: 700;
+      padding: 3px 7px; border-radius: 999px;
+      display: flex; align-items: center; gap: 3px;
+    }
 
     /* ═══════════════════════════════════════════
        BOTTOM BAR
@@ -813,94 +898,207 @@
     }
 
     /* ═══════════════════════════════════════════
-       PUBLISHED MODAL
+       PUBLISHED MODAL — Feed Tasarımı
     ═══════════════════════════════════════════ */
     #pubModal { z-index: 600; align-items: center; }
 
     .pub-card {
-      width: min(96%, 460px); max-height: 88dvh;
+      width: min(96%, 480px); max-height: 90dvh;
       overflow-y: auto; -webkit-overflow-scrolling: touch;
       background: #fff; border-radius: var(--radius-xl);
       box-shadow: var(--shadow-modal);
       animation: scaleIn .28s var(--ease-spring) both;
     }
-    .pub-img-wrap {
-      position: relative; width: 100%;
-      /* FIX: aspect-ratio: 1/1 yerine auto — yatay fotoğraflarda ezilme önlendi */
-      aspect-ratio: 1 / 1;
-      background: #111; overflow: hidden; cursor: zoom-in;
+
+    /* Medya alanı */
+    .pub-media-wrap {
+      position: relative; width: 100%; aspect-ratio: 1/1;
+      background: #0a0a0a; overflow: hidden;
     }
-    .pub-img-wrap img {
+    .pub-media-wrap img, .pub-media-wrap video {
       width: 100%; height: 100%; object-fit: cover; display: block;
-      transition: transform .25s var(--ease-out);
     }
-    .pub-img-wrap:active img { transform: scale(.98); }
+    .pub-media-wrap video { cursor: pointer; }
+    .pub-video-play-overlay {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      pointer-events: none; transition: opacity .2s;
+    }
+    .pub-video-play-overlay .play-circle {
+      width: 56px; height: 56px; border-radius: 50%;
+      background: rgba(0,0,0,.55); backdrop-filter: blur(4px);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff;
+    }
+    .pub-media-wrap.playing .pub-video-play-overlay { opacity: 0; }
+
+    .pub-media-topbar {
+      position: absolute; top: 0; left: 0; right: 0;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 10px 0; pointer-events: none;
+    }
+    .pub-media-badge {
+      background: rgba(0,0,0,.45); color: #fff;
+      font-size: 10px; font-weight: 700; letter-spacing: .05em;
+      padding: 4px 10px; border-radius: 999px;
+      backdrop-filter: blur(6px);
+      display: flex; align-items: center; gap: 4px;
+    }
     .pub-img-close {
-      position: absolute; top: 12px; right: 12px;
-      width: 36px; height: 36px; border-radius: 50%;
+      width: 34px; height: 34px; border-radius: 50%;
       background: rgba(0,0,0,.45); backdrop-filter: blur(6px);
       color: #fff; font-size: 16px;
       display: flex; align-items: center; justify-content: center;
-      transition: transform .1s, background .15s;
+      transition: transform .1s, background .15s; pointer-events: auto;
     }
     .pub-img-close:active { transform: scale(.88); }
 
-    /* FIX: Author avatar — tek element, bg-image ile görsel gösterilir */
-    .pub-author-avatar {
-      width: 38px; height: 38px; border-radius: 50%;
-      background: linear-gradient(135deg, var(--pink-mid), #e07ba8);
-      background-size: cover;
-      background-position: center;
-      color: #fff; font-size: 14px; font-weight: 800;
-      display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0;
-      border: 2px solid var(--pink-light);
-    }
+    .pub-body { padding: 0; }
 
-    .pub-body { padding: 14px 18px 20px; }
-    .pub-author-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-    .pub-author-info { flex: 1; min-width: 0; }
-    .pub-author { font-size: 14.5px; font-weight: 800; color: var(--pink-dark); }
-    .pub-date   { font-size: 11.5px; color: var(--text-muted); margin-top: 1px; }
-    .pub-note   { font-size: 14.5px; color: var(--text-primary); line-height: 1.55; }
-
-    /* Like button in pub modal */
-    .pub-reactions {
+    .pub-author-row {
       display: flex; align-items: center; gap: 10px;
-      margin-top: 14px; padding-top: 12px;
-      border-top: 1px solid rgba(160,60,100,.08);
+      padding: 12px 14px 10px;
+      border-bottom: 1px solid rgba(160,60,100,.06);
     }
-    .like-btn {
-      display: flex; align-items: center; gap: 6px;
-      padding: 8px 16px; border-radius: 999px;
-      background: rgba(255,60,100,.06);
-      border: 1.5px solid rgba(255,60,100,.15);
-      font-size: 14px; font-weight: 700; color: var(--danger);
-      transition: background .15s, transform .1s;
+    .pub-author-avatar {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--pink-mid), #e07ba8);
+      background-size: cover; background-position: center;
+      color: #fff; font-size: 15px; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; border: 2px solid var(--pink-light);
+      box-shadow: 0 2px 8px rgba(160,60,100,.2);
     }
-    .like-btn:active { transform: scale(.9); }
-    .like-btn.liked  { background: rgba(255,60,100,.12); border-color: rgba(255,60,100,.3); }
-    .like-btn .heart { transition: transform .2s var(--ease-spring); }
-    .like-btn.liked .heart { animation: heartPop .35s var(--ease-spring); }
-    .like-count { font-size: 13px; color: var(--text-muted); font-weight: 600; }
+    .pub-author-info { flex: 1; min-width: 0; }
+    .pub-author { font-size: 14px; font-weight: 800; color: var(--pink-dark); }
+    .pub-date   { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+
+    .pub-note-wrap { padding: 10px 14px 2px; }
+    .pub-note {
+      font-size: 14px; color: var(--text-primary); line-height: 1.6;
+      white-space: pre-wrap; word-break: break-word;
+    }
+
+    .pub-actions-bar {
+      display: flex; align-items: center;
+      padding: 6px 10px;
+      border-bottom: 1px solid rgba(160,60,100,.06);
+    }
+    .pub-action-btn {
+      display: flex; align-items: center; gap: 5px;
+      padding: 8px 12px; border-radius: var(--radius-sm);
+      font-size: 13px; font-weight: 700; color: var(--text-secondary);
+      transition: background .15s, color .15s, transform .1s;
+    }
+    .pub-action-btn:active { transform: scale(.9); background: rgba(160,60,100,.07); }
+    .pub-action-btn.liked  { color: var(--danger); }
+    .pub-action-btn .heart { display: inline-block; transition: transform .2s var(--ease-spring); }
+    .pub-action-btn.liked .heart { animation: heartPop .35s var(--ease-spring); }
+    .pub-action-count { font-size: 12px; font-weight: 700; }
+    .pub-actions-spacer { flex: 1; }
 
     .pub-loc-btn {
-      display: inline-flex; align-items: center; gap: 6px;
-      background: rgba(80,120,255,.1); color: #4060d4;
-      border: 1px solid rgba(80,120,255,.2);
-      padding: 8px 13px; border-radius: var(--radius-sm);
-      font-size: 13px; font-weight: 600; margin-top: 12px;
-      transition: background .15s;
+      display: none; align-items: center; gap: 6px;
+      margin: 0 14px 10px;
+      background: rgba(80,120,255,.08); color: #4060d4;
+      border: 1px solid rgba(80,120,255,.15);
+      padding: 9px 13px; border-radius: var(--radius-sm);
+      font-size: 13px; font-weight: 600; transition: background .15s;
     }
-    .pub-loc-btn:active { background: rgba(80,120,255,.18); }
+    .pub-loc-btn.show { display: flex; }
+    .pub-loc-btn:active { background: rgba(80,120,255,.16); }
+
+    .pub-owner-section { padding: 0 14px 14px; display: none; }
+    .pub-owner-section.show { display: block; }
     .pub-delete-btn {
-      width: 100%; height: 46px; border-radius: var(--radius-sm);
-      background: var(--danger); color: #fff;
-      font-size: 14px; font-weight: 700; margin-top: 14px;
-      box-shadow: 0 3px 12px rgba(217,79,98,.25);
-      transition: opacity .15s, transform .1s;
+      width: 100%; height: 44px; border-radius: var(--radius-sm);
+      background: #fff5f6; color: var(--danger);
+      border: 1.5px solid rgba(217,79,98,.2);
+      font-size: 13.5px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      transition: background .15s, transform .1s;
     }
-    .pub-delete-btn:active { transform: scale(.97); opacity: .88; }
+    .pub-delete-btn:active { transform: scale(.97); background: #ffe8ea; }
+
+    /* Yayınlar sayfası — Feed kartları */
+    .feed-grid { display: flex; flex-direction: column; gap: 14px; }
+
+    .feed-card {
+      background: rgba(255,255,255,.78);
+      border-radius: var(--radius-lg); overflow: hidden;
+      box-shadow: var(--shadow-card); cursor: pointer;
+      transition: transform .15s var(--ease-out), box-shadow .15s;
+      border: 1px solid rgba(255,255,255,.6);
+    }
+    .feed-card:active { transform: scale(.985); }
+
+    .feed-header {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px 8px;
+    }
+    .feed-avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--pink-mid), #e07ba8);
+      background-size: cover; background-position: center;
+      color: #fff; font-size: 13px; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; border: 1.5px solid var(--pink-light);
+    }
+    .feed-meta { flex: 1; min-width: 0; }
+    .feed-name { font-size: 13px; font-weight: 800; color: var(--pink-dark); }
+    .feed-time { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+    .feed-new-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--danger); flex-shrink: 0;
+      box-shadow: 0 0 0 2px rgba(247,189,214,.8);
+    }
+
+    .feed-media {
+      position: relative; width: 100%; aspect-ratio: 1/1;
+      background: #0a0a0a; overflow: hidden;
+    }
+    .feed-media img, .feed-media video {
+      width: 100%; height: 100%; object-fit: cover; display: block;
+    }
+    .feed-video-badge {
+      position: absolute; top: 8px; right: 8px;
+      background: rgba(0,0,0,.5); color: #fff;
+      font-size: 10px; font-weight: 700;
+      padding: 3px 8px; border-radius: 999px;
+      display: flex; align-items: center; gap: 3px;
+    }
+    .feed-play-overlay {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      pointer-events: none;
+    }
+    .feed-play-circle {
+      width: 48px; height: 48px; border-radius: 50%;
+      background: rgba(0,0,0,.45); backdrop-filter: blur(4px);
+      display: flex; align-items: center; justify-content: center; color: #fff;
+    }
+
+    .feed-footer {
+      display: flex; align-items: center; gap: 0;
+      padding: 6px 10px 10px;
+    }
+    .feed-like-btn {
+      display: flex; align-items: center; gap: 4px;
+      padding: 6px 10px 6px 6px; border-radius: var(--radius-sm);
+      font-size: 13px; font-weight: 700; color: var(--text-secondary);
+      transition: color .15s, background .15s, transform .1s;
+    }
+    .feed-like-btn:active { transform: scale(.88); }
+    .feed-like-btn.liked  { color: var(--danger); }
+    .feed-like-btn .heart { display: inline-block; transition: transform .2s var(--ease-spring); }
+    .feed-like-btn.liked .heart { animation: heartPop .35s var(--ease-spring); }
+    .feed-note {
+      flex: 1; font-size: 12.5px; color: var(--text-muted);
+      overflow: hidden; white-space: nowrap; text-overflow: ellipsis; padding: 0 6px;
+    }
+    .feed-expand {
+      font-size: 11px; color: var(--text-muted); font-weight: 600; flex-shrink: 0;
+    }
 
     /* ═══════════════════════════════════════════
        SETTINGS MODAL
