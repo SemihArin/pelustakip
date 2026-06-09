@@ -968,8 +968,31 @@
 </head>
 <body>
 
+<!-- ═══ SPLASH SCREEN ═══ -->
+<div id="splashScreen" aria-hidden="true">
+  <div class="splash-ring splash-ring-1"></div>
+  <div class="splash-ring splash-ring-2"></div>
+  <div class="splash-ring splash-ring-3"></div>
+  <div class="splash-petal p1">🌸</div>
+  <div class="splash-petal p2">🌸</div>
+  <div class="splash-petal p3">🌸</div>
+
+  <div class="splash-logo">
+    <div class="splash-paw-wrap">🐾</div>
+    <div class="splash-title">Pelus Takip</div>
+    <div class="splash-subtitle">Sevimli anların defteri</div>
+  </div>
+
+  <div class="splash-status">
+    <div class="splash-status-text" id="splashStatusText">Yükleniyor…</div>
+    <div class="splash-bar-track">
+      <div class="splash-bar-fill indeterminate" id="splashBarFill"></div>
+    </div>
+  </div>
+</div>
+
 <!-- ═══ LOGIN ═══ -->
-<div id="loginOverlay">
+<div id="loginOverlay" style="display:none;">
   <div class="login-box">
     <span class="login-paw">🐾</span>
     <h2>Pelus Takip</h2>
@@ -1322,7 +1345,94 @@ const EL = {
   notifBtnLabel:   q("notifBtnLabel"),
 
   toast:           q("toast"),
+
+  splashScreen:    q("splashScreen"),
+  splashStatusText:q("splashStatusText"),
+  splashBarFill:   q("splashBarFill"),
 };
+
+/* ═══════════════════════════════════════════
+   SPLASH SCREEN
+═══════════════════════════════════════════ */
+const SPLASH_MSGS = [
+  "Firebase bağlanıyor…",
+  "Hesap doğrulanıyor…",
+  "Fotoğraflar yükleniyor…",
+  "Hazırlanıyor…",
+];
+let splashMsgTimer = null;
+let splashMsgIndex = 0;
+
+function splashSetStatus(msg) {
+  if (!EL.splashStatusText) return;
+  EL.splashStatusText.style.opacity = "0";
+  setTimeout(() => {
+    EL.splashStatusText.textContent = msg;
+    EL.splashStatusText.style.opacity = "1";
+  }, 180);
+}
+
+function splashStartCycling() {
+  splashMsgIndex = 0;
+  splashSetStatus(SPLASH_MSGS[0]);
+  splashMsgTimer = setInterval(() => {
+    splashMsgIndex = (splashMsgIndex + 1) % SPLASH_MSGS.length;
+    splashSetStatus(SPLASH_MSGS[splashMsgIndex]);
+  }, 1800);
+}
+
+function splashSetProgress(pct) {
+  // pct: 0-100; null → indeterminate
+  if (!EL.splashBarFill) return;
+  if (pct === null) {
+    EL.splashBarFill.classList.add("indeterminate");
+    EL.splashBarFill.style.width = "";
+  } else {
+    EL.splashBarFill.classList.remove("indeterminate");
+    EL.splashBarFill.style.width = pct + "%";
+  }
+}
+
+function hideSplash() {
+  clearInterval(splashMsgTimer);
+  splashSetStatus("Hazır!");
+  splashSetProgress(100);
+  setTimeout(() => {
+    EL.splashScreen.classList.add("hiding");
+    EL.splashScreen.addEventListener("animationend", () => {
+      EL.splashScreen.classList.add("hidden");
+    }, { once: true });
+  }, 380);
+}
+
+// Splash başlatılıyor — sayfa açıldığında hemen
+splashStartCycling();
+splashSetProgress(null); // indeterminate başlangıç
+
+/* ═══════════════════════════════════════════
+   PAGE LOADER (ara yüklemeler için inline overlay)
+═══════════════════════════════════════════ */
+let pageLoaderTimer = null;
+
+function showPageLoader(containerEl, msg = "Yükleniyor…") {
+  // Varsa temizle
+  hidePageLoader(containerEl);
+  const pl = document.createElement("div");
+  pl.className = "page-loader";
+  pl.dataset.pageLoader = "1";
+  pl.innerHTML = `<div class="pl-icon">🐾</div><div class="pl-text">${msg}</div>`;
+  containerEl.appendChild(pl);
+  // Küçük gecikme ile göster (skeleton görünüyorsa çakışmaz)
+  requestAnimationFrame(() => pl.classList.add("visible"));
+  return pl;
+}
+
+function hidePageLoader(containerEl) {
+  containerEl.querySelectorAll("[data-page-loader]").forEach(el => {
+    el.classList.remove("visible");
+    setTimeout(() => el.remove(), 280);
+  });
+}
 
 /* ─── App state ─── */
 let currentUser   = null;
@@ -1524,7 +1634,9 @@ function renderStats(photos) {
 function listenPhotos(uid) {
   unsubPhotos?.(); unsubPhotos = null;
   EL.galleryPage.innerHTML = `<div class="skeleton-grid">${Array(6).fill('<div class="skeleton-card"></div>').join("")}</div>`;
+  splashSetStatus("Fotoğraflar yükleniyor…");
   const q2 = query(collection(db, "users", uid, "photos"), orderBy("createdAtClient", "desc"));
+  let firstSnap = true;
   unsubPhotos = onSnapshot(q2,
     snap => {
       allPhotos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -1533,8 +1645,10 @@ function listenPhotos(uid) {
         : allPhotos;
       renderGallery(filtered);
       renderStats(allPhotos);
+      // İlk snapshot geldi — splash kapatma tetikleyicisi
+      if (firstSnap) { firstSnap = false; tryHideSplash("photos"); }
     },
-    err => console.error("photos:", err)
+    err => { console.error("photos:", err); tryHideSplash(); }
   );
 }
 
@@ -1546,6 +1660,7 @@ function listenPublished() {
   let prevIds = new Set();
 
   const q2 = query(collection(db, "publishedPhotos"), orderBy("createdAtClient", "desc"));
+  let firstSnap = true;
   unsubPublished = onSnapshot(q2,
     snap => {
       const newItems = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -1571,9 +1686,10 @@ function listenPublished() {
       pubCache = newItems;
       prevIds  = new Set(newItems.map(i => i.id));
       initialized = true;
+      if (firstSnap) { firstSnap = false; tryHideSplash("published"); }
       renderPublished();
     },
-    err => console.error("published:", err)
+    err => { console.error("published:", err); tryHideSplash("published"); }
   );
 }
 
@@ -2176,13 +2292,41 @@ EL.cameraVideo.addEventListener("pointerdown", e => {
 });
 
 /* ═══════════════════════════════════════════
-   AUTH
+   AUTH + SPLASH ENTEGRASYONu
    FIX: getRedirectResult sadece bir kez çalışır, onAuthStateChanged içinde
    değil ayrı bir try bloğunda — çift tetiklenme önlendi
 ═══════════════════════════════════════════ */
+
+// Splash kapatma için iki kaynak beklenir: photos + published ilk snapshot
+// Her ikisi de gelince (ya da timeout'ta) splash kapanır
+const _splashReady = { photos: false, published: false, auth: false };
+let _splashHideScheduled = false;
+
+function tryHideSplash(source) {
+  if (source) _splashReady[source] = true;
+
+  // Kullanıcı giriş yapmamışsa, auth false döndü demektir, splash login'e bırakır
+  if (!_splashReady.auth) return;
+
+  // Auth true ama henüz veri yüklenmediyse biraz bekle
+  const dataReady = _splashReady.photos; // photos yeterli, published bonus
+  if (!dataReady && !_splashHideScheduled) {
+    // Max 4 saniye bekle — sonra her halükarda kapat
+    _splashHideScheduled = true;
+    setTimeout(() => hideSplash(), 4000);
+  } else if (dataReady) {
+    hideSplash();
+  }
+}
+
 function applyUser(user) {
   currentUser = user;
   if (user) {
+    // Splash: auth tamamlandı, veri bekleniyor
+    _splashReady.auth = true;
+    splashSetStatus("Fotoğraflar yükleniyor…");
+    splashSetProgress(60);
+
     EL.loginOverlay.style.display = "none";
     EL.container.style.display    = "flex";
     if (user.photoURL) EL.userBtn.innerHTML = `<img src="${user.photoURL}" alt="">`;
@@ -2197,7 +2341,7 @@ function applyUser(user) {
       EL.settingsInitials.style.display = "none";
     } else {
       EL.settingsAvatar.style.display   = "none";
-      EL.settingsInitials.style.display = "flex"; // FIX: flex ile göster
+      EL.settingsInitials.style.display = "flex";
       EL.settingsInitials.textContent   = initials(user.displayName || user.email);
     }
 
@@ -2206,6 +2350,9 @@ function applyUser(user) {
     initForegroundMessages();
     refreshFcmToken();
   } else {
+    // Kullanıcı yok → login ekranına geç, splash'ı kapat
+    hideSplash();
+
     EL.loginOverlay.style.display = "flex";
     EL.container.style.display    = "none";
     stopCamera();
@@ -2248,23 +2395,25 @@ async function login() {
 EL.googleLoginBtn.addEventListener("click", login);
 
 // FIX: getRedirectResult onAuthStateChanged'dan önce, ayrı bir blokta çalıştırılır
-// Böylece redirect sonrası çift applyUser() çağrısı önlenir
 (async () => {
   try {
+    splashSetStatus("Hesap doğrulanıyor…");
+    splashSetProgress(30);
     const result = await getRedirectResult(auth);
-    // Redirect result auth state change'i de tetikler, burada ayrıca işlemeye gerek yok
     if (result?.user) {
-      // Auth state değişikliği zaten tetiklenecek, burada sadece loader'ı kaldır
       EL.loginLoader.style.display = "none";
     }
   } catch (e) {
-    // Redirect hata — normal sayfa açılışında bu kısım çalışır
+    // Normal sayfa açılışında redirect result yoktur
   }
 })();
 
 onAuthStateChanged(auth, user => {
   applyUser(user);
 });
+
+// Güvenlik: Splash 6 saniyeden uzun sürerse her halükarda kapat
+setTimeout(() => hideSplash(), 6000);
 
 window.addEventListener("beforeunload", () => { stopCamera(); unsubPhotos?.(); unsubPublished?.(); });
 
