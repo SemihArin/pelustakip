@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html>
 <html lang="tr">
 <head>
@@ -38,12 +36,12 @@
       --ease-spring:   cubic-bezier(.34,1.18,.64,1);
       --ease-out:      cubic-bezier(.22,1,.36,1);
     }
- 
+
     /* ═══════════════════════════════════════════
        RESET & BASE
     ═══════════════════════════════════════════ */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
- 
+
     html, body {
       width: 100%; height: 100%;
       background: var(--bg);
@@ -64,12 +62,12 @@
     img { display: block; }
     svg { display: block; pointer-events: none; flex-shrink: 0; }
     button { cursor: pointer; border: none; background: none; }
- 
+
     /* ═══════════════════════════════════════════
        UTILITY
     ═══════════════════════════════════════════ */
     .sr-only { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0,0,0,0); }
- 
+
     @keyframes spin      { to { transform: rotate(360deg); } }
     @keyframes sheetUp   { from { transform: translateY(48px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
     @keyframes fadeIn    { from { opacity: 0; } to { opacity: 1; } }
@@ -84,7 +82,7 @@
     @keyframes heartPop  { 0% { transform:scale(1); } 50% { transform:scale(1.5); } 100% { transform:scale(1); } }
     @keyframes shimmer   { from { background-position: -200% 0; } to { background-position: 200% 0; } }
     @keyframes slideDown { from { transform:translateY(-10px); opacity:0; } to { transform:translateY(0); opacity:1; } }
- 
+
     /* Splash özel animasyonlar */
     @keyframes splashPawFloat {
       0%   { transform: translateY(0px) scale(1) rotate(-4deg); }
@@ -123,7 +121,7 @@
       0%   { transform: translate(0,0) rotate(0deg) scale(1); opacity:.5; }
       100% { transform: translate(-10px, 70px) rotate(220deg) scale(.35); opacity:0; }
     }
- 
+
     /* ═══════════════════════════════════════════
        SPLASH SCREEN
     ═══════════════════════════════════════════ */
@@ -146,7 +144,7 @@
       pointer-events: none;
     }
     #splashScreen.hidden { display: none; }
- 
+
     /* Dekoratif halkalar */
     .splash-ring {
       position: absolute; border-radius: 50%;
@@ -156,7 +154,7 @@
     .splash-ring-1 { width: 320px; height: 320px; top: 50%; left: 50%; transform: translate(-50%,-50%); }
     .splash-ring-2 { width: 480px; height: 480px; top: 50%; left: 50%; transform: translate(-50%,-50%); opacity:.6; }
     .splash-ring-3 { width: 640px; height: 640px; top: 50%; left: 50%; transform: translate(-50%,-50%); opacity:.3; }
- 
+
     /* Petaller */
     .splash-petal {
       position: absolute; font-size: 18px;
@@ -165,7 +163,7 @@
     .splash-petal.p1 { top: 28%; left: 36%; animation: petal1 3.2s ease-in 1.2s infinite; }
     .splash-petal.p2 { top: 22%; left: 55%; animation: petal2 2.8s ease-in 1.6s infinite; }
     .splash-petal.p3 { top: 30%; left: 62%; animation: petal3 3.6s ease-in .9s  infinite; }
- 
+
     /* Logo alanı */
     .splash-logo {
       display: flex; flex-direction: column; align-items: center;
@@ -196,7 +194,7 @@
       animation: splashSubIn .6s var(--ease-out) .45s both;
       letter-spacing: .02em;
     }
- 
+
     /* İlerleme göstergeleri */
     .splash-status {
       display: flex; flex-direction: column; align-items: center; gap: 14px;
@@ -208,7 +206,7 @@
       min-height: 18px; text-align: center;
       transition: opacity .3s ease;
     }
- 
+
     /* İnce progress bar */
     .splash-bar-track {
       width: 140px; height: 3px;
@@ -229,7 +227,7 @@
       0%   { transform: translateX(-200%); width: 40%; }
       100% { transform: translateX(350%);  width: 40%; }
     }
- 
+
     /* Üç nokta loader (küçük yüklemeler için) */
     .dot-loader {
       display: flex; gap: 5px; align-items: center;
@@ -241,7 +239,7 @@
     .dot-loader span:nth-child(1) { animation: splashDotBounce 1.2s ease infinite 0s; }
     .dot-loader span:nth-child(2) { animation: splashDotBounce 1.2s ease infinite .18s; }
     .dot-loader span:nth-child(3) { animation: splashDotBounce 1.2s ease infinite .36s; }
- 
+
     /* ═══════════════════════════════════════════
        İNLINE LOADING OVERLAY (ara yüklemeler)
     ═══════════════════════════════════════════ */
@@ -267,7 +265,7 @@
       font-size: 13px; color: var(--text-muted);
       font-weight: 500;
     }
- 
+
     /* ═══════════════════════════════════════════
        LOGIN
     ═══════════════════════════════════════════ */
@@ -319,12 +317,12 @@
       border-radius: 50%;
       animation: spin .65s linear infinite; margin: 0 auto;
     }
- 
+
     /* ═══════════════════════════════════════════
        APP SHELL
     ═══════════════════════════════════════════ */
     #container { width: 100%; height: 100%; display: flex; flex-direction: column; }
- 
+
     /* Header */
     .header {
       display: flex; align-items: center; justify-content: space-between;
@@ -353,7 +351,7 @@
     .user-btn:hover  { transform: scale(1.05); }
     .user-btn:active { transform: scale(.93); }
     .user-btn img    { width: 100%; height: 100%; object-fit: cover; }
- 
+
     /* Search bar */
     .search-bar {
       display: none;
@@ -377,24 +375,25 @@
     }
     .search-input-wrap input::placeholder { color: var(--text-muted); }
     .search-clear { color: var(--text-muted); padding: 2px; font-size: 16px; }
- 
+
     /* Stats banner */
     .stats-banner {
-      display: flex; gap: 8px;
+      display: flex; gap: 6px;
       padding: 0 0 10px;
     }
     .stat-pill {
       flex: 1; background: rgba(255,255,255,.55);
       border-radius: var(--radius-sm);
-      padding: 10px 8px; text-align: center;
+      padding: 9px 4px; text-align: center;
       border: 1px solid rgba(255,255,255,.5);
+      min-width: 0;
     }
-    .stat-pill .stat-val { font-size: 20px; font-weight: 800; color: var(--pink-dark); line-height: 1; }
-    .stat-pill .stat-lbl { font-size: 10px; color: var(--text-muted); margin-top: 3px; font-weight: 600; text-transform: uppercase; letter-spacing: .4px; }
- 
+    .stat-pill .stat-val { font-size: 18px; font-weight: 800; color: var(--pink-dark); line-height: 1; }
+    .stat-pill .stat-lbl { font-size: 9px; color: var(--text-muted); margin-top: 3px; font-weight: 600; text-transform: uppercase; letter-spacing: .3px; }
+
     /* Pages wrapper */
     .pages { flex: 1; position: relative; overflow: hidden; min-height: 0; }
- 
+
     /* Scroll pages */
     .scroll-page {
       position: absolute; inset: 0;
@@ -406,7 +405,7 @@
     }
     .scroll-page.active { opacity: 1; pointer-events: auto; }
     .scroll-page, #cameraPage { will-change: opacity; }
- 
+
     /* Camera page */
     #cameraPage {
       position: absolute; inset: 0;
@@ -416,7 +415,7 @@
       z-index: 5;
     }
     #cameraPage.active { opacity: 1; pointer-events: auto; }
- 
+
     /* Pull-to-refresh */
     .ptr-indicator {
       text-align: center; padding: 12px 0 0;
@@ -430,7 +429,7 @@
       border: 2px solid rgba(160,60,100,.2); border-top-color: var(--pink-mid);
       border-radius: 50%; animation: spin .65s linear infinite;
     }
- 
+
     /* View toggle */
     .view-toggle {
       display: flex; align-items: center; justify-content: space-between;
@@ -444,12 +443,12 @@
       color: var(--text-muted); transition: background .15s, color .15s;
     }
     .view-toggle-btn.active { background: #fff; color: var(--pink-mid); box-shadow: 0 1px 4px rgba(0,0,0,.08); }
- 
+
     /* ═══════════════════════════════════════════
        GALLERY
     ═══════════════════════════════════════════ */
     .gallery, .published-gallery { display: flex; flex-direction: column; gap: 22px; }
- 
+
     .group-head {
       display: flex; justify-content: space-between; align-items: baseline;
       color: var(--text-secondary); font-weight: 800;
@@ -458,7 +457,7 @@
       border-bottom: 1.5px solid rgba(160,60,100,.1);
     }
     .group-count { font-weight: 600; font-size: 12px; color: var(--text-muted); }
- 
+
     .group-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
@@ -466,7 +465,7 @@
     }
     .group-grid.list-view { grid-template-columns: 1fr; gap: 10px; }
     .group-grid.list-view .card { aspect-ratio: 16/9; border-radius: var(--radius-md); }
- 
+
     /* Skeleton */
     .skeleton-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 9px; margin-bottom: 22px; }
     .skeleton-card {
@@ -475,7 +474,7 @@
       background-size: 200% 100%;
       animation: shimmer 1.5s infinite;
     }
- 
+
     /* Card */
     .card {
       aspect-ratio: 1/1;
@@ -495,7 +494,7 @@
       object-fit: cover; display: block;
       will-change: transform; image-rendering: auto;
     }
- 
+
     .fav-badge {
       position: absolute; top: 6px; right: 6px;
       width: 22px; height: 22px; border-radius: 50%;
@@ -523,7 +522,7 @@
       background: var(--danger); border-radius: 50%;
       box-shadow: 0 0 0 2.5px #fff;
     }
- 
+
     /* Like badge on published card */
     .card-likes {
       position: absolute; bottom: 6px; right: 6px;
@@ -532,7 +531,7 @@
       padding: 3px 7px 3px 5px; border-radius: 999px;
       display: flex; align-items: center; gap: 3px;
     }
- 
+
     .empty-state {
       display: flex; flex-direction: column; align-items: center;
       padding: 56px 24px; color: var(--text-secondary);
@@ -541,13 +540,13 @@
     .empty-state .empty-icon { font-size: 52px; }
     .empty-state strong { font-size: 16px; font-weight: 700; }
     .empty-state small   { font-size: 13px; color: var(--text-muted); }
- 
+
     /* ═══════════════════════════════════════════
        CAMERA
     ═══════════════════════════════════════════ */
     #cameraVideo { width: 100%; height: 100%; object-fit: cover; display: block; }
     #cameraVideo.front-cam { transform: scaleX(-1); }
- 
+
     .cam-badge {
       position: absolute; top: calc(var(--safe-top) + 14px); left: 14px; z-index: 20;
       padding: 7px 13px; border-radius: 999px;
@@ -562,35 +561,111 @@
       opacity: 0; pointer-events: none; z-index: 21;
     }
     .focus-ring.pop { animation: focusPop .6s ease forwards; }
- 
+
+    /* Mod Toggle (Fotoğraf / Video) */
+    .cam-mode-toggle {
+      position: absolute; bottom: calc(var(--safe-bottom) + 108px);
+      left: 50%; transform: translateX(-50%);
+      z-index: 20;
+      display: flex; gap: 0;
+      background: rgba(0,0,0,.45); border-radius: 999px;
+      padding: 4px; backdrop-filter: blur(8px);
+    }
+    .cam-mode-btn {
+      padding: 7px 20px; border-radius: 999px;
+      font-size: 12px; font-weight: 700; color: rgba(255,255,255,.65);
+      transition: background .2s, color .2s;
+      display: flex; align-items: center; gap: 5px;
+    }
+    .cam-mode-btn.active { background: rgba(255,255,255,.2); color: #fff; }
+    .cam-mode-btn svg { flex-shrink: 0; }
+
+    /* Capture / Record butonu */
     #captureBtn {
       position: absolute; bottom: calc(var(--safe-bottom) + 24px);
       left: 50%; transform: translateX(-50%);
-      width: 68px; height: 68px; border-radius: 50%;
+      width: 72px; height: 72px; border-radius: 50%;
       background: #fff;
       border: 4px solid rgba(255,255,255,.5);
       outline: 3px solid rgba(255,255,255,.3);
       z-index: 20;
       box-shadow: 0 4px 20px rgba(0,0,0,.3);
       transition: transform .1s;
+      display: flex; align-items: center; justify-content: center;
     }
     #captureBtn:active { transform: translateX(-50%) scale(.88); }
- 
+
+    /* Video modunda iç kare */
+    #captureBtnInner {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: transparent;
+      transition: background .2s, border-radius .2s, width .2s, height .2s;
+    }
+    .cam-video-mode #captureBtnInner {
+      background: var(--danger);
+      width: 26px; height: 26px; border-radius: 50%;
+    }
+    .cam-video-mode.recording #captureBtnInner {
+      background: var(--danger);
+      width: 22px; height: 22px; border-radius: 6px; /* Kare = dur */
+    }
+
+    /* Kayıt halkası animasyonu */
+    @keyframes recRing {
+      0%   { stroke-dashoffset: 201; }
+      100% { stroke-dashoffset: 0; }
+    }
+    .rec-ring-svg {
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%,-50%) rotate(-90deg);
+      width: 84px; height: 84px; z-index: 19;
+      opacity: 0; transition: opacity .2s;
+      pointer-events: none;
+    }
+    .cam-video-mode.recording .rec-ring-svg { opacity: 1; }
+    .rec-ring-circle {
+      fill: none; stroke: var(--danger); stroke-width: 4;
+      stroke-linecap: round;
+      stroke-dasharray: 201;
+      stroke-dashoffset: 201;
+    }
+    .cam-video-mode.recording .rec-ring-circle {
+      animation: recRing 6s linear forwards;
+    }
+
+    /* Kayıt süresi göstergesi */
+    .rec-timer {
+      position: absolute; top: calc(var(--safe-top) + 14px);
+      left: 50%; transform: translateX(-50%);
+      z-index: 22; display: none;
+      background: var(--danger); color: #fff;
+      padding: 5px 14px; border-radius: 999px;
+      font-size: 13px; font-weight: 800; letter-spacing: .05em;
+      align-items: center; gap: 6px;
+      box-shadow: 0 2px 10px rgba(217,79,98,.4);
+    }
+    .rec-timer.show { display: flex; }
+    .rec-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: #fff; animation: pulse 1s ease-in-out infinite;
+    }
+
     .cam-switch-btn {
       position: absolute; top: calc(var(--safe-top) + 14px); right: 14px;
       width: 46px; height: 46px; border-radius: 50%;
       background: rgba(255,255,255,.9); z-index: 20;
       display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 2px 8px rgba(0,0,0,.15); transition: transform .15s;
+      box-shadow: 0 2px 8px rgba(0,0,0,.15); transition: transform .15s, opacity .2s;
     }
     .cam-switch-btn:active { transform: scale(.88); }
- 
+    .cam-video-mode.recording .cam-switch-btn { opacity: .3; pointer-events: none; }
+
     /* FIX: Zoom bar başlangıçta gizli — .show class ile görünür */
     .cam-zoom-bar {
       position: absolute; left: 14px; right: 14px;
-      bottom: calc(var(--safe-bottom) + 108px);
+      bottom: calc(var(--safe-bottom) + 156px);
       z-index: 20;
-      display: none;        /* FIX: başlangıçta gizli */
+      display: none;
       gap: 10px; align-items: center;
       padding: 10px 16px; border-radius: var(--radius-md);
       background: rgba(255,255,255,.9);
@@ -599,7 +674,16 @@
     .cam-zoom-bar label { font-size: 12px; font-weight: 600; white-space: nowrap; color: var(--text-secondary); }
     .cam-zoom-bar input { flex: 1; accent-color: var(--pink-mid); }
     .cam-zoom-bar span  { font-size: 12px; font-weight: 700; white-space: nowrap; color: var(--pink-dark); }
- 
+
+    /* Galeri kartında video oynatma işareti */
+    .card-video-badge {
+      position: absolute; bottom: 6px; left: 6px;
+      background: rgba(0,0,0,.55); color: #fff;
+      font-size: 10px; font-weight: 700;
+      padding: 3px 7px; border-radius: 999px;
+      display: flex; align-items: center; gap: 3px;
+    }
+
     /* ═══════════════════════════════════════════
        BOTTOM BAR
     ═══════════════════════════════════════════ */
@@ -637,7 +721,7 @@
       pointer-events: none;
       box-shadow: 0 0 0 2px rgba(247,189,214,.8);
     }
- 
+
     /* ═══════════════════════════════════════════
        MODAL BASE
     ═══════════════════════════════════════════ */
@@ -648,7 +732,7 @@
       z-index: 500; contain: layout style;
     }
     .modal.open { display: flex; animation: fadeIn .2s ease both; }
- 
+
     /* Sheet */
     .sheet {
       width: min(100%, 540px); max-height: 92dvh;
@@ -659,7 +743,7 @@
       animation: sheetUp .3s var(--ease-spring) both;
       box-shadow: 0 -4px 32px rgba(160,60,100,.18);
     }
- 
+
     .sheet-handle {
       width: 40px; height: 4px; border-radius: 999px;
       background: rgba(140,60,100,.22); margin: 10px auto 16px;
@@ -669,7 +753,7 @@
       margin-bottom: 16px;
     }
     .sheet-title { font-size: 19px; font-weight: 800; color: var(--pink-dark); }
- 
+
     .icon-btn {
       width: 34px; height: 34px; border-radius: 50%;
       background: rgba(255,255,255,.7);
@@ -679,12 +763,12 @@
       flex-shrink: 0;
     }
     .icon-btn:active { transform: scale(.88); }
- 
+
     /* ═══════════════════════════════════════════
        PHOTO MODAL
     ═══════════════════════════════════════════ */
     #photoModal { z-index: 500; }
- 
+
     .modal-img-wrap {
       position: relative; width: 100%; aspect-ratio: 4/3;
       border-radius: var(--radius-lg); overflow: hidden;
@@ -696,7 +780,7 @@
       transition: transform .2s var(--ease-out);
     }
     .modal-img-wrap:active img { transform: scale(.98); }
- 
+
     .modal-field { margin-top: 10px; }
     .modal-field label { display: block; font-size: 11.5px; font-weight: 700; color: var(--text-muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: .5px; }
     .modal-field textarea {
@@ -712,7 +796,7 @@
       border-color: var(--pink-mid);
       box-shadow: 0 0 0 3px rgba(192,100,138,.12);
     }
- 
+
     .chips-row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
     .chip {
       display: inline-flex; align-items: center; gap: 5px;
@@ -724,19 +808,19 @@
     }
     .chip:active { transform: scale(.93); }
     .chip.active { background: var(--pink-mid); color: #fff; border-color: transparent; }
- 
+
     .location-chip {
       width: 100%; justify-content: flex-start;
       border-radius: var(--radius-sm);
       padding: 11px 14px; margin-top: 8px;
     }
     .location-chip .loc-label { font-weight: 400; color: var(--text-muted); font-size: 13px; }
- 
+
     .modal-actions { display: flex; flex-direction: column; gap: 9px; margin-top: 16px; }
     .btn-row { display: grid; gap: 9px; }
     .btn-row-3 { grid-template-columns: 1fr 1fr 1fr; }
     .btn-row-2 { grid-template-columns: 1fr 1fr; }
- 
+
     .btn {
       height: 48px; border-radius: var(--radius-md);
       font-weight: 700; font-size: 14px;
@@ -748,12 +832,12 @@
     .btn-secondary { background: rgba(255,255,255,.72); color: var(--text-primary); border: 1.5px solid rgba(160,60,100,.12); }
     .btn-danger    { background: var(--danger); color: #fff; box-shadow: 0 3px 14px rgba(217,79,98,.3); }
     .btn-full      { width: 100%; }
- 
+
     /* ═══════════════════════════════════════════
        CONFIRM DIALOG
     ═══════════════════════════════════════════ */
     #confirmModal { z-index: 1000; align-items: center; }
- 
+
     .confirm-card {
       width: min(92%, 340px); background: #fff;
       border-radius: var(--radius-xl);
@@ -768,7 +852,7 @@
     .confirm-text  { font-size: 13.5px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 22px; }
     .confirm-btns  { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     .confirm-btns .btn { height: 46px; }
- 
+
     /* ═══════════════════════════════════════════
        FULLSCREEN VIEWER
     ═══════════════════════════════════════════ */
@@ -813,102 +897,215 @@
       text-align: center; color: rgba(255,255,255,.65);
       font-size: 12px; pointer-events: none; padding: 0 24px;
     }
- 
+
     /* ═══════════════════════════════════════════
-       PUBLISHED MODAL
+       PUBLISHED MODAL — Feed Tasarımı
     ═══════════════════════════════════════════ */
     #pubModal { z-index: 600; align-items: center; }
- 
+
     .pub-card {
-      width: min(96%, 460px); max-height: 88dvh;
+      width: min(96%, 480px); max-height: 90dvh;
       overflow-y: auto; -webkit-overflow-scrolling: touch;
       background: #fff; border-radius: var(--radius-xl);
       box-shadow: var(--shadow-modal);
       animation: scaleIn .28s var(--ease-spring) both;
     }
-    .pub-img-wrap {
-      position: relative; width: 100%;
-      /* FIX: aspect-ratio: 1/1 yerine auto — yatay fotoğraflarda ezilme önlendi */
-      aspect-ratio: 1 / 1;
-      background: #111; overflow: hidden; cursor: zoom-in;
+
+    /* Medya alanı */
+    .pub-media-wrap {
+      position: relative; width: 100%; aspect-ratio: 1/1;
+      background: #0a0a0a; overflow: hidden;
     }
-    .pub-img-wrap img {
+    .pub-media-wrap img, .pub-media-wrap video {
       width: 100%; height: 100%; object-fit: cover; display: block;
-      transition: transform .25s var(--ease-out);
     }
-    .pub-img-wrap:active img { transform: scale(.98); }
+    .pub-media-wrap video { cursor: pointer; }
+    .pub-video-play-overlay {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      pointer-events: none; transition: opacity .2s;
+    }
+    .pub-video-play-overlay .play-circle {
+      width: 56px; height: 56px; border-radius: 50%;
+      background: rgba(0,0,0,.55); backdrop-filter: blur(4px);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff;
+    }
+    .pub-media-wrap.playing .pub-video-play-overlay { opacity: 0; }
+
+    .pub-media-topbar {
+      position: absolute; top: 0; left: 0; right: 0;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 10px 0; pointer-events: none;
+    }
+    .pub-media-badge {
+      background: rgba(0,0,0,.45); color: #fff;
+      font-size: 10px; font-weight: 700; letter-spacing: .05em;
+      padding: 4px 10px; border-radius: 999px;
+      backdrop-filter: blur(6px);
+      display: flex; align-items: center; gap: 4px;
+    }
     .pub-img-close {
-      position: absolute; top: 12px; right: 12px;
-      width: 36px; height: 36px; border-radius: 50%;
+      width: 34px; height: 34px; border-radius: 50%;
       background: rgba(0,0,0,.45); backdrop-filter: blur(6px);
       color: #fff; font-size: 16px;
       display: flex; align-items: center; justify-content: center;
-      transition: transform .1s, background .15s;
+      transition: transform .1s, background .15s; pointer-events: auto;
     }
     .pub-img-close:active { transform: scale(.88); }
- 
-    /* FIX: Author avatar — tek element, bg-image ile görsel gösterilir */
-    .pub-author-avatar {
-      width: 38px; height: 38px; border-radius: 50%;
-      background: linear-gradient(135deg, var(--pink-mid), #e07ba8);
-      background-size: cover;
-      background-position: center;
-      color: #fff; font-size: 14px; font-weight: 800;
-      display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0;
-      border: 2px solid var(--pink-light);
-    }
- 
-    .pub-body { padding: 14px 18px 20px; }
-    .pub-author-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-    .pub-author-info { flex: 1; min-width: 0; }
-    .pub-author { font-size: 14.5px; font-weight: 800; color: var(--pink-dark); }
-    .pub-date   { font-size: 11.5px; color: var(--text-muted); margin-top: 1px; }
-    .pub-note   { font-size: 14.5px; color: var(--text-primary); line-height: 1.55; }
- 
-    /* Like button in pub modal */
-    .pub-reactions {
+
+    .pub-body { padding: 0; }
+
+    .pub-author-row {
       display: flex; align-items: center; gap: 10px;
-      margin-top: 14px; padding-top: 12px;
-      border-top: 1px solid rgba(160,60,100,.08);
+      padding: 12px 14px 10px;
+      border-bottom: 1px solid rgba(160,60,100,.06);
     }
-    .like-btn {
-      display: flex; align-items: center; gap: 6px;
-      padding: 8px 16px; border-radius: 999px;
-      background: rgba(255,60,100,.06);
-      border: 1.5px solid rgba(255,60,100,.15);
-      font-size: 14px; font-weight: 700; color: var(--danger);
+    .pub-author-avatar {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--pink-mid), #e07ba8);
+      background-size: cover; background-position: center;
+      color: #fff; font-size: 15px; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; border: 2px solid var(--pink-light);
+      box-shadow: 0 2px 8px rgba(160,60,100,.2);
+    }
+    .pub-author-info { flex: 1; min-width: 0; }
+    .pub-author { font-size: 14px; font-weight: 800; color: var(--pink-dark); }
+    .pub-date   { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+
+    .pub-note-wrap { padding: 10px 14px 2px; }
+    .pub-note {
+      font-size: 14px; color: var(--text-primary); line-height: 1.6;
+      white-space: pre-wrap; word-break: break-word;
+    }
+
+    .pub-actions-bar {
+      display: flex; align-items: center;
+      padding: 6px 10px;
+      border-bottom: 1px solid rgba(160,60,100,.06);
+    }
+    .pub-action-btn {
+      display: flex; align-items: center; gap: 5px;
+      padding: 8px 12px; border-radius: var(--radius-sm);
+      font-size: 13px; font-weight: 700; color: var(--text-secondary);
+      transition: background .15s, color .15s, transform .1s;
+    }
+    .pub-action-btn:active { transform: scale(.9); background: rgba(160,60,100,.07); }
+    .pub-action-btn.liked  { color: var(--danger); }
+    .pub-action-btn .heart { display: inline-block; transition: transform .2s var(--ease-spring); }
+    .pub-action-btn.liked .heart { animation: heartPop .35s var(--ease-spring); }
+    .pub-action-count { font-size: 12px; font-weight: 700; }
+    .pub-actions-spacer { flex: 1; }
+
+    .pub-loc-btn {
+      display: none; align-items: center; gap: 6px;
+      margin: 0 14px 10px;
+      background: rgba(80,120,255,.08); color: #4060d4;
+      border: 1px solid rgba(80,120,255,.15);
+      padding: 9px 13px; border-radius: var(--radius-sm);
+      font-size: 13px; font-weight: 600; transition: background .15s;
+    }
+    .pub-loc-btn.show { display: flex; }
+    .pub-loc-btn:active { background: rgba(80,120,255,.16); }
+
+    .pub-owner-section { padding: 0 14px 14px; display: none; }
+    .pub-owner-section.show { display: block; }
+    .pub-delete-btn {
+      width: 100%; height: 44px; border-radius: var(--radius-sm);
+      background: #fff5f6; color: var(--danger);
+      border: 1.5px solid rgba(217,79,98,.2);
+      font-size: 13.5px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
       transition: background .15s, transform .1s;
     }
-    .like-btn:active { transform: scale(.9); }
-    .like-btn.liked  { background: rgba(255,60,100,.12); border-color: rgba(255,60,100,.3); }
-    .like-btn .heart { transition: transform .2s var(--ease-spring); }
-    .like-btn.liked .heart { animation: heartPop .35s var(--ease-spring); }
-    .like-count { font-size: 13px; color: var(--text-muted); font-weight: 600; }
- 
-    .pub-loc-btn {
-      display: inline-flex; align-items: center; gap: 6px;
-      background: rgba(80,120,255,.1); color: #4060d4;
-      border: 1px solid rgba(80,120,255,.2);
-      padding: 8px 13px; border-radius: var(--radius-sm);
-      font-size: 13px; font-weight: 600; margin-top: 12px;
-      transition: background .15s;
+    .pub-delete-btn:active { transform: scale(.97); background: #ffe8ea; }
+
+    /* Yayınlar sayfası — Feed kartları */
+    .feed-grid { display: flex; flex-direction: column; gap: 14px; }
+
+    .feed-card {
+      background: rgba(255,255,255,.78);
+      border-radius: var(--radius-lg); overflow: hidden;
+      box-shadow: var(--shadow-card); cursor: pointer;
+      transition: transform .15s var(--ease-out), box-shadow .15s;
+      border: 1px solid rgba(255,255,255,.6);
     }
-    .pub-loc-btn:active { background: rgba(80,120,255,.18); }
-    .pub-delete-btn {
-      width: 100%; height: 46px; border-radius: var(--radius-sm);
-      background: var(--danger); color: #fff;
-      font-size: 14px; font-weight: 700; margin-top: 14px;
-      box-shadow: 0 3px 12px rgba(217,79,98,.25);
-      transition: opacity .15s, transform .1s;
+    .feed-card:active { transform: scale(.985); }
+
+    .feed-header {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px 8px;
     }
-    .pub-delete-btn:active { transform: scale(.97); opacity: .88; }
- 
+    .feed-avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--pink-mid), #e07ba8);
+      background-size: cover; background-position: center;
+      color: #fff; font-size: 13px; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; border: 1.5px solid var(--pink-light);
+    }
+    .feed-meta { flex: 1; min-width: 0; }
+    .feed-name { font-size: 13px; font-weight: 800; color: var(--pink-dark); }
+    .feed-time { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+    .feed-new-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--danger); flex-shrink: 0;
+      box-shadow: 0 0 0 2px rgba(247,189,214,.8);
+    }
+
+    .feed-media {
+      position: relative; width: 100%; aspect-ratio: 1/1;
+      background: #0a0a0a; overflow: hidden;
+    }
+    .feed-media img, .feed-media video {
+      width: 100%; height: 100%; object-fit: cover; display: block;
+    }
+    .feed-video-badge {
+      position: absolute; top: 8px; right: 8px;
+      background: rgba(0,0,0,.5); color: #fff;
+      font-size: 10px; font-weight: 700;
+      padding: 3px 8px; border-radius: 999px;
+      display: flex; align-items: center; gap: 3px;
+    }
+    .feed-play-overlay {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      pointer-events: none;
+    }
+    .feed-play-circle {
+      width: 48px; height: 48px; border-radius: 50%;
+      background: rgba(0,0,0,.45); backdrop-filter: blur(4px);
+      display: flex; align-items: center; justify-content: center; color: #fff;
+    }
+
+    .feed-footer {
+      display: flex; align-items: center; gap: 0;
+      padding: 6px 10px 10px;
+    }
+    .feed-like-btn {
+      display: flex; align-items: center; gap: 4px;
+      padding: 6px 10px 6px 6px; border-radius: var(--radius-sm);
+      font-size: 13px; font-weight: 700; color: var(--text-secondary);
+      transition: color .15s, background .15s, transform .1s;
+    }
+    .feed-like-btn:active { transform: scale(.88); }
+    .feed-like-btn.liked  { color: var(--danger); }
+    .feed-like-btn .heart { display: inline-block; transition: transform .2s var(--ease-spring); }
+    .feed-like-btn.liked .heart { animation: heartPop .35s var(--ease-spring); }
+    .feed-note {
+      flex: 1; font-size: 12.5px; color: var(--text-muted);
+      overflow: hidden; white-space: nowrap; text-overflow: ellipsis; padding: 0 6px;
+    }
+    .feed-expand {
+      font-size: 11px; color: var(--text-muted); font-weight: 600; flex-shrink: 0;
+    }
+
     /* ═══════════════════════════════════════════
        SETTINGS MODAL
     ═══════════════════════════════════════════ */
     #settingsModal { z-index: 700; }
- 
+
     .settings-body { text-align: center; padding-bottom: 8px; }
     .settings-avatar {
       width: 76px; height: 76px; border-radius: 50%;
@@ -933,7 +1130,7 @@
     .settings-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; font-size: 14px; color: var(--text-secondary); }
     .settings-row svg { color: var(--text-muted); }
     .btn-logout { background: #fff5f7; color: var(--danger); border: 1.5px solid rgba(217,79,98,.15); }
- 
+
     /* ═══════════════════════════════════════════
        TOAST
     ═══════════════════════════════════════════ */
@@ -950,7 +1147,7 @@
       box-shadow: 0 4px 20px rgba(0,0,0,.25);
     }
     #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
- 
+
     /* ═══════════════════════════════════════════
        RESPONSIVE
     ═══════════════════════════════════════════ */
@@ -969,7 +1166,7 @@
   <meta name="theme-color" content="#F7BDD6">
 </head>
 <body>
- 
+
 <!-- ═══ SPLASH SCREEN ═══ -->
 <div id="splashScreen" aria-hidden="true">
   <div class="splash-ring splash-ring-1"></div>
@@ -978,13 +1175,13 @@
   <div class="splash-petal p1">🌸</div>
   <div class="splash-petal p2">🌸</div>
   <div class="splash-petal p3">🌸</div>
- 
+
   <div class="splash-logo">
     <div class="splash-paw-wrap">🐾</div>
     <div class="splash-title">Pelus Takip</div>
     <div class="splash-subtitle">Sevimli anların defteri</div>
   </div>
- 
+
   <div class="splash-status">
     <div class="splash-status-text" id="splashStatusText">Yükleniyor…</div>
     <div class="splash-bar-track">
@@ -992,7 +1189,7 @@
     </div>
   </div>
 </div>
- 
+
 <!-- ═══ LOGIN ═══ -->
 <div id="loginOverlay" style="display:none;">
   <div class="login-box">
@@ -1012,10 +1209,10 @@
     <div id="loginWarning" class="login-warning" role="alert"></div>
   </div>
 </div>
- 
+
 <!-- ═══ APP ═══ -->
 <div id="container" style="display:none;">
- 
+
   <header class="header">
     <span></span>
     <span class="header-title">Pelus Takip</span>
@@ -1026,7 +1223,7 @@
       <button id="userBtn" class="user-btn" type="button" aria-label="Profil">?</button>
     </div>
   </header>
- 
+
   <!-- Search bar -->
   <div class="search-bar" id="searchBar">
     <div class="search-input-wrap">
@@ -1035,39 +1232,68 @@
       <button id="searchClear" class="search-clear" style="display:none;" type="button">✕</button>
     </div>
   </div>
- 
+
   <div class="pages">
     <!-- Galeri -->
     <div id="localPage" class="scroll-page active" role="main">
       <div id="statsArea" class="stats-banner"></div>
       <div id="galleryPage" class="gallery"></div>
     </div>
- 
+
     <!-- Yayınlar -->
     <div id="publishedPage" class="scroll-page" role="main">
       <div id="publishedGallery" class="published-gallery"></div>
     </div>
- 
+
     <!-- Kamera -->
     <div id="cameraPage">
       <div class="cam-badge" id="camBadge">Arka Kamera</div>
       <div class="focus-ring" id="focusRing"></div>
       <video id="cameraVideo" autoplay playsinline muted></video>
       <canvas id="canvas" style="display:none;"></canvas>
+
+      <!-- Kayıt zamanlayıcısı -->
+      <div class="rec-timer" id="recTimer">
+        <div class="rec-dot"></div>
+        <span id="recTimerText">0:00</span>
+      </div>
+
+      <!-- Kamera değiştir -->
       <button id="switchCamBtn" class="cam-switch-btn" type="button" aria-label="Kamera Değiştir">
         <svg viewBox="0 0 24 24" width="22" height="22">
           <path fill="currentColor" d="M7 7h4l1.2-2h-.4A2 2 0 0 0 10 6H7a3 3 0 0 0-3 3v2h2V9a1 1 0 0 1 1-1Zm10 8h-4l-1.2 2h.4a2 2 0 0 0 1.8-1H17a3 3 0 0 0 3-3v-2h-2v2a1 1 0 0 1-1 1Zm-3.5-7L17 12l-3.5 4v-3H10v-2h3.5V8Zm-3 8L7 12l3.5-4v3H14v2h-3.5v3Z"/>
         </svg>
       </button>
+
+      <!-- Zoom -->
       <div class="cam-zoom-bar" id="camZoomBar">
         <label>Zoom</label>
         <input id="zoomRange" type="range" min="1" max="1" step="0.1" value="1">
         <span id="zoomLabel">1.0x</span>
       </div>
-      <button id="captureBtn" type="button" aria-label="Fotoğraf Çek"></button>
+
+      <!-- Fotoğraf / Video mod toggle -->
+      <div class="cam-mode-toggle">
+        <button id="camModePhoto" class="cam-mode-btn active" type="button">
+          <svg viewBox="0 0 24 24" width="13" height="13"><path fill="currentColor" d="M9 5.5a1.5 1.5 0 0 1 1.27-.7h3.46a1.5 1.5 0 0 1 1.27.7L16 7h2.5A2.5 2.5 0 0 1 21 9.5v8A2.5 2.5 0 0 1 18.5 20h-13A2.5 2.5 0 0 1 3 17.5v-8A2.5 2.5 0 0 1 5.5 7H8l1-1.5Zm3 4.5a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm0 2a2 2 0 1 1 0 4 2 2 0 0 1 0-4Z"/></svg>
+          Fotoğraf
+        </button>
+        <button id="camModeVideo" class="cam-mode-btn" type="button">
+          <svg viewBox="0 0 24 24" width="13" height="13"><path fill="currentColor" d="M4 6.5A2.5 2.5 0 0 1 6.5 4h7A2.5 2.5 0 0 1 16 6.5v.86l3.36-1.68A1 1 0 0 1 21 6.5v11a1 1 0 0 1-1.64.82L16 16.64V17.5A2.5 2.5 0 0 1 13.5 20h-7A2.5 2.5 0 0 1 4 17.5v-11Z"/></svg>
+          Video
+        </button>
+      </div>
+
+      <!-- Capture / Record butonu + halka -->
+      <svg class="rec-ring-svg" id="recRingSvg" viewBox="0 0 84 84">
+        <circle class="rec-ring-circle" id="recRingCircle" cx="42" cy="42" r="38"/>
+      </svg>
+      <button id="captureBtn" type="button" aria-label="Fotoğraf Çek / Video Kaydet">
+        <div id="captureBtnInner"></div>
+      </button>
     </div>
   </div>
- 
+
   <!-- Alt Bar -->
   <nav class="bottombar" aria-label="Navigasyon">
     <button id="navLocal" class="nav-btn active" type="button" aria-label="Galerim">
@@ -1090,7 +1316,7 @@
     </button>
   </nav>
 </div>
- 
+
 <!-- ═══ FULLSCREEN VIEWER ═══ -->
 <div id="fullscreenModal" class="modal" role="dialog" aria-modal="true" aria-label="Tam ekran görüntü">
   <div class="fs-inner">
@@ -1109,7 +1335,7 @@
     <div class="fs-caption" id="fsCaption"></div>
   </div>
 </div>
- 
+
 <!-- ═══ PHOTO MODAL ═══ -->
 <div id="photoModal" class="modal" role="dialog" aria-modal="true">
   <div class="sheet">
@@ -1142,7 +1368,7 @@
     </div>
   </div>
 </div>
- 
+
 <!-- ═══ CONFIRM DIALOG ═══ -->
 <div id="confirmModal" class="modal" role="alertdialog" aria-modal="true">
   <div class="confirm-card">
@@ -1155,41 +1381,76 @@
     </div>
   </div>
 </div>
- 
+
 <!-- ═══ PUBLISHED PHOTO MODAL ═══ -->
 <div id="pubModal" class="modal" role="dialog" aria-modal="true">
   <div class="pub-card">
-    <div class="pub-img-wrap" id="pubImgWrap">
-      <img id="pubImg" src="" alt="">
-      <button class="pub-img-close" id="pubClose" type="button" aria-label="Kapat">✕</button>
+    <!-- Medya -->
+    <div class="pub-media-wrap" id="pubMediaWrap">
+      <img id="pubImg" src="" alt="" style="display:block;">
+      <video id="pubVideo" src="" loop playsinline style="display:none;" preload="metadata"></video>
+      <!-- Video oynat overlay -->
+      <div class="pub-video-play-overlay" id="pubVideoPlayOverlay" style="display:none;">
+        <div class="play-circle">
+          <svg viewBox="0 0 24 24" width="24" height="24"><path fill="#fff" d="M8 5.14v14l11-7-11-7z"/></svg>
+        </div>
+      </div>
+      <!-- Üst bar -->
+      <div class="pub-media-topbar">
+        <div class="pub-media-badge" id="pubMediaBadge" style="display:none;">
+          <svg viewBox="0 0 24 24" width="10" height="10"><path fill="#fff" d="M4 6.5A2.5 2.5 0 0 1 6.5 4h7A2.5 2.5 0 0 1 16 6.5v.86l3.36-1.68A1 1 0 0 1 21 6.5v11a1 1 0 0 1-1.64.82L16 16.64V17.5A2.5 2.5 0 0 1 13.5 20h-7A2.5 2.5 0 0 1 4 17.5v-11Z"/></svg>
+          VİDEO
+        </div>
+        <button class="pub-img-close" id="pubClose" type="button" aria-label="Kapat">✕</button>
+      </div>
     </div>
+
+    <!-- Body -->
     <div class="pub-body">
+      <!-- Yazar satırı -->
       <div class="pub-author-row">
-        <!-- FIX: Tek element, JS ile bg-image veya initials gösterilir -->
         <div id="pubAuthorAvatar" class="pub-author-avatar">?</div>
         <div class="pub-author-info">
           <div class="pub-author" id="pubAuthor">Yayın</div>
-          <div class="pub-date"   id="pubDate"></div>
+          <div class="pub-date" id="pubDate"></div>
         </div>
       </div>
-      <p class="pub-note" id="pubNote"></p>
-      <div class="pub-reactions">
-        <button id="pubLikeBtn" class="like-btn" type="button">
+
+      <!-- Not -->
+      <div class="pub-note-wrap" id="pubNoteWrap" style="display:none;">
+        <p class="pub-note" id="pubNote"></p>
+      </div>
+
+      <!-- Aksiyonlar -->
+      <div class="pub-actions-bar">
+        <button id="pubLikeBtn" class="pub-action-btn" type="button">
           <span class="heart">❤️</span>
           <span id="pubLikeLabel">Beğen</span>
+          <span id="pubLikeCount" class="pub-action-count"></span>
         </button>
-        <span id="pubLikeCount" class="like-count"></span>
+        <div class="pub-actions-spacer"></div>
+        <!-- Tam ekran -->
+        <button id="pubFullscreenBtn" class="pub-action-btn" type="button" aria-label="Tam ekran">
+          <svg viewBox="0 0 24 24" width="17" height="17"><path fill="currentColor" d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+        </button>
       </div>
-      <button id="pubLocBtn" class="pub-loc-btn" style="display:none;" type="button">
+
+      <!-- Konum -->
+      <button id="pubLocBtn" class="pub-loc-btn" type="button">
         📍 <span id="pubLocText"></span>
       </button>
-      <div id="pubOwnerActions" style="display:none;">
-        <button id="pubDeleteBtn" class="pub-delete-btn" type="button">🗑 Yayını Sil</button>
+
+      <!-- Sahip aksiyonları -->
+      <div id="pubOwnerActions" class="pub-owner-section">
+        <button id="pubDeleteBtn" class="pub-delete-btn" type="button">
+          <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M3 6h18v2H3V6zm5-3h8v2H8V3zM5 8h14l-1 13H6L5 8zm5 3v7h2v-7h-2zm4 0v7h2v-7h-2z"/></svg>
+          Yayını Sil
+        </button>
       </div>
     </div>
   </div>
 </div>
- 
+
 <!-- ═══ SETTINGS MODAL ═══ -->
 <div id="settingsModal" class="modal" role="dialog" aria-modal="true">
   <div class="sheet">
@@ -1219,10 +1480,10 @@
     </div>
   </div>
 </div>
- 
+
 <!-- Toast -->
 <div id="toast" role="status" aria-live="polite"></div>
- 
+
 <!-- ═══════════════════════════════════════════
      JAVASCRIPT
 ═══════════════════════════════════════════ -->
@@ -1239,7 +1500,7 @@ import {
 import {
   getMessaging, getToken, onMessage
 } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-messaging.js";
- 
+
 /* ─── Firebase ─── */
 const FB = initializeApp({
   apiKey:            "AIzaSyBu3fMWUupz6EIbRyB4FBOfplF7GFDToMc",
@@ -1252,11 +1513,11 @@ const FB = initializeApp({
 const db       = getFirestore(FB);
 const auth     = getAuth(FB);
 const provider = new GoogleAuthProvider();
- 
+
 const VAPID_KEY = "BCDu3jOhSy7wU8j48_xpi_EuxdDUNeZwoEVpJ0zVhPqqlNPMBeMunbHgjWuSlL0ztSGfaN0WmmOPbHA31vy2dqw";
 let messaging = null;
 try { messaging = getMessaging(FB); } catch(e) {}
- 
+
 /* ─── DOM refs ─── */
 const q = id => document.getElementById(id);
 const EL = {
@@ -1266,16 +1527,16 @@ const EL = {
   loginLoader:     q("loginLoader"),
   loginWarning:    q("loginWarning"),
   userBtn:         q("userBtn"),
- 
+
   searchToggleBtn: q("searchToggleBtn"),
   searchBar:       q("searchBar"),
   searchInput:     q("searchInput"),
   searchClear:     q("searchClear"),
- 
+
   statsArea:       q("statsArea"),
   galleryPage:     q("galleryPage"),
   publishedGallery:q("publishedGallery"),
- 
+
   cameraPage:      q("cameraPage"),
   cameraVideo:     q("cameraVideo"),
   canvas:          q("canvas"),
@@ -1283,21 +1544,28 @@ const EL = {
   focusRing:       q("focusRing"),
   switchCamBtn:    q("switchCamBtn"),
   captureBtn:      q("captureBtn"),
+  captureBtnInner: q("captureBtnInner"),
   camZoomBar:      q("camZoomBar"),
   zoomRange:       q("zoomRange"),
   zoomLabel:       q("zoomLabel"),
- 
+  camModePhoto:    q("camModePhoto"),
+  camModeVideo:    q("camModeVideo"),
+  recTimer:        q("recTimer"),
+  recTimerText:    q("recTimerText"),
+  recRingSvg:      q("recRingSvg"),
+  recRingCircle:   q("recRingCircle"),
+
   navLocal:        q("navLocal"),
   navPublished:    q("navPublished"),
   navCamera:       q("navCamera"),
   localPage:       q("localPage"),
   publishedPage:   q("publishedPage"),
- 
+
   fullscreenModal: q("fullscreenModal"),
   fsImg:           q("fsImg"),
   fsBackBtn:       q("fsBackBtn"),
   fsCaption:       q("fsCaption"),
- 
+
   photoModal:      q("photoModal"),
   photoModalTitle: q("photoModalTitle"),
   photoModalClose: q("photoModalClose"),
@@ -1312,21 +1580,25 @@ const EL = {
   shareBtn:        q("shareBtn"),
   publishBtn:      q("publishBtn"),
   saveBtn:         q("saveBtn"),
- 
+
   confirmModal:    q("confirmModal"),
   confirmIcon:     q("confirmIcon"),
   confirmTitle:    q("confirmTitle"),
   confirmText:     q("confirmText"),
   confirmCancel:   q("confirmCancel"),
   confirmOk:       q("confirmOk"),
- 
+
   pubModal:        q("pubModal"),
+  pubMediaWrap:    q("pubMediaWrap"),
   pubImg:          q("pubImg"),
-  pubImgWrap:      q("pubImgWrap"),
+  pubVideo:        q("pubVideo"),
+  pubVideoPlayOverlay: q("pubVideoPlayOverlay"),
+  pubMediaBadge:   q("pubMediaBadge"),
   pubClose:        q("pubClose"),
   pubAuthorAvatar: q("pubAuthorAvatar"),
   pubAuthor:       q("pubAuthor"),
   pubDate:         q("pubDate"),
+  pubNoteWrap:     q("pubNoteWrap"),
   pubNote:         q("pubNote"),
   pubLikeBtn:      q("pubLikeBtn"),
   pubLikeLabel:    q("pubLikeLabel"),
@@ -1335,7 +1607,8 @@ const EL = {
   pubLocText:      q("pubLocText"),
   pubOwnerActions: q("pubOwnerActions"),
   pubDeleteBtn:    q("pubDeleteBtn"),
- 
+  pubFullscreenBtn:q("pubFullscreenBtn"),
+
   settingsModal:   q("settingsModal"),
   settingsClose:   q("settingsClose"),
   settingsAvatar:  q("settingsAvatar"),
@@ -1345,14 +1618,14 @@ const EL = {
   logoutBtn:       q("logoutBtn"),
   notifBtn:        q("notifBtn"),
   notifBtnLabel:   q("notifBtnLabel"),
- 
+
   toast:           q("toast"),
- 
+
   splashScreen:    q("splashScreen"),
   splashStatusText:q("splashStatusText"),
   splashBarFill:   q("splashBarFill"),
 };
- 
+
 /* ═══════════════════════════════════════════
    SPLASH SCREEN
 ═══════════════════════════════════════════ */
@@ -1364,7 +1637,7 @@ const SPLASH_MSGS = [
 ];
 let splashMsgTimer = null;
 let splashMsgIndex = 0;
- 
+
 function splashSetStatus(msg) {
   if (!EL.splashStatusText) return;
   EL.splashStatusText.style.opacity = "0";
@@ -1373,7 +1646,7 @@ function splashSetStatus(msg) {
     EL.splashStatusText.style.opacity = "1";
   }, 180);
 }
- 
+
 function splashStartCycling() {
   splashMsgIndex = 0;
   splashSetStatus(SPLASH_MSGS[0]);
@@ -1382,7 +1655,7 @@ function splashStartCycling() {
     splashSetStatus(SPLASH_MSGS[splashMsgIndex]);
   }, 1800);
 }
- 
+
 function splashSetProgress(pct) {
   // pct: 0-100; null → indeterminate
   if (!EL.splashBarFill) return;
@@ -1394,7 +1667,7 @@ function splashSetProgress(pct) {
     EL.splashBarFill.style.width = pct + "%";
   }
 }
- 
+
 function hideSplash() {
   clearInterval(splashMsgTimer);
   splashSetStatus("Hazır!");
@@ -1406,16 +1679,16 @@ function hideSplash() {
     }, { once: true });
   }, 380);
 }
- 
+
 // Splash başlatılıyor — sayfa açıldığında hemen
 splashStartCycling();
 splashSetProgress(null); // indeterminate başlangıç
- 
+
 /* ═══════════════════════════════════════════
    PAGE LOADER (ara yüklemeler için inline overlay)
 ═══════════════════════════════════════════ */
 let pageLoaderTimer = null;
- 
+
 function showPageLoader(containerEl, msg = "Yükleniyor…") {
   // Varsa temizle
   hidePageLoader(containerEl);
@@ -1428,37 +1701,48 @@ function showPageLoader(containerEl, msg = "Yükleniyor…") {
   requestAnimationFrame(() => pl.classList.add("visible"));
   return pl;
 }
- 
+
 function hidePageLoader(containerEl) {
   containerEl.querySelectorAll("[data-page-loader]").forEach(el => {
     el.classList.remove("visible");
     setTimeout(() => el.remove(), 280);
   });
 }
- 
+
 /* ─── App state ─── */
 let currentUser   = null;
 let activePage    = "local";
 let searchQuery   = "";
 let allPhotos     = [];
- 
+
 let camStream = null, camTrack = null, camGen = 0;
 let facingMode = "environment";
 let zoomMin = 1, zoomMax = 1, currentZoom = 1;
- 
+
+// Video kayıt state
+let camMode       = "photo";   // "photo" | "video"
+let mediaRecorder = null;
+let recChunks     = [];
+let recStartTime  = 0;
+let recTimerInterval = null;
+const REC_MAX_MS  = 6000; // 6 saniye
+
 const pm = {
   id: null, image: "", created: null, note: "",
   favorite: false, publishedId: null,
   locationLabel: "", mapsUrl: "", isNew: false,
+  isVideo: false,
+  videoId: null,       // IndexedDB key (local videos)
+  videoBlobUrl: null,  // Object URL for preview
 };
- 
+
 // FIX: Auth redirect sadece bir kere işlenir
 let authInitialized = false;
 let unsubPhotos = null, unsubPublished = null;
 let pubCache = [], lastSeen = 0;
 let confirmResolve = null;
 let currentPubItem = null;
- 
+
 /* ═══════════════════════════════════════════
    TOAST
 ═══════════════════════════════════════════ */
@@ -1469,21 +1753,21 @@ function toast(msg) {
   EL.toast.classList.add("show");
   toastTimer = setTimeout(() => EL.toast.classList.remove("show"), 2800);
 }
- 
+
 /* ═══════════════════════════════════════════
    MODAL HELPERS
 ═══════════════════════════════════════════ */
 function openModal(el)  { el.classList.add("open"); }
 function closeModal(el) { el.classList.remove("open"); }
- 
-// FIX: ESC search bar'ı da kapatır
+
 document.addEventListener("keydown", e => {
   if (e.key !== "Escape") return;
   // Açık modal varsa kapat
-  for (const id of ["fullscreenModal","confirmModal","pubModal","photoModal","settingsModal"]) {
-    const el = q(id);
-    if (el.classList.contains("open")) { closeModal(el); return; }
-  }
+  if (q("fullscreenModal").classList.contains("open"))  { closeModal(EL.fullscreenModal); return; }
+  if (q("confirmModal").classList.contains("open"))     { resolveConfirm(false); return; }
+  if (q("pubModal").classList.contains("open"))         { closeModal(EL.pubModal); return; }
+  if (q("photoModal").classList.contains("open"))       { closePhotoModal(); return; }
+  if (q("settingsModal").classList.contains("open"))    { closeModal(EL.settingsModal); return; }
   // Search bar açıksa kapat
   if (EL.searchBar.classList.contains("visible")) {
     EL.searchBar.classList.remove("visible");
@@ -1492,15 +1776,16 @@ document.addEventListener("keydown", e => {
     renderGallery(allPhotos);
   }
 });
- 
+
 function pushModalState(name) { history.pushState({ modal: name }, ""); }
 window.addEventListener("popstate", () => {
-  for (const id of ["fullscreenModal","confirmModal","pubModal","photoModal","settingsModal"]) {
-    const el = q(id);
-    if (el.classList.contains("open")) { closeModal(el); return; }
-  }
+  if (q("fullscreenModal").classList.contains("open"))  { closeModal(EL.fullscreenModal); return; }
+  if (q("confirmModal").classList.contains("open"))     { resolveConfirm(false); return; }
+  if (q("pubModal").classList.contains("open"))         { closeModal(EL.pubModal); return; }
+  if (q("photoModal").classList.contains("open"))       { closePhotoModal(); return; }
+  if (q("settingsModal").classList.contains("open"))    { closeModal(EL.settingsModal); return; }
 });
- 
+
 /* ═══════════════════════════════════════════
    SEARCH
 ═══════════════════════════════════════════ */
@@ -1516,7 +1801,7 @@ EL.searchToggleBtn.addEventListener("click", () => {
     renderGallery(allPhotos);
   }
 });
- 
+
 EL.searchInput.addEventListener("input", () => {
   searchQuery = EL.searchInput.value.trim().toLowerCase();
   EL.searchClear.style.display = searchQuery ? "block" : "none";
@@ -1525,14 +1810,14 @@ EL.searchInput.addEventListener("input", () => {
     : allPhotos;
   renderGallery(filtered);
 });
- 
+
 EL.searchClear.addEventListener("click", () => {
   EL.searchInput.value = ""; searchQuery = "";
   EL.searchClear.style.display = "none";
   EL.searchInput.focus();
   renderGallery(allPhotos);
 });
- 
+
 /* ═══════════════════════════════════════════
    FULLSCREEN VIEWER
 ═══════════════════════════════════════════ */
@@ -1543,12 +1828,12 @@ function openFullscreen(src, caption = "") {
   pushModalState("fullscreen");
 }
 function closeFullscreen() { closeModal(EL.fullscreenModal); }
- 
+
 EL.fsBackBtn.addEventListener("click", closeFullscreen);
 EL.fullscreenModal.addEventListener("click", e => {
   if (e.target === EL.fullscreenModal || e.target.classList.contains("fs-inner")) closeFullscreen();
 });
- 
+
 /* ═══════════════════════════════════════════
    CONFIRM DIALOG
 ═══════════════════════════════════════════ */
@@ -1569,7 +1854,7 @@ function resolveConfirm(val) {
 }
 EL.confirmOk.addEventListener("click",     () => resolveConfirm(true));
 EL.confirmCancel.addEventListener("click", () => resolveConfirm(false));
- 
+
 /* ═══════════════════════════════════════════
    DATE HELPERS
 ═══════════════════════════════════════════ */
@@ -1592,7 +1877,7 @@ const dayLabel = key => {
   return new Date(y,m-1,d).toLocaleDateString("tr-TR", { day:"2-digit", month:"long", year:"numeric" });
 };
 const initials = n => (n||"").split(" ").map(s=>s[0]).join("").toUpperCase().slice(0,2) || "?";
- 
+
 /* ═══════════════════════════════════════════
    LAST-SEEN / BADGE
 ═══════════════════════════════════════════ */
@@ -1615,21 +1900,23 @@ function setBadge(count) {
     b.textContent = count > 99 ? "99+" : String(count);
   } else b?.remove();
 }
- 
+
 /* ═══════════════════════════════════════════
    STATS
 ═══════════════════════════════════════════ */
 function renderStats(photos) {
-  const total = photos.length;
-  const favs  = photos.filter(p => p.favorite).length;
-  const pubs  = photos.filter(p => p.publishedId).length;
+  const total  = photos.length;
+  const favs   = photos.filter(p => p.favorite && !p.isVideo).length;
+  const videos = photos.filter(p => p.isVideo).length;
+  const pubs   = photos.filter(p => p.publishedId).length;
   if (!total) { EL.statsArea.innerHTML = ""; return; }
   EL.statsArea.innerHTML = `
-    <div class="stat-pill"><div class="stat-val">${total}</div><div class="stat-lbl">Fotoğraf</div></div>
+    <div class="stat-pill"><div class="stat-val">${total}</div><div class="stat-lbl">Medya</div></div>
+    <div class="stat-pill"><div class="stat-val">${videos}</div><div class="stat-lbl">Video</div></div>
     <div class="stat-pill"><div class="stat-val">${favs}</div><div class="stat-lbl">Favori</div></div>
     <div class="stat-pill"><div class="stat-val">${pubs}</div><div class="stat-lbl">Yayın</div></div>`;
 }
- 
+
 /* ═══════════════════════════════════════════
    FIRESTORE LISTENERS
 ═══════════════════════════════════════════ */
@@ -1653,20 +1940,20 @@ function listenPhotos(uid) {
     err => { console.error("photos:", err); tryHideSplash(); }
   );
 }
- 
+
 function listenPublished() {
   unsubPublished?.(); unsubPublished = null;
- 
+
   // FIX: firstLoad bayrağı snapshot dışında tutulur, diff doğru çalışır
   let initialized = false;
   let prevIds = new Set();
- 
+
   const q2 = query(collection(db, "publishedPhotos"), orderBy("createdAtClient", "desc"));
   let firstSnap = true;
   unsubPublished = onSnapshot(q2,
     snap => {
       const newItems = snap.docs.map(d => ({ id: d.id, ...d.data() }));
- 
+
       if (initialized) {
         // Yeni eklenen ID'leri bul
         newItems.forEach(item => {
@@ -1684,7 +1971,7 @@ function listenPublished() {
           }
         });
       }
- 
+
       pubCache = newItems;
       prevIds  = new Set(newItems.map(i => i.id));
       initialized = true;
@@ -1694,7 +1981,7 @@ function listenPublished() {
     err => { console.error("published:", err); tryHideSplash("published"); }
   );
 }
- 
+
 /* ═══════════════════════════════════════════
    DOUBLE-TAP HELPER
    FIX: Touch cihazlarda click + touchend çift tetiklenme önlendi
@@ -1703,18 +1990,18 @@ function addDoubleTapListener(el, onSingle, onDouble, delay = 280) {
   let timer = null, lastTouch = 0;
   let startX = 0, startY = 0, didMove = false;
   let lastTouchEndTime = 0;
- 
+
   // Touch events
   el.addEventListener("touchstart", e => {
     startX = e.touches[0].clientX; startY = e.touches[0].clientY; didMove = false;
   }, { passive: true });
- 
+
   el.addEventListener("touchmove", e => {
     const dx = Math.abs(e.touches[0].clientX - startX);
     const dy = Math.abs(e.touches[0].clientY - startY);
     if (dx > 6 || dy > 6) didMove = true;
   }, { passive: true });
- 
+
   el.addEventListener("touchend", e => {
     if (didMove) return;
     lastTouchEndTime = Date.now();
@@ -1726,20 +2013,20 @@ function addDoubleTapListener(el, onSingle, onDouble, delay = 280) {
       timer = setTimeout(() => { lastTouch = 0; onSingle(e); }, delay);
     }
   }, { passive: true });
- 
+
   // FIX: Mouse click sadece touch olmayan cihazlarda çalışır
   el.addEventListener("click", e => {
     if (Date.now() - lastTouchEndTime < 600) return; // touch'tan gelen click'i engelle
     clearTimeout(timer);
     timer = setTimeout(() => onSingle(e), delay / 2);
   });
- 
+
   el.addEventListener("dblclick", e => {
     if (Date.now() - lastTouchEndTime < 600) return;
     clearTimeout(timer); onDouble(e);
   });
 }
- 
+
 /* ═══════════════════════════════════════════
    GALLERY RENDER
 ═══════════════════════════════════════════ */
@@ -1769,17 +2056,43 @@ function renderGallery(photos) {
     items.forEach(p => {
       const card = document.createElement("div");
       card.className = "card";
-      const img = document.createElement("img");
-      img.src = p.image; img.loading = "lazy"; img.alt = ""; img.decoding = "async";
-      card.appendChild(img);
-      if (p.favorite) {
+
+      if (p.isVideo) {
+        // Video kartı: thumbnail göster, blob URL hazırsa video elementi ekle
+        const thumb = document.createElement("img");
+        thumb.src = p.image; thumb.loading = "lazy"; thumb.alt = ""; thumb.decoding = "async";
+        thumb.style.cssText = "width:100%;height:100%;object-fit:cover;";
+        card.appendChild(thumb);
+        // Arka planda blob URL yükle ve video ile değiştir
+        if (p.videoId) {
+          getVideoBlobUrl(p.videoId).then(url => {
+            if (!url || !card.isConnected) return;
+            const vid = document.createElement("video");
+            vid.src = url; vid.preload = "metadata"; vid.muted = true;
+            vid.style.cssText = "width:100%;height:100%;object-fit:cover;";
+            card.replaceChild(vid, thumb);
+          }).catch(() => {});
+        }
+        const vb = document.createElement("div");
+        vb.className = "card-video-badge";
+        vb.innerHTML = `<svg viewBox="0 0 24 24" width="10" height="10"><path fill="#fff" d="M8 5.14v14l11-7-11-7z"/></svg> VİDEO`;
+        card.appendChild(vb);
+      } else {
+        const img = document.createElement("img");
+        img.src = p.image; img.loading = "lazy"; img.alt = ""; img.decoding = "async";
+        card.appendChild(img);
+      }
+
+      if (p.favorite && !p.isVideo) {
         const b = document.createElement("div"); b.className = "fav-badge"; b.textContent = "⭐"; card.appendChild(b);
       }
       if (p.note) {
         const g = document.createElement("div"); g.className = "card-gradient";
         g.textContent = p.note; card.appendChild(g);
       }
-      addDoubleTapListener(card, () => openPhotoModal(p), () => openFullscreen(p.image, p.note));
+      addDoubleTapListener(card, () => openPhotoModal(p), () => {
+        if (!p.isVideo) openFullscreen(p.image, p.note);
+      });
       grid.appendChild(card);
     });
     sec.appendChild(grid);
@@ -1787,7 +2100,7 @@ function renderGallery(photos) {
   });
   EL.galleryPage.appendChild(frag);
 }
- 
+
 function renderPublished() {
   EL.publishedGallery.innerHTML = "";
   if (!pubCache.length) {
@@ -1795,57 +2108,149 @@ function renderPublished() {
       <div class="empty-state">
         <span class="empty-icon">🌐</span>
         <strong>Henüz yayın yok</strong>
-        <small>Fotoğraf düzenleme ekranından yayınla</small>
+        <small>Fotoğraf veya video düzenleme ekranından yayınla</small>
       </div>`;
     setBadge(0); return;
   }
-  const frag = document.createDocumentFragment();
+
+  // Feed grid wrapper
+  const grid = document.createElement("div");
+  grid.className = "feed-grid";
+
   pubCache.forEach(item => {
-    const isNew = (item.createdAtClient || 0) > lastSeen;
-    const card  = document.createElement("div");
-    card.className = "card";
-    const img = document.createElement("img");
-    img.src = item.image; img.loading = "lazy"; img.alt = ""; img.decoding = "async";
-    card.appendChild(img);
- 
-    const pill = document.createElement("div");
-    pill.className = "pub-badge-pill";
-    pill.textContent = item.displayName ? item.displayName.split(" ")[0] : "Yayın";
-    card.appendChild(pill);
- 
-    if (isNew) { const dot = document.createElement("div"); dot.className = "new-dot"; card.appendChild(dot); }
-    if (item.note) { const g = document.createElement("div"); g.className = "card-gradient"; g.textContent = item.note; card.appendChild(g); }
- 
-    const likes = item.likes ? Object.keys(item.likes).length : 0;
-    if (likes > 0) {
-      const lb = document.createElement("div"); lb.className = "card-likes";
-      lb.innerHTML = `❤️ ${likes}`; card.appendChild(lb);
-    }
- 
-    addDoubleTapListener(card, () => openPubModal(item), () => openFullscreen(item.image, item.note));
-    frag.appendChild(card);
+    const isNew   = (item.createdAtClient || 0) > lastSeen;
+    const likes   = item.likes ? Object.keys(item.likes).length : 0;
+    const liked   = currentUser && !!item.likes?.[currentUser.uid];
+    const isVideo = !!item.isVideo;
+
+    const card = document.createElement("div");
+    card.className = "feed-card";
+
+    // Avatar
+    const avatarStyle = item.photoURL
+      ? `background-image:url(${item.photoURL});`
+      : "";
+    const avatarText = item.photoURL ? "" : initials(item.displayName);
+
+    card.innerHTML = `
+      <div class="feed-header">
+        <div class="feed-avatar" style="${avatarStyle}">${avatarText}</div>
+        <div class="feed-meta">
+          <div class="feed-name">${item.displayName || "Anonim"}</div>
+          <div class="feed-time">${item.createdAtClient ? timeAgo(item.createdAtClient) : ""}</div>
+        </div>
+        ${isNew ? '<div class="feed-new-dot"></div>' : ""}
+      </div>
+      <div class="feed-media">
+        ${isVideo
+          ? `<video src="${item.image}" preload="metadata" muted playsinline loop style="pointer-events:none;"></video>
+             <div class="feed-play-overlay"><div class="feed-play-circle"><svg viewBox="0 0 24 24" width="20" height="20"><path fill="#fff" d="M8 5.14v14l11-7-11-7z"/></svg></div></div>
+             <div class="feed-video-badge"><svg viewBox="0 0 24 24" width="9" height="9"><path fill="#fff" d="M4 6.5A2.5 2.5 0 0 1 6.5 4h7A2.5 2.5 0 0 1 16 6.5v.86l3.36-1.68A1 1 0 0 1 21 6.5v11a1 1 0 0 1-1.64.82L16 16.64V17.5A2.5 2.5 0 0 1 13.5 20h-7A2.5 2.5 0 0 1 4 17.5v-11Z"/></svg> VİDEO</div>`
+          : `<img src="${item.image}" loading="lazy" decoding="async" alt="">`
+        }
+      </div>
+      <div class="feed-footer">
+        <button class="feed-like-btn${liked?" liked":""}" data-id="${item.id}" type="button">
+          <span class="heart">❤️</span>
+          ${likes > 0 ? `<span>${likes}</span>` : ""}
+        </button>
+        <div class="feed-note">${item.note || ""}</div>
+        <div class="feed-expand">Detay →</div>
+      </div>`;
+
+    // Feed like butonu (satır içi, modal açmadan)
+    const feedLikeBtn = card.querySelector(".feed-like-btn");
+    feedLikeBtn.addEventListener("click", async e => {
+      e.stopPropagation();
+      if (!currentUser) { toast("⚠️ Giriş yapın"); return; }
+      const id = feedLikeBtn.dataset.id;
+      const it = pubCache.find(p => p.id === id);
+      if (!it) return;
+      const wasLiked = !!it.likes?.[currentUser.uid];
+      const update = {};
+      if (wasLiked) { update[`likes.${currentUser.uid}`] = deleteField(); if (it.likes) delete it.likes[currentUser.uid]; }
+      else          { update[`likes.${currentUser.uid}`] = true; if (!it.likes) it.likes = {}; it.likes[currentUser.uid] = true; }
+      feedLikeBtn.classList.toggle("liked", !wasLiked);
+      const newLikes = it.likes ? Object.keys(it.likes).length : 0;
+      const likeSpan = feedLikeBtn.querySelector("span:last-child");
+      if (likeSpan && likeSpan !== feedLikeBtn.querySelector(".heart")) {
+        likeSpan.textContent = newLikes > 0 ? newLikes : "";
+      } else if (newLikes > 0 && !feedLikeBtn.querySelector("span:not(.heart)")) {
+        const s = document.createElement("span"); s.textContent = newLikes; feedLikeBtn.appendChild(s);
+      }
+      try { await updateDoc(doc(db, "publishedPhotos", id), update); } catch(e) { toast("❌ Hata"); }
+    });
+
+    // Kart tıklama → modal
+    card.addEventListener("click", e => {
+      if (e.target.closest(".feed-like-btn")) return;
+      openPubModal(item);
+    });
+
+    grid.appendChild(card);
   });
-  EL.publishedGallery.appendChild(frag);
+
+  EL.publishedGallery.appendChild(grid);
   setBadge(pubCache.filter(i => (i.createdAtClient||0) > lastSeen).length);
 }
- 
+
 /* ═══════════════════════════════════════════
    PHOTO MODAL
 ═══════════════════════════════════════════ */
 function resetPM() {
   Object.assign(pm, { id:null, image:"", created:null, note:"", favorite:false,
-                      publishedId:null, locationLabel:"", mapsUrl:"", isNew:false });
+                      publishedId:null, locationLabel:"", mapsUrl:"", isNew:false,
+                      isVideo:false, videoId:null, videoBlobUrl:null });
 }
- 
+
 function applyPMtoUI() {
-  EL.modalPreview.src = pm.image;
-  EL.noteInput.value  = pm.note;
+  const imgEl = EL.modalPreview;
+  let   vidEl = EL.photoImgWrap.querySelector("video.modal-video-preview");
+
+  if (pm.isVideo) {
+    imgEl.style.display = "none";
+    if (!vidEl) {
+      vidEl = document.createElement("video");
+      vidEl.className = "modal-video-preview";
+      vidEl.style.cssText = "width:100%;height:100%;object-fit:cover;border-radius:inherit;";
+      vidEl.setAttribute("playsinline",""); vidEl.setAttribute("loop",""); vidEl.controls = true;
+      EL.photoImgWrap.appendChild(vidEl);
+    }
+    // Önizleme için blob URL kullan (varsa), yoksa thumbnail göster
+    if (pm.videoBlobUrl) {
+      vidEl.src = pm.videoBlobUrl;
+      vidEl.style.display = "block";
+      imgEl.style.display = "none";
+    } else if (pm.videoId) {
+      // Kaydedilmiş video — IndexedDB'den yükle
+      vidEl.style.display = "none";
+      imgEl.src = pm.image; // thumbnail
+      imgEl.style.display = "block";
+      getVideoBlobUrl(pm.videoId).then(url => {
+        if (!url) return;
+        vidEl.src = url; vidEl.style.display = "block";
+        imgEl.style.display = "none";
+      });
+    } else {
+      // Sadece thumbnail var (yayınlanmış video)
+      vidEl.style.display = "none";
+      imgEl.src = pm.image; imgEl.style.display = "block";
+    }
+    EL.photoImgWrap.style.cursor = "default";
+  } else {
+    imgEl.src = pm.image; imgEl.style.display = "block";
+    if (vidEl) { vidEl.src = ""; vidEl.style.display = "none"; }
+    EL.photoImgWrap.style.cursor = "zoom-in";
+  }
+
+  EL.noteInput.value = pm.note;
   EL.favoriteBtn.classList.toggle("active", pm.favorite);
   EL.locationLabel.textContent = pm.locationLabel || "Konum ekle";
   EL.deleteBtn.style.display = pm.id ? "" : "none";
   EL.publishBtn.textContent  = pm.publishedId ? "Yayını Güncelle" : "Yayınla";
+  EL.favoriteBtn.parentElement.style.display = pm.isVideo ? "none" : "";
 }
- 
+
 function openPhotoModal(photo) {
   resetPM();
   Object.assign(pm, {
@@ -1853,38 +2258,55 @@ function openPhotoModal(photo) {
     note: photo.note || "", favorite: !!photo.favorite,
     publishedId: photo.publishedId || null,
     locationLabel: photo.locationLabel || "", mapsUrl: photo.mapsUrl || "",
-    isNew: false,
+    isNew: false, isVideo: !!photo.isVideo,
+    videoId: photo.videoId || null,
+    videoBlobUrl: null,
   });
-  EL.photoModalTitle.textContent = "Fotoğraf Detayı";
+  // Video ise blob URL'yi önceden yükle
+  if (photo.isVideo && photo.videoId) {
+    getVideoBlobUrl(photo.videoId).then(url => { pm.videoBlobUrl = url; applyPMtoUI(); });
+  }
+  EL.photoModalTitle.textContent = photo.isVideo ? "Video Detayı" : "Fotoğraf Detayı";
   applyPMtoUI();
   openModal(EL.photoModal);
   pushModalState("photoModal");
 }
- 
-function openNewPhotoModal(imageData) {
+
+function openNewPhotoModal(imageData, isVideo = false) {
   resetPM();
-  pm.image = imageData; pm.created = Date.now(); pm.isNew = true;
-  EL.photoModalTitle.textContent = "Yeni Fotoğraf";
+  pm.image = imageData; pm.created = Date.now(); pm.isNew = true; pm.isVideo = isVideo;
+  EL.photoModalTitle.textContent = isVideo ? "Yeni Video" : "Yeni Fotoğraf";
   applyPMtoUI();
   openModal(EL.photoModal);
   pushModalState("photoModal");
 }
- 
-EL.photoImgWrap.addEventListener("click", () => { if (pm.image) openFullscreen(pm.image, pm.note); });
-EL.photoModalClose.addEventListener("click", () => closeModal(EL.photoModal));
-EL.cancelBtn.addEventListener("click",       () => closeModal(EL.photoModal));
- 
+
+EL.photoImgWrap.addEventListener("click", () => {
+  if (pm.isVideo) return; // video zaten controls ile oynatılıyor
+  if (pm.image) openFullscreen(pm.image, pm.note);
+});
+
+function closePhotoModal() {
+  // Önizleme videosunu durdur
+  const vidEl = EL.photoImgWrap.querySelector("video.modal-video-preview");
+  if (vidEl) { vidEl.pause(); vidEl.src = ""; }
+  closeModal(EL.photoModal);
+}
+
+EL.photoModalClose.addEventListener("click", () => closePhotoModal());
+EL.cancelBtn.addEventListener("click",       () => closePhotoModal());
+
 EL.favoriteBtn.addEventListener("click", () => {
   pm.favorite = !pm.favorite;
   EL.favoriteBtn.classList.toggle("active", pm.favorite);
 });
- 
+
 EL.locationBtn.addEventListener("click", handleLocationTap);
 EL.saveBtn.addEventListener("click",    savePhoto);
 EL.deleteBtn.addEventListener("click",  deletePhoto);
 EL.publishBtn.addEventListener("click", publishPhoto);
 EL.shareBtn.addEventListener("click",   sharePhoto);
- 
+
 // FIX: Konum mantığı düzeltildi
 // - Mevcut fotoğraf ve mapsUrl varsa: harita açar
 // - Mevcut fotoğraf ve mapsUrl yoksa: yeni konum alır
@@ -1910,37 +2332,50 @@ async function handleLocationTap() {
     toast("⚠️ Konum alınamadı. İzin verdiğinizden emin olun.");
   } finally { EL.locationBtn.disabled = false; }
 }
- 
+
 async function savePhoto() {
   if (!pm.image || !currentUser) return;
   pm.note = EL.noteInput.value.trim();
-  EL.saveBtn.disabled = true; EL.saveBtn.textContent = "Kaydediliyor…";
+  EL.saveBtn.disabled = true;
+  EL.saveBtn.textContent = pm.isVideo ? "Kaydediliyor…" : "Kaydediliyor…";
   const payload = {
-    image: pm.image, note: pm.note,
+    image: pm.image,            // fotoğraf: full jpeg | video: thumbnail jpeg
+    note: pm.note,
     locationLabel: pm.locationLabel, mapsUrl: pm.mapsUrl,
     favorite: pm.favorite, createdAtClient: pm.created || Date.now(),
     publishedId: pm.publishedId || null,
+    isVideo: pm.isVideo || false,
+    videoId: pm.videoId || null,  // IndexedDB key — Firestore'da sadece referans
   };
   try {
     if (pm.id) await updateDoc(doc(db, "users", currentUser.uid, "photos", pm.id), payload);
     else       await addDoc(collection(db, "users", currentUser.uid, "photos"), payload);
-    toast("✅ Kaydedildi");
+    toast(pm.isVideo ? "🎬 Video kaydedildi" : "✅ Kaydedildi");
     closeModal(EL.photoModal);
   } catch (err) { toast("❌ Kayıt hatası: " + err.message); }
   finally { EL.saveBtn.disabled = false; EL.saveBtn.textContent = "💾 Kaydet"; }
 }
- 
+
 async function deletePhoto() {
   if (!pm.id || !currentUser) return;
-  const ok = await openConfirm({ title:"Fotoğraf silinsin mi?", text:"Bu işlem geri alınamaz.", okLabel:"Sil", icon:"🗑" });
+  const label = pm.isVideo ? "Video" : "Fotoğraf";
+  const ok = await openConfirm({ title:`${label} silinsin mi?`, text:"Bu işlem geri alınamaz.", okLabel:"Sil", icon:"🗑" });
   if (!ok) return;
   try {
     await deleteDoc(doc(db, "users", currentUser.uid, "photos", pm.id));
     if (pm.publishedId) await deleteDoc(doc(db, "publishedPhotos", pm.publishedId)).catch(()=>{});
-    toast("🗑 Silindi"); closeModal(EL.photoModal);
+    // IndexedDB'den de sil
+    if (pm.videoId) {
+      const cachedUrl = _videoBlobUrls.get(pm.videoId);
+      if (cachedUrl) URL.revokeObjectURL(cachedUrl);
+      _videoBlobUrls.delete(pm.videoId);
+      await deleteVideoBlob(pm.videoId);
+    }
+    toast(`🗑 ${label} silindi`);
+    closeModal(EL.photoModal);
   } catch (err) { toast("❌ Silme hatası: " + err.message); }
 }
- 
+
 /* ═══════════════════════════════════════════
    FCM
 ═══════════════════════════════════════════ */
@@ -1951,7 +2386,7 @@ async function saveFcmToken(token) {
       { token, updatedAt: Date.now() }, { merge: true });
   } catch(e) {}
 }
- 
+
 async function requestNotificationPermission() {
   if (!messaging) { toast("⚠️ Bildirimler bu tarayıcıda desteklenmiyor"); return; }
   if (!('serviceWorker' in navigator)) { toast("⚠️ Service Worker gerekli"); return; }
@@ -1970,7 +2405,7 @@ async function requestNotificationPermission() {
     toast("❌ Bildirim hatası: " + e.message);
   }
 }
- 
+
 function initForegroundMessages() {
   if (!messaging) return;
   onMessage(messaging, payload => {
@@ -1983,7 +2418,7 @@ function initForegroundMessages() {
     }
   });
 }
- 
+
 async function refreshFcmToken() {
   if (!messaging || !currentUser) return;
   if (localStorage.getItem("fcmEnabled") !== "1") return;
@@ -1995,7 +2430,7 @@ async function refreshFcmToken() {
     await saveFcmToken(token);
   } catch(e) {}
 }
- 
+
 function updateNotifBtn() {
   const enabled = localStorage.getItem("fcmEnabled") === "1" && Notification.permission === "granted";
   EL.notifBtnLabel.textContent = enabled ? "Bildirimler Açık ✓" : "Bildirimleri Etkinleştir";
@@ -2003,30 +2438,38 @@ function updateNotifBtn() {
   EL.notifBtn.style.pointerEvents = enabled ? "none" : "auto";
 }
 EL.notifBtn.addEventListener("click", requestNotificationPermission);
- 
+
 /* ═══════════════════════════════════════════
    PUBLISH
 ═══════════════════════════════════════════ */
 async function publishPhoto() {
   if (!pm.image || !currentUser) return;
   pm.note = EL.noteInput.value.trim();
+
+  const isVid = pm.isVideo;
   const ok = await openConfirm({
-    title:   pm.publishedId ? "Yayını Güncelle" : "Yayınla",
-    text:    "Bu fotoğraf herkese açık olacak.",
+    title:   pm.publishedId ? "Yayını Güncelle" : (isVid ? "Video Yayınla" : "Yayınla"),
+    text:    isVid
+      ? "Video önizleme karesi herkesle paylaşılacak.\n(Video cihazınızda kalır)"
+      : "Bu fotoğraf herkese açık olacak.",
     okLabel: pm.publishedId ? "Güncelle" : "Yayınla",
-    icon:    "🌐"
+    icon:    isVid ? "🎬" : "🌐"
   });
   if (!ok) return;
   EL.publishBtn.disabled = true;
+  EL.publishBtn.textContent = "Yayınlanıyor…";
   try {
+    // Video için pm.image zaten thumbnail JPEG — sıkıştır ve gönder
     const compressed = await compressImage(pm.image);
     const payload = {
-      image: compressed, note: pm.note,
+      image: compressed,          // thumbnail (her zaman JPEG, < 100 KB)
+      note: pm.note,
       locationLabel: pm.locationLabel, mapsUrl: pm.mapsUrl,
       favorite: pm.favorite, createdAtClient: Date.now(),
       uid: currentUser.uid,
       displayName: currentUser.displayName || "Anonim",
       photoURL: currentUser.photoURL || null,
+      isVideo: isVid,             // feed'de video rozeti için
     };
     if (pm.publishedId) {
       await updateDoc(doc(db, "publishedPhotos", pm.publishedId), payload);
@@ -2040,20 +2483,20 @@ async function publishPhoto() {
         authorName: currentUser.displayName || "Biri",
         note: pm.note || "", createdAt: Date.now(),
       }).catch(()=>{});
-      toast("🌐 Yayınlandı");
+      toast(isVid ? "🎬 Video yayınlandı" : "🌐 Yayınlandı");
     }
     EL.publishBtn.textContent = "Yayını Güncelle";
   } catch (err) { toast("❌ Yayın hatası: " + err.message); }
   finally { EL.publishBtn.disabled = false; }
 }
- 
-// FIX: Küçük görseller sıkıştırılmaz, gereksiz kalite kaybı önlenir
+
 function compressImage(dataUrl, maxPx = 800, q = .65) {
+  // Video için sıkıştırma yapma
+  if (dataUrl.startsWith("data:video")) return Promise.resolve(dataUrl);
   return new Promise(res => {
     const img = new Image();
     img.onload = () => {
       let w = img.width, h = img.height;
-      // FIX: Zaten küçükse canvas'a gerek yok
       if (w <= maxPx && h <= maxPx) { res(dataUrl); return; }
       if (w >= h) { h = Math.round(h*maxPx/w); w = maxPx; }
       else        { w = Math.round(w*maxPx/h); h = maxPx; }
@@ -2065,7 +2508,7 @@ function compressImage(dataUrl, maxPx = 800, q = .65) {
     img.src = dataUrl;
   });
 }
- 
+
 function dataURLtoBlob(dataUrl) {
   const [header, data] = dataUrl.split(",");
   const mime = header.match(/:(.*?);/)[1];
@@ -2073,30 +2516,60 @@ function dataURLtoBlob(dataUrl) {
   for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
   return new Blob([arr], { type: mime });
 }
- 
+
 async function sharePhoto() {
   if (!pm.image) return;
   try {
-    const blob = pm.image.startsWith("data:") ? dataURLtoBlob(pm.image) : await fetch(pm.image).then(r => r.blob());
-    const file = new File([blob], "pelus.jpg", { type: blob.type });
-    if (navigator.share && navigator.canShare?.({ files:[file] })) {
-      await navigator.share({ files:[file] }); toast("Paylaşıldı");
-    } else if (navigator.share) {
-      await navigator.share({ title:"Pelus Takip", text: EL.noteInput.value }); toast("Paylaşıldı");
-    } else toast("⚠️ Paylaşım desteklenmiyor");
+    if (pm.isVideo && pm.videoId) {
+      // Video: IndexedDB'den blob al ve paylaş
+      const blob = await loadVideoBlob(pm.videoId);
+      if (!blob) { toast("⚠️ Video bulunamadı"); return; }
+      const ext  = blob.type.includes("mp4") ? "mp4" : "webm";
+      const file = new File([blob], `pelus_video.${ext}`, { type: blob.type });
+      if (navigator.share && navigator.canShare?.({ files:[file] })) {
+        await navigator.share({ files:[file], title:"Pelus Takip" }); toast("Paylaşıldı");
+      } else {
+        // Fallback: indirme linki
+        const url = URL.createObjectURL(blob);
+        const a   = document.createElement("a");
+        a.href = url; a.download = file.name; a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 5000);
+        toast("📥 Video indirildi");
+      }
+    } else {
+      // Fotoğraf
+      const blob = pm.image.startsWith("data:") ? dataURLtoBlob(pm.image) : await fetch(pm.image).then(r => r.blob());
+      const file = new File([blob], "pelus.jpg", { type: blob.type });
+      if (navigator.share && navigator.canShare?.({ files:[file] })) {
+        await navigator.share({ files:[file] }); toast("Paylaşıldı");
+      } else if (navigator.share) {
+        await navigator.share({ title:"Pelus Takip", text: EL.noteInput.value }); toast("Paylaşıldı");
+      } else toast("⚠️ Paylaşım desteklenmiyor");
+    }
   } catch(e) { if (e.name !== "AbortError") toast("❌ Paylaşım hatası"); }
 }
- 
+
 /* ═══════════════════════════════════════════
-   PUBLISHED MODAL + LIKES
-   FIX: pubAuthorAvatar — tek DOM elementi, outerHTML manipülasyonu kaldırıldı
+   PUBLISHED MODAL
 ═══════════════════════════════════════════ */
 function openPubModal(item) {
   currentPubItem = item;
-  EL.pubImg.src            = item.image;
-  EL.pubImg.dataset.id     = item.id;
- 
-  // FIX: Tek element üzerinde backgroundImage ile avatar gösterimi
+  const isVideo = !!item.isVideo;
+
+  // Yayınlarda video sadece thumbnail olarak saklanır (Firebase limiti)
+  // Gerçek video sadece cihazda IndexedDB'de
+  EL.pubImg.style.display   = "block";
+  EL.pubVideo.style.display = "none";
+  EL.pubVideoPlayOverlay.style.display = "none";
+  EL.pubMediaBadge.style.display = isVideo ? "flex" : "none";
+  EL.pubMediaBadge.innerHTML = isVideo
+    ? `<svg viewBox="0 0 24 24" width="10" height="10"><path fill="#fff" d="M4 6.5A2.5 2.5 0 0 1 6.5 4h7A2.5 2.5 0 0 1 16 6.5v.86l3.36-1.68A1 1 0 0 1 21 6.5v11a1 1 0 0 1-1.64.82L16 16.64V17.5A2.5 2.5 0 0 1 13.5 20h-7A2.5 2.5 0 0 1 4 17.5v-11Z"/></svg> VİDEO ÖNİZLEME`
+    : "";
+  EL.pubMediaWrap.classList.remove("playing");
+  EL.pubImg.src = item.image;
+  EL.pubImg.dataset.id = item.id;
+
+  // Avatar
   if (item.photoURL) {
     EL.pubAuthorAvatar.style.backgroundImage = `url(${item.photoURL})`;
     EL.pubAuthorAvatar.textContent = "";
@@ -2104,26 +2577,53 @@ function openPubModal(item) {
     EL.pubAuthorAvatar.style.backgroundImage = "";
     EL.pubAuthorAvatar.textContent = initials(item.displayName);
   }
- 
+
   EL.pubAuthor.textContent = item.displayName || "Anonim";
   EL.pubDate.textContent   = item.createdAtClient ? timeAgo(item.createdAtClient) : "";
-  EL.pubNote.textContent   = item.note || "";
- 
-  const likes  = item.likes ? Object.keys(item.likes).length : 0;
-  const liked  = currentUser && item.likes?.[currentUser.uid];
-  EL.pubLikeBtn.classList.toggle("liked", !!liked);
+
+  if (item.note) {
+    EL.pubNote.textContent = item.note;
+    EL.pubNoteWrap.style.display = "block";
+  } else {
+    EL.pubNoteWrap.style.display = "none";
+  }
+
+  const likes = item.likes ? Object.keys(item.likes).length : 0;
+  const liked = currentUser && !!item.likes?.[currentUser.uid];
+  EL.pubLikeBtn.classList.toggle("liked", liked);
   EL.pubLikeLabel.textContent = liked ? "Beğenildi" : "Beğen";
-  EL.pubLikeCount.textContent = likes > 0 ? `${likes} beğeni` : "";
- 
+  EL.pubLikeCount.textContent = likes > 0 ? likes : "";
+
   const hasLoc = !!(item.mapsUrl?.trim());
-  EL.pubLocBtn.style.display = hasLoc ? "inline-flex" : "none";
+  EL.pubLocBtn.classList.toggle("show", hasLoc);
   if (hasLoc) EL.pubLocText.textContent = item.locationLabel || "Konumu gör";
-  EL.pubOwnerActions.style.display = (currentUser && item.uid === currentUser.uid) ? "" : "none";
+
+  const isOwner = currentUser && item.uid === currentUser.uid;
+  EL.pubOwnerActions.classList.toggle("show", isOwner);
+
+  // Tam ekran butonu — sadece fotoğraflar için
+  EL.pubFullscreenBtn.style.display = isVideo ? "none" : "";
+
   openModal(EL.pubModal);
   pushModalState("pubModal");
 }
- 
-// FIX: Like toggle — null yerine deleteField() kullanılır
+
+// Pub modal medya tıklama — fotoğraf: tam ekran | video: bilgi mesajı
+EL.pubMediaWrap.addEventListener("click", e => {
+  if (e.target === EL.pubClose || EL.pubClose.contains(e.target)) return;
+  if (currentPubItem?.isVideo) {
+    toast("🎬 Video bu cihazda kayıtlıysa galerinizden izleyebilirsiniz");
+    return;
+  }
+  if (EL.pubImg.src) openFullscreen(EL.pubImg.src, currentPubItem?.note);
+});
+
+// Tam ekran butonu
+EL.pubFullscreenBtn.addEventListener("click", () => {
+  if (currentPubItem && !currentPubItem.isVideo) openFullscreen(EL.pubImg.src, currentPubItem.note);
+});
+
+// Like
 EL.pubLikeBtn.addEventListener("click", async () => {
   if (!currentUser || !currentPubItem) return;
   const id   = currentPubItem.id;
@@ -2131,9 +2631,7 @@ EL.pubLikeBtn.addEventListener("click", async () => {
   if (!item) return;
   const liked = !!item.likes?.[currentUser.uid];
   const update = {};
- 
   if (liked) {
-    // FIX: null yerine deleteField() — Firestore null field hatası önlendi
     update[`likes.${currentUser.uid}`] = deleteField();
     if (item.likes) delete item.likes[currentUser.uid];
   } else {
@@ -2141,36 +2639,36 @@ EL.pubLikeBtn.addEventListener("click", async () => {
     if (!item.likes) item.likes = {};
     item.likes[currentUser.uid] = true;
   }
- 
   const likes = item.likes ? Object.keys(item.likes).length : 0;
   EL.pubLikeBtn.classList.toggle("liked", !liked);
   EL.pubLikeLabel.textContent = !liked ? "Beğenildi" : "Beğen";
-  EL.pubLikeCount.textContent = likes > 0 ? `${likes} beğeni` : "";
-  try {
-    await updateDoc(doc(db, "publishedPhotos", id), update);
-  } catch(e) { toast("❌ Hata"); }
+  EL.pubLikeCount.textContent = likes > 0 ? likes : "";
+  try { await updateDoc(doc(db, "publishedPhotos", id), update); }
+  catch(e) { toast("❌ Hata"); }
 });
- 
-EL.pubImgWrap.addEventListener("click", () => { const src = EL.pubImg.src; if (src) openFullscreen(src); });
-EL.pubClose.addEventListener("click", e => { e.stopPropagation(); closeModal(EL.pubModal); });
- 
+
+EL.pubClose.addEventListener("click", e => {
+  e.stopPropagation();
+  closeModal(EL.pubModal);
+});
+
 EL.pubLocBtn.addEventListener("click", () => {
-  const item = pubCache.find(p => p.id === EL.pubImg.dataset.id);
-  if (item?.mapsUrl) window.open(item.mapsUrl, "_blank", "noopener");
+  if (currentPubItem?.mapsUrl) window.open(currentPubItem.mapsUrl, "_blank", "noopener");
 });
- 
+
 EL.pubDeleteBtn.addEventListener("click", async () => {
-  const id   = EL.pubImg.dataset.id;
-  const item = pubCache.find(p => p.id === id);
-  if (!item || !currentUser || item.uid !== currentUser.uid) { toast("⚠️ Bu yayını silemezsiniz"); return; }
+  if (!currentPubItem || !currentUser || currentPubItem.uid !== currentUser.uid) {
+    toast("⚠️ Bu yayını silemezsiniz"); return;
+  }
   const ok = await openConfirm({ title:"Yayın silinsin mi?", text:"Kalıcı olarak silinir.", okLabel:"Sil", icon:"🗑" });
   if (!ok) return;
   try {
-    await deleteDoc(doc(db, "publishedPhotos", id));
-    toast("🗑 Yayın silindi"); closeModal(EL.pubModal);
+    await deleteDoc(doc(db, "publishedPhotos", currentPubItem.id));
+    toast("🗑 Yayın silindi");
+    closeModal(EL.pubModal);
   } catch(err) { toast("❌ Silme hatası: " + err.message); }
 });
- 
+
 /* ═══════════════════════════════════════════
    SETTINGS
    FIX: settings-initials display:flex ile açılıyor
@@ -2184,7 +2682,7 @@ EL.logoutBtn.addEventListener("click", async () => {
   closeModal(EL.settingsModal);
   toast("Çıkış yapıldı");
 });
- 
+
 /* ═══════════════════════════════════════════
    NAVIGATION
 ═══════════════════════════════════════════ */
@@ -2192,25 +2690,38 @@ function showPage(page) {
   if (page === activePage && page !== "camera") return;
   if (page !== "camera") stopCamera();
   activePage = page;
- 
+
   EL.localPage.classList.toggle("active",     page === "local");
   EL.publishedPage.classList.toggle("active", page === "published");
   EL.cameraPage.classList.toggle("active",    page === "camera");
   EL.navLocal.classList.toggle("active",      page === "local");
   EL.navPublished.classList.toggle("active",  page === "published");
   EL.navCamera.classList.toggle("active",     page === "camera");
- 
+
   if (page === "camera")    openCamera("environment");
   if (page === "published") markSeen();
 }
- 
+
 EL.navLocal.addEventListener("click",     () => showPage("local"));
 EL.navPublished.addEventListener("click", () => showPage("published"));
 EL.navCamera.addEventListener("click",    () => showPage("camera"));
- 
+
 /* ═══════════════════════════════════════════
-   CAMERA
+   CAMERA — Fotoğraf + Video (maks 6 sn)
 ═══════════════════════════════════════════ */
+
+// Mod toggle
+EL.camModePhoto.addEventListener("click", () => setCamMode("photo"));
+EL.camModeVideo.addEventListener("click", () => setCamMode("video"));
+
+function setCamMode(mode) {
+  camMode = mode;
+  EL.cameraPage.classList.toggle("cam-video-mode", mode === "video");
+  EL.camModePhoto.classList.toggle("active", mode === "photo");
+  EL.camModeVideo.classList.toggle("active", mode === "video");
+  EL.captureBtn.setAttribute("aria-label", mode === "photo" ? "Fotoğraf Çek" : "Video Kaydet");
+}
+
 async function openCamera(mode) {
   const gen = ++camGen;
   if (camStream) {
@@ -2221,13 +2732,12 @@ async function openCamera(mode) {
   if (gen !== camGen) return;
   try {
     camStream = await navigator.mediaDevices.getUserMedia({
-      video: mode === "user"
-        ? { facingMode: "user" }
-        : { facingMode: { ideal: "environment" } }
+      video: mode === "user" ? { facingMode: "user" } : { facingMode: { ideal: "environment" } },
+      audio: true
     });
     if (gen !== camGen) { camStream.getTracks().forEach(t => t.stop()); camStream = null; return; }
     EL.cameraVideo.srcObject = camStream;
-    await EL.cameraVideo.play().catch(()=>{});
+    await EL.cameraVideo.play().catch(() => {});
     camTrack = camStream.getVideoTracks()[0];
     facingMode = mode;
     EL.camBadge.textContent = mode === "user" ? "Ön Kamera" : "Arka Kamera";
@@ -2249,16 +2759,17 @@ async function openCamera(mode) {
     toast("⚠️ Kamera açılamadı. Lütfen izin verin.");
   }
 }
- 
+
 function stopCamera() {
+  stopRecording(true); // kayıt varsa iptal et
   camGen++;
   if (camStream) {
     camStream.getTracks().forEach(t => t.stop());
     camStream = null; camTrack = null; EL.cameraVideo.srcObject = null;
   }
 }
- 
-// FIX: Capture sonrası kısa gecikme ile modal açılır (sayfa geçiş animasyonu bitmeden modal açılma sorunu)
+
+// ─── Fotoğraf çekme ───
 async function capture() {
   if (!EL.cameraVideo.videoWidth) { toast("⚠️ Kamera hazır değil"); return; }
   const c = EL.canvas;
@@ -2270,20 +2781,258 @@ async function capture() {
   const data = c.toDataURL("image/jpeg", .85);
   stopCamera();
   showPage("local");
-  // FIX: Sayfa geçiş animasyonu tamamlanmadan modal açılırsa görsel kayma oluyordu
   setTimeout(() => openNewPhotoModal(data), 220);
 }
- 
-EL.captureBtn.addEventListener("click",   capture);
+
+// ─── Video kayıt başlat ───
+function startRecording() {
+  if (!camStream || mediaRecorder) return;
+  recChunks = [];
+
+  // Tercih edilen codec
+  const mimeType = ["video/webm;codecs=vp9,opus","video/webm;codecs=vp8,opus","video/webm","video/mp4"]
+    .find(t => MediaRecorder.isTypeSupported(t)) || "";
+
+  try {
+    mediaRecorder = new MediaRecorder(camStream, mimeType ? { mimeType } : {});
+  } catch(e) {
+    toast("⚠️ Video kaydı desteklenmiyor"); return;
+  }
+
+  mediaRecorder.ondataavailable = e => { if (e.data?.size > 0) recChunks.push(e.data); };
+  mediaRecorder.onstop = () => finalizeVideo();
+  mediaRecorder.start(100); // 100ms chunk
+  recStartTime = Date.now();
+
+  // UI
+  EL.cameraPage.classList.add("recording");
+  EL.recTimer.classList.add("show");
+  // Ring animasyonunu yeniden başlat
+  EL.recRingCircle.style.animation = "none";
+  void EL.recRingCircle.offsetWidth;
+  EL.recRingCircle.style.animation = "";
+
+  // Zamanlayıcı göster
+  recTimerInterval = setInterval(() => {
+    const elapsed = Date.now() - recStartTime;
+    const secs = Math.floor(elapsed / 1000);
+    EL.recTimerText.textContent = `${secs}`;
+    if (elapsed >= REC_MAX_MS) stopRecording(false);
+  }, 100);
+
+  // Oto durdur
+  setTimeout(() => { if (mediaRecorder?.state === "recording") stopRecording(false); }, REC_MAX_MS);
+}
+
+// ─── Video kayıt durdur ───
+function stopRecording(cancel = false) {
+  clearInterval(recTimerInterval); recTimerInterval = null;
+  EL.cameraPage.classList.remove("recording");
+  EL.recTimer.classList.remove("show");
+  EL.recTimerText.textContent = "0";
+
+  if (!mediaRecorder) return;
+  const mr = mediaRecorder; mediaRecorder = null;
+  if (mr.state !== "inactive") {
+    if (cancel) { mr.ondataavailable = null; mr.onstop = null; mr.stop(); recChunks = []; }
+    else mr.stop(); // onstop → finalizeVideo
+  }
+}
+
+// ─── Video tamamlandı → modal aç ───
+/* ═══════════════════════════════════════════
+   VIDEO STORAGE — IndexedDB
+   Firebase Firestore doküman limiti 1 MB olduğundan
+   video verileri cihazda IndexedDB'de tutulur.
+   Firestore'a sadece meta + thumbnail (JPEG) yazılır.
+═══════════════════════════════════════════ */
+const VDB_NAME    = "pelus_videos";
+const VDB_STORE   = "clips";
+const VDB_VERSION = 1;
+let   _vdb        = null;
+
+function openVDB() {
+  if (_vdb) return Promise.resolve(_vdb);
+  return new Promise((res, rej) => {
+    const req = indexedDB.open(VDB_NAME, VDB_VERSION);
+    req.onupgradeneeded = e => e.target.result.createObjectStore(VDB_STORE, { keyPath: "id" });
+    req.onsuccess = e => { _vdb = e.target.result; res(_vdb); };
+    req.onerror   = ()  => rej(new Error("IndexedDB açılamadı"));
+  });
+}
+
+async function saveVideoBlob(id, blob) {
+  const db = await openVDB();
+  return new Promise((res, rej) => {
+    const tx = db.transaction(VDB_STORE, "readwrite");
+    tx.objectStore(VDB_STORE).put({ id, blob, savedAt: Date.now() });
+    tx.oncomplete = () => res();
+    tx.onerror    = () => rej(tx.error);
+  });
+}
+
+async function loadVideoBlob(id) {
+  const db = await openVDB();
+  return new Promise((res, rej) => {
+    const tx  = db.transaction(VDB_STORE, "readonly");
+    const req = tx.objectStore(VDB_STORE).get(id);
+    req.onsuccess = () => res(req.result?.blob || null);
+    req.onerror   = () => rej(req.error);
+  });
+}
+
+async function deleteVideoBlob(id) {
+  const db = await openVDB();
+  return new Promise((res) => {
+    const tx = db.transaction(VDB_STORE, "readwrite");
+    tx.objectStore(VDB_STORE).delete(id);
+    tx.oncomplete = () => res();
+    tx.onerror    = () => res(); // hata olsa da devam
+  });
+}
+
+/** Video blob'undan ilk kareyi JPEG data URL olarak çeker */
+function extractThumbnail(blob, maxPx = 480, quality = 0.72) {
+  return new Promise(res => {
+    const url = URL.createObjectURL(blob);
+    const vid = document.createElement("video");
+    vid.muted = true; vid.playsInline = true; vid.preload = "metadata";
+    vid.onloadeddata = () => {
+      vid.currentTime = 0.1;
+    };
+    vid.onseeked = () => {
+      const c = document.createElement("canvas");
+      let w = vid.videoWidth, h = vid.videoHeight;
+      if (w > maxPx || h > maxPx) {
+        if (w >= h) { h = Math.round(h * maxPx / w); w = maxPx; }
+        else        { w = Math.round(w * maxPx / h); h = maxPx; }
+      }
+      c.width = w; c.height = h;
+      c.getContext("2d").drawImage(vid, 0, 0, w, h);
+      URL.revokeObjectURL(url);
+      res(c.toDataURL("image/jpeg", quality));
+    };
+    vid.onerror = () => { URL.revokeObjectURL(url); res(null); };
+    vid.src = url;
+  });
+}
+
+/** IndexedDB'deki video için object URL üretir ve önbellekler */
+const _videoBlobUrls = new Map();
+async function getVideoBlobUrl(videoId) {
+  if (_videoBlobUrls.has(videoId)) return _videoBlobUrls.get(videoId);
+  const blob = await loadVideoBlob(videoId);
+  if (!blob) return null;
+  const url = URL.createObjectURL(blob);
+  _videoBlobUrls.set(videoId, url);
+  return url;
+}
+
+/* ─── Video kaydı tamamlandı ─── */
+async function finalizeVideo() {
+  if (!recChunks.length) { toast("⚠️ Video kaydedilemedi"); return; }
+
+  const dur = Date.now() - recStartTime;
+  if (dur < 500) { toast("⚠️ Video çok kısa (en az 0.5 sn)"); recChunks = []; return; }
+
+  const mimeType = recChunks[0].type || "video/webm";
+  const blob     = new Blob(recChunks, { type: mimeType });
+  recChunks = [];
+
+  // Boyut kontrolü — 50 MB üstü reddet
+  if (blob.size > 50 * 1024 * 1024) {
+    toast("⚠️ Video çok büyük, daha kısa kaydedin"); return;
+  }
+
+  // Toast ile kullanıcıyı bilgilendir
+  toast("🎬 Video işleniyor…");
+
+  // 1) Thumbnail çek
+  const thumbnail = await extractThumbnail(blob);
+
+  // 2) Video'yu IndexedDB'ye kaydet
+  const videoId = `vid_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
+  try {
+    await saveVideoBlob(videoId, blob);
+  } catch(e) {
+    toast("❌ Video kaydedilemedi: " + e.message); return;
+  }
+
+  // 3) Object URL üret (önizleme için)
+  const blobUrl = URL.createObjectURL(blob);
+  _videoBlobUrls.set(videoId, blobUrl);
+
+  stopCamera();
+  showPage("local");
+  // pm.image = thumbnail (Firestore'a gidecek),
+  // pm.videoId = IndexedDB key,
+  // pm.videoBlobUrl = önizleme için
+  setTimeout(() => openNewVideoModal(thumbnail, videoId, blobUrl), 220);
+}
+
+function openNewVideoModal(thumbnail, videoId, blobUrl) {
+  resetPM();
+  pm.image       = thumbnail;   // Firestore'a kaydedilecek thumbnail
+  pm.videoId     = videoId;     // IndexedDB key
+  pm.videoBlobUrl= blobUrl;     // Önizleme için blob URL
+  pm.created     = Date.now();
+  pm.isNew       = true;
+  pm.isVideo     = true;
+  EL.photoModalTitle.textContent = "Yeni Video";
+  applyPMtoUI();
+  openModal(EL.photoModal);
+  pushModalState("photoModal");
+}
+
+function blobToDataUrl(blob) {
+  return new Promise(res => {
+    const r = new FileReader();
+    r.onload = () => res(r.result);
+    r.readAsDataURL(blob);
+  });
+}
+
+// ─── Capture butonu: foto → tıkla | video → bas-bırak ───
+EL.captureBtn.addEventListener("click", e => {
+  if (camMode === "photo") capture();
+});
+
+// Touch: video modunda bas-bırak
+EL.captureBtn.addEventListener("touchstart", e => {
+  if (camMode !== "video") return;
+  e.preventDefault();
+  startRecording();
+}, { passive: false });
+
+EL.captureBtn.addEventListener("touchend", e => {
+  if (camMode !== "video") return;
+  e.preventDefault();
+  stopRecording(false);
+}, { passive: false });
+
+// Mouse (desktop): video modunda mousedown-mouseup
+EL.captureBtn.addEventListener("mousedown", e => {
+  if (camMode !== "video") return;
+  startRecording();
+});
+EL.captureBtn.addEventListener("mouseup", e => {
+  if (camMode !== "video") return;
+  stopRecording(false);
+});
+EL.captureBtn.addEventListener("mouseleave", e => {
+  if (camMode === "video" && mediaRecorder) stopRecording(false);
+});
+
 EL.switchCamBtn.addEventListener("click", () => openCamera(facingMode === "user" ? "environment" : "user"));
+
 EL.zoomRange.addEventListener("input", () => {
   if (!camTrack) return;
   const z = Math.max(zoomMin, Math.min(zoomMax, +EL.zoomRange.value));
   currentZoom = z;
   EL.zoomLabel.textContent = z.toFixed(1) + "x";
-  camTrack.applyConstraints({ advanced: [{ zoom: z }] }).catch(()=>{});
+  camTrack.applyConstraints({ advanced: [{ zoom: z }] }).catch(() => {});
 });
- 
+
 EL.cameraVideo.addEventListener("pointerdown", e => {
   const r = EL.cameraVideo.getBoundingClientRect();
   EL.focusRing.style.left = ((e.clientX - r.left) / r.width  * 100) + "%";
@@ -2292,24 +3041,24 @@ EL.cameraVideo.addEventListener("pointerdown", e => {
   void EL.focusRing.offsetWidth;
   EL.focusRing.classList.add("pop");
 });
- 
+
 /* ═══════════════════════════════════════════
    AUTH + SPLASH ENTEGRASYONu
    FIX: getRedirectResult sadece bir kez çalışır, onAuthStateChanged içinde
    değil ayrı bir try bloğunda — çift tetiklenme önlendi
 ═══════════════════════════════════════════ */
- 
+
 // Splash kapatma için iki kaynak beklenir: photos + published ilk snapshot
 // Her ikisi de gelince (ya da timeout'ta) splash kapanır
 const _splashReady = { photos: false, published: false, auth: false };
 let _splashHideScheduled = false;
- 
+
 function tryHideSplash(source) {
   if (source) _splashReady[source] = true;
- 
+
   // Kullanıcı giriş yapmamışsa, auth false döndü demektir, splash login'e bırakır
   if (!_splashReady.auth) return;
- 
+
   // Auth true ama henüz veri yüklenmediyse biraz bekle
   const dataReady = _splashReady.photos; // photos yeterli, published bonus
   if (!dataReady && !_splashHideScheduled) {
@@ -2320,7 +3069,7 @@ function tryHideSplash(source) {
     hideSplash();
   }
 }
- 
+
 function applyUser(user) {
   currentUser = user;
   if (user) {
@@ -2328,14 +3077,14 @@ function applyUser(user) {
     _splashReady.auth = true;
     splashSetStatus("Fotoğraflar yükleniyor…");
     splashSetProgress(60);
- 
+
     EL.loginOverlay.style.display = "none";
     EL.container.style.display    = "flex";
     if (user.photoURL) EL.userBtn.innerHTML = `<img src="${user.photoURL}" alt="">`;
     else               EL.userBtn.textContent = initials(user.displayName || user.email);
     EL.settingsName.textContent  = user.displayName || "";
     EL.settingsEmail.textContent = user.email || "";
- 
+
     // FIX: Avatar/initials gösterimi düzeltildi
     if (user.photoURL) {
       EL.settingsAvatar.src = user.photoURL;
@@ -2346,7 +3095,7 @@ function applyUser(user) {
       EL.settingsInitials.style.display = "flex";
       EL.settingsInitials.textContent   = initials(user.displayName || user.email);
     }
- 
+
     loadLastSeen(user.uid).then(() => { listenPhotos(user.uid); listenPublished(); });
     updateNotifBtn();
     initForegroundMessages();
@@ -2354,7 +3103,7 @@ function applyUser(user) {
   } else {
     // Kullanıcı yok → login ekranına geç, splash'ı kapat
     hideSplash();
- 
+
     EL.loginOverlay.style.display = "flex";
     EL.container.style.display    = "none";
     stopCamera();
@@ -2368,7 +3117,7 @@ function applyUser(user) {
     EL.googleLoginBtn.disabled    = false;
   }
 }
- 
+
 async function login() {
   EL.googleLoginBtn.disabled    = true;
   EL.loginWarning.style.display = "none";
@@ -2393,9 +3142,9 @@ async function login() {
     }
   }
 }
- 
+
 EL.googleLoginBtn.addEventListener("click", login);
- 
+
 // FIX: getRedirectResult onAuthStateChanged'dan önce, ayrı bir blokta çalıştırılır
 (async () => {
   try {
@@ -2409,18 +3158,17 @@ EL.googleLoginBtn.addEventListener("click", login);
     // Normal sayfa açılışında redirect result yoktur
   }
 })();
- 
+
 onAuthStateChanged(auth, user => {
   applyUser(user);
 });
- 
+
 // Güvenlik: Splash 6 saniyeden uzun sürerse her halükarda kapat
 setTimeout(() => hideSplash(), 6000);
- 
+
 window.addEventListener("beforeunload", () => { stopCamera(); unsubPhotos?.(); unsubPublished?.(); });
- 
+
 showPage("local");
 </script>
 </body>
 </html>
- 
