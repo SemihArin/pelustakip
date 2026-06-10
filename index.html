@@ -2142,15 +2142,25 @@ function renderPublished() {
         ${isNew ? '<div class="feed-new-dot"></div>' : ""}
       </div>
       <div class="feed-media">
-        ${isVideo
-          ? `<video src="${item.image}" preload="metadata" muted playsinline loop style="pointer-events:none;"></video>
-             <div class="feed-play-overlay"><div class="feed-play-circle"><svg viewBox="0 0 24 24" width="20" height="20"><path fill="#fff" d="M8 5.14v14l11-7-11-7z"/></svg></div></div>
-             <div class="feed-video-badge"><svg viewBox="0 0 24 24" width="9" height="9"><path fill="#fff" d="M4 6.5A2.5 2.5 0 0 1 6.5 4h7A2.5 2.5 0 0 1 16 6.5v.86l3.36-1.68A1 1 0 0 1 21 6.5v11a1 1 0 0 1-1.64.82L16 16.64V17.5A2.5 2.5 0 0 1 13.5 20h-7A2.5 2.5 0 0 1 4 17.5v-11Z"/></svg> VİDEO</div>`
-          : `<img src="${item.image}" loading="lazy" decoding="async" alt="">`
-        }
+        <img src="${item.image}" loading="lazy" decoding="async" alt=""
+             style="width:100%;height:100%;object-fit:cover;display:block;">
+        ${isVideo ? `
+          <div class="feed-play-overlay">
+            <div class="feed-play-circle">
+              <svg viewBox="0 0 24 24" width="20" height="20">
+                <path fill="#fff" d="M8 5.14v14l11-7-11-7z"/>
+              </svg>
+            </div>
+          </div>
+          <div class="feed-video-badge">
+            <svg viewBox="0 0 24 24" width="9" height="9">
+              <path fill="#fff" d="M4 6.5A2.5 2.5 0 0 1 6.5 4h7A2.5 2.5 0 0 1 16 6.5v.86l3.36-1.68A1 1 0 0 1 21 6.5v11a1 1 0 0 1-1.64.82L16 16.64V17.5A2.5 2.5 0 0 1 13.5 20h-7A2.5 2.5 0 0 1 4 17.5v-11Z"/>
+            </svg>
+            ${item.hasChunks ? "VİDEO" : "VİDEO"}
+          </div>` : ""}
       </div>
       <div class="feed-footer">
-        <button class="feed-like-btn${liked?" liked":""}" data-id="${item.id}" type="button">
+        <button class="feed-like-btn${liked ? " liked" : ""}" data-id="${item.id}" type="button">
           <span class="heart">❤️</span>
           ${likes > 0 ? `<span>${likes}</span>` : ""}
         </button>
@@ -2440,54 +2450,242 @@ function updateNotifBtn() {
 EL.notifBtn.addEventListener("click", requestNotificationPermission);
 
 /* ═══════════════════════════════════════════
-   PUBLISH
+   VIDEO CHUNK UPLOAD — Firestore 900 KB limit
+   Video blob → base64 → 900 KB parçalar → ayrı dokümanlar
+   videoChunks/{publishedId}/chunk_{index}
+═══════════════════════════════════════════ */
+const CHUNK_SIZE_BYTES = 900 * 1024; // 900 KB (base64 ~%33 büyür → ~675 KB ham)
+const B64_CHUNK       = Math.floor(CHUNK_SIZE_BYTES * 0.74); // ham blob bytes per chunk
+
+/** Blob → base64 string (data: prefix yok) */
+function blobToBase64Raw(blob) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload  = () => res(r.result.split(",")[1]);
+    r.onerror = () => rej(r.error);
+    r.readAsDataURL(blob);
+  });
+}
+
+/** Base64 string → Blob */
+function base64ToBlob(b64, mimeType) {
+  const bin  = atob(b64);
+  const arr  = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+  return new Blob([arr], { type: mimeType });
+}
+
+/**
+ * Video'yu Firestore'a chunk'lar halinde yükle.
+ * onProgress(uploaded, total) callback ile ilerleme bildirilir.
+ * publishedId: ana dokümanın ID'si (chunk koleksiyon yolu için)
+ */
+async function uploadVideoChunks(blob, publishedId, onProgress) {
+  const mimeType   = blob.type || "video/webm";
+  const totalBytes = blob.size;
+  const chunkCount = Math.ceil(totalBytes / B64_CHUNK);
+
+  for (let i = 0; i < chunkCount; i++) {
+    const start     = i * B64_CHUNK;
+    const end       = Math.min(start + B64_CHUNK, totalBytes);
+    const chunkBlob = blob.slice(start, end);
+    const b64       = await blobToBase64Raw(chunkBlob);
+
+    await setDoc(
+      doc(db, "videoChunks", publishedId, "chunks", `chunk_${String(i).padStart(5,"0")}`),
+      { index: i, data: b64, total: chunkCount, mimeType }
+    );
+    onProgress(i + 1, chunkCount);
+  }
+  return chunkCount;
+}
+
+/**
+ * Firestore'dan chunk'ları sırayla getirip Blob olarak döndür.
+ * onProgress(loaded, total) ile ilerleme bildirilir.
+ * Önbellekte varsa (blobUrlCache) direkt döner.
+ */
+const _chunkBlobCache = new Map(); // publishedId → objectURL
+
+async function assembleVideoFromChunks(publishedId, mimeType, chunkCount, onProgress) {
+  if (_chunkBlobCache.has(publishedId)) return _chunkBlobCache.get(publishedId);
+
+  const parts = [];
+  for (let i = 0; i < chunkCount; i++) {
+    const snap = await getDoc(
+      doc(db, "videoChunks", publishedId, "chunks", `chunk_${String(i).padStart(5,"0")}`)
+    );
+    if (!snap.exists()) throw new Error(`Chunk ${i} bulunamadı`);
+    parts.push(base64ToBlob(snap.data().data, mimeType));
+    onProgress(i + 1, chunkCount);
+  }
+
+  const fullBlob = new Blob(parts, { type: mimeType });
+  const url      = URL.createObjectURL(fullBlob);
+  _chunkBlobCache.set(publishedId, url);
+  return url;
+}
+
+/** Chunk dokümanlarını sil (yayın silindiğinde) */
+async function deleteVideoChunks(publishedId, chunkCount) {
+  const promises = [];
+  for (let i = 0; i < chunkCount; i++) {
+    promises.push(
+      deleteDoc(doc(db, "videoChunks", publishedId, "chunks", `chunk_${String(i).padStart(5,"0")}`))
+        .catch(() => {})
+    );
+  }
+  await Promise.all(promises);
+}
+
+/* ═══════════════════════════════════════════
+   PUBLISH — Fotoğraf & Video (chunk'lı)
 ═══════════════════════════════════════════ */
 async function publishPhoto() {
   if (!pm.image || !currentUser) return;
   pm.note = EL.noteInput.value.trim();
 
   const isVid = pm.isVideo;
+
+  // Video boyutunu kontrol et
+  let videoBlob = null;
+  if (isVid && pm.videoId) {
+    videoBlob = await loadVideoBlob(pm.videoId);
+    if (!videoBlob) { toast("⚠️ Video bulunamadı"); return; }
+  }
+
   const ok = await openConfirm({
     title:   pm.publishedId ? "Yayını Güncelle" : (isVid ? "Video Yayınla" : "Yayınla"),
     text:    isVid
-      ? "Video önizleme karesi herkesle paylaşılacak.\n(Video cihazınızda kalır)"
+      ? `Video parçalara bölünerek yayınlanacak.\n(${videoBlob ? (videoBlob.size / 1024 / 1024).toFixed(1) + " MB" : ""})`
       : "Bu fotoğraf herkese açık olacak.",
     okLabel: pm.publishedId ? "Güncelle" : "Yayınla",
     icon:    isVid ? "🎬" : "🌐"
   });
   if (!ok) return;
-  EL.publishBtn.disabled = true;
-  EL.publishBtn.textContent = "Yayınlanıyor…";
+
+  EL.publishBtn.disabled    = true;
+  EL.publishBtn.textContent = "Hazırlanıyor…";
+
+  // Yayınlanıyor progress overlay
+  const progressEl = _createUploadProgress();
+
   try {
-    // Video için pm.image zaten thumbnail JPEG — sıkıştır ve gönder
-    const compressed = await compressImage(pm.image);
+    const thumbnail  = await compressImage(pm.image);
+    const mimeType   = videoBlob?.type || "video/webm";
+    const chunkCount = isVid && videoBlob ? Math.ceil(videoBlob.size / B64_CHUNK) : 0;
+
     const payload = {
-      image: compressed,          // thumbnail (her zaman JPEG, < 100 KB)
-      note: pm.note,
-      locationLabel: pm.locationLabel, mapsUrl: pm.mapsUrl,
-      favorite: pm.favorite, createdAtClient: Date.now(),
-      uid: currentUser.uid,
-      displayName: currentUser.displayName || "Anonim",
-      photoURL: currentUser.photoURL || null,
-      isVideo: isVid,             // feed'de video rozeti için
+      image:         thumbnail,
+      note:          pm.note,
+      locationLabel: pm.locationLabel,
+      mapsUrl:       pm.mapsUrl,
+      favorite:      pm.favorite,
+      createdAtClient: Date.now(),
+      uid:           currentUser.uid,
+      displayName:   currentUser.displayName || "Anonim",
+      photoURL:      currentUser.photoURL || null,
+      isVideo:       isVid,
+      hasChunks:     isVid && chunkCount > 0,
+      chunkCount:    chunkCount,
+      mimeType:      isVid ? mimeType : null,
     };
-    if (pm.publishedId) {
-      await updateDoc(doc(db, "publishedPhotos", pm.publishedId), payload);
-      toast("✅ Yayın güncellendi");
+
+    let pubId = pm.publishedId;
+
+    if (pubId) {
+      // Güncelleme: eski chunk'ları sil
+      const oldSnap = await getDoc(doc(db, "publishedPhotos", pubId)).catch(() => null);
+      if (oldSnap?.data()?.hasChunks) {
+        await deleteVideoChunks(pubId, oldSnap.data().chunkCount || 0);
+      }
+      await updateDoc(doc(db, "publishedPhotos", pubId), payload);
     } else {
       const ref = await addDoc(collection(db, "publishedPhotos"), payload);
-      pm.publishedId = ref.id;
-      if (pm.id) await updateDoc(doc(db, "users", currentUser.uid, "photos", pm.id), { publishedId: ref.id }).catch(()=>{});
+      pubId = ref.id;
+      pm.publishedId = pubId;
+      if (pm.id) {
+        await updateDoc(
+          doc(db, "users", currentUser.uid, "photos", pm.id),
+          { publishedId: pubId }
+        ).catch(() => {});
+      }
+    }
+
+    // Video chunk'larını yükle
+    if (isVid && videoBlob && chunkCount > 0) {
+      EL.publishBtn.textContent = `Yükleniyor 0/${chunkCount}`;
+      await uploadVideoChunks(videoBlob, pubId, (done, total) => {
+        const pct = Math.round((done / total) * 100);
+        EL.publishBtn.textContent = `Yükleniyor ${done}/${total}`;
+        _updateUploadProgress(progressEl, pct, `${done}/${total} parça yüklendi`);
+      });
+      // Cache'e al
+      _chunkBlobCache.set(pubId, URL.createObjectURL(videoBlob));
+    }
+
+    // Bildirim gönder (sadece yeni yayın)
+    if (!pm.publishedId || pm.publishedId !== pubId) {
       addDoc(collection(db, "notifications"), {
-        type: "new_publish", publishedId: ref.id,
+        type: "new_publish", publishedId: pubId,
         authorName: currentUser.displayName || "Biri",
         note: pm.note || "", createdAt: Date.now(),
-      }).catch(()=>{});
-      toast(isVid ? "🎬 Video yayınlandı" : "🌐 Yayınlandı");
+      }).catch(() => {});
     }
+
+    _removeUploadProgress(progressEl);
+    toast(isVid ? "🎬 Video yayınlandı!" : "🌐 Yayınlandı");
     EL.publishBtn.textContent = "Yayını Güncelle";
-  } catch (err) { toast("❌ Yayın hatası: " + err.message); }
-  finally { EL.publishBtn.disabled = false; }
+
+  } catch (err) {
+    _removeUploadProgress(progressEl);
+    toast("❌ Yayın hatası: " + err.message);
+    console.error(err);
+  } finally {
+    EL.publishBtn.disabled = false;
+  }
+}
+
+/* ─── Upload progress overlay (sheet içinde) ─── */
+function _createUploadProgress() {
+  const el = document.createElement("div");
+  el.style.cssText = `
+    position:fixed; inset:0; z-index:9000;
+    background:rgba(15,5,12,.6); backdrop-filter:blur(4px);
+    display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:18px;
+    animation: fadeIn .2s ease both;
+  `;
+  el.innerHTML = `
+    <div style="background:#fff;border-radius:24px;padding:28px 32px;text-align:center;
+                box-shadow:0 24px 64px rgba(60,10,30,.3);min-width:260px;">
+      <div style="font-size:36px;margin-bottom:12px;">🎬</div>
+      <div style="font-size:16px;font-weight:800;color:#4d2438;margin-bottom:6px;" id="_upTitle">Video yükleniyor…</div>
+      <div style="font-size:12px;color:#9a7585;margin-bottom:16px;" id="_upSub">Lütfen bekleyin</div>
+      <div style="height:6px;background:rgba(192,100,138,.15);border-radius:999px;overflow:hidden;">
+        <div id="_upBar" style="height:100%;width:0%;background:linear-gradient(90deg,#c0648a,#e07ba8);
+             border-radius:999px;transition:width .35s ease;"></div>
+      </div>
+      <div style="font-size:11px;color:#9a7585;margin-top:8px;" id="_upPct">0%</div>
+    </div>`;
+  document.body.appendChild(el);
+  return el;
+}
+
+function _updateUploadProgress(el, pct, label) {
+  const bar = el.querySelector("#_upBar");
+  const pctEl = el.querySelector("#_upPct");
+  const sub   = el.querySelector("#_upSub");
+  if (bar)   bar.style.width   = pct + "%";
+  if (pctEl) pctEl.textContent = pct + "%";
+  if (sub)   sub.textContent   = label;
+}
+
+function _removeUploadProgress(el) {
+  if (!el || !el.parentNode) return;
+  el.style.opacity = "0";
+  el.style.transition = "opacity .3s ease";
+  setTimeout(() => el.remove(), 320);
 }
 
 function compressImage(dataUrl, maxPx = 800, q = .65) {
@@ -2556,18 +2754,31 @@ function openPubModal(item) {
   currentPubItem = item;
   const isVideo = !!item.isVideo;
 
-  // Yayınlarda video sadece thumbnail olarak saklanır (Firebase limiti)
-  // Gerçek video sadece cihazda IndexedDB'de
-  EL.pubImg.style.display   = "block";
-  EL.pubVideo.style.display = "none";
+  EL.pubImg.style.display          = "block";
+  EL.pubVideo.style.display        = "none";
   EL.pubVideoPlayOverlay.style.display = "none";
-  EL.pubMediaBadge.style.display = isVideo ? "flex" : "none";
-  EL.pubMediaBadge.innerHTML = isVideo
-    ? `<svg viewBox="0 0 24 24" width="10" height="10"><path fill="#fff" d="M4 6.5A2.5 2.5 0 0 1 6.5 4h7A2.5 2.5 0 0 1 16 6.5v.86l3.36-1.68A1 1 0 0 1 21 6.5v11a1 1 0 0 1-1.64.82L16 16.64V17.5A2.5 2.5 0 0 1 13.5 20h-7A2.5 2.5 0 0 1 4 17.5v-11Z"/></svg> VİDEO ÖNİZLEME`
-    : "";
+  EL.pubMediaBadge.style.display   = isVideo ? "flex" : "none";
   EL.pubMediaWrap.classList.remove("playing");
-  EL.pubImg.src = item.image;
-  EL.pubImg.dataset.id = item.id;
+  EL.pubImg.src         = item.image; // thumbnail her zaman
+  EL.pubImg.dataset.id  = item.id;
+
+  if (isVideo && item.hasChunks) {
+    EL.pubMediaBadge.innerHTML = `
+      <svg viewBox="0 0 24 24" width="10" height="10">
+        <path fill="#fff" d="M4 6.5A2.5 2.5 0 0 1 6.5 4h7A2.5 2.5 0 0 1 16 6.5v.86l3.36-1.68A1 1 0 0 1 21 6.5v11a1 1 0 0 1-1.64.82L16 16.64V17.5A2.5 2.5 0 0 1 13.5 20h-7A2.5 2.5 0 0 1 4 17.5v-11Z"/>
+      </svg> VİDEO — oynatmak için dokun`;
+    // Önbellekte zaten varsa videoyu hemen hazırla
+    if (_chunkBlobCache.has(item.id)) {
+      _showPubVideo(_chunkBlobCache.get(item.id));
+    } else {
+      EL.pubVideoPlayOverlay.style.display = "flex";
+    }
+  } else if (isVideo) {
+    EL.pubMediaBadge.innerHTML = `
+      <svg viewBox="0 0 24 24" width="10" height="10">
+        <path fill="#fff" d="M4 6.5A2.5 2.5 0 0 1 6.5 4h7A2.5 2.5 0 0 1 16 6.5v.86l3.36-1.68A1 1 0 0 1 21 6.5v11a1 1 0 0 1-1.64.82L16 16.64V17.5A2.5 2.5 0 0 1 13.5 20h-7A2.5 2.5 0 0 1 4 17.5v-11Z"/>
+      </svg> VİDEO`;
+  }
 
   // Avatar
   if (item.photoURL) {
@@ -2582,7 +2793,7 @@ function openPubModal(item) {
   EL.pubDate.textContent   = item.createdAtClient ? timeAgo(item.createdAtClient) : "";
 
   if (item.note) {
-    EL.pubNote.textContent = item.note;
+    EL.pubNote.textContent      = item.note;
     EL.pubNoteWrap.style.display = "block";
   } else {
     EL.pubNoteWrap.style.display = "none";
@@ -2600,23 +2811,107 @@ function openPubModal(item) {
 
   const isOwner = currentUser && item.uid === currentUser.uid;
   EL.pubOwnerActions.classList.toggle("show", isOwner);
-
-  // Tam ekran butonu — sadece fotoğraflar için
   EL.pubFullscreenBtn.style.display = isVideo ? "none" : "";
 
   openModal(EL.pubModal);
   pushModalState("pubModal");
 }
 
-// Pub modal medya tıklama — fotoğraf: tam ekran | video: bilgi mesajı
-EL.pubMediaWrap.addEventListener("click", e => {
+/** Pub modal'da video elementini göster ve oynat */
+function _showPubVideo(blobUrl) {
+  EL.pubImg.style.display              = "none";
+  EL.pubVideo.src                      = blobUrl;
+  EL.pubVideo.style.display            = "block";
+  EL.pubVideoPlayOverlay.style.display = "none";
+  EL.pubMediaWrap.classList.add("playing");
+  EL.pubVideo.play().catch(() => {});
+}
+
+/** Chunk'ları indirirken overlay içinde progress bar göster */
+function _showChunkLoadProgress(container) {
+  const el = document.createElement("div");
+  el.id = "chunkLoadOverlay";
+  el.style.cssText = `
+    position:absolute; inset:0; z-index:10;
+    background:rgba(0,0,0,.7); backdrop-filter:blur(2px);
+    display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:10px;
+  `;
+  el.innerHTML = `
+    <div style="font-size:28px;">🎬</div>
+    <div style="color:#fff;font-size:13px;font-weight:700;" id="_clo_label">Video yükleniyor…</div>
+    <div style="width:160px;height:4px;background:rgba(255,255,255,.2);border-radius:999px;overflow:hidden;">
+      <div id="_clo_bar" style="height:100%;width:0%;background:#c0648a;
+           border-radius:999px;transition:width .3s ease;"></div>
+    </div>
+    <div style="color:rgba(255,255,255,.6);font-size:11px;" id="_clo_pct">0%</div>`;
+  container.style.position = "relative";
+  container.appendChild(el);
+  return el;
+}
+
+function _updateChunkLoadProgress(el, done, total) {
+  const pct = Math.round((done / total) * 100);
+  const bar = el.querySelector("#_clo_bar");
+  const lbl = el.querySelector("#_clo_label");
+  const pctEl = el.querySelector("#_clo_pct");
+  if (bar)   bar.style.width   = pct + "%";
+  if (lbl)   lbl.textContent   = `${done}/${total} parça indirildi`;
+  if (pctEl) pctEl.textContent = pct + "%";
+}
+
+// Pub medya tıklama — video: chunk'ları indir + oynat | fotoğraf: tam ekran
+EL.pubMediaWrap.addEventListener("click", async e => {
   if (e.target === EL.pubClose || EL.pubClose.contains(e.target)) return;
-  if (currentPubItem?.isVideo) {
-    toast("🎬 Video bu cihazda kayıtlıysa galerinizden izleyebilirsiniz");
+
+  const item = currentPubItem;
+  if (!item) return;
+
+  if (!item.isVideo) {
+    if (EL.pubImg.src) openFullscreen(EL.pubImg.src, item.note);
     return;
   }
-  if (EL.pubImg.src) openFullscreen(EL.pubImg.src, currentPubItem?.note);
+
+  // Video zaten oynatılıyorsa durdur/devam et
+  if (EL.pubVideo.style.display === "block" && EL.pubVideo.src) {
+    if (EL.pubVideo.paused) {
+      EL.pubVideo.play().then(() => EL.pubMediaWrap.classList.add("playing")).catch(() => {});
+    } else {
+      EL.pubVideo.pause();
+      EL.pubMediaWrap.classList.remove("playing");
+    }
+    return;
+  }
+
+  if (!item.hasChunks) {
+    toast("🎬 Video galerinizden izleyebilirsiniz");
+    return;
+  }
+
+  // Önbellekte var mı?
+  if (_chunkBlobCache.has(item.id)) {
+    _showPubVideo(_chunkBlobCache.get(item.id));
+    return;
+  }
+
+  // Chunk'ları indir
+  const progressEl = _showChunkLoadProgress(EL.pubMediaWrap);
+  try {
+    const url = await assembleVideoFromChunks(
+      item.id,
+      item.mimeType || "video/webm",
+      item.chunkCount || 1,
+      (done, total) => _updateChunkLoadProgress(progressEl, done, total)
+    );
+    progressEl.remove();
+    _showPubVideo(url);
+  } catch(err) {
+    progressEl.remove();
+    toast("❌ Video yüklenemedi: " + err.message);
+  }
 });
+
+EL.pubVideo.addEventListener("ended", () => EL.pubMediaWrap.classList.remove("playing"));
 
 // Tam ekran butonu
 EL.pubFullscreenBtn.addEventListener("click", () => {
@@ -2649,6 +2944,9 @@ EL.pubLikeBtn.addEventListener("click", async () => {
 
 EL.pubClose.addEventListener("click", e => {
   e.stopPropagation();
+  // Video oynatılıyorsa durdur ama src'yi temizleme (önbellek korunur)
+  if (!EL.pubVideo.paused) EL.pubVideo.pause();
+  EL.pubMediaWrap.classList.remove("playing");
   closeModal(EL.pubModal);
 });
 
@@ -2660,10 +2958,28 @@ EL.pubDeleteBtn.addEventListener("click", async () => {
   if (!currentPubItem || !currentUser || currentPubItem.uid !== currentUser.uid) {
     toast("⚠️ Bu yayını silemezsiniz"); return;
   }
-  const ok = await openConfirm({ title:"Yayın silinsin mi?", text:"Kalıcı olarak silinir.", okLabel:"Sil", icon:"🗑" });
+  const ok = await openConfirm({
+    title: "Yayın silinsin mi?",
+    text:  currentPubItem.hasChunks
+      ? "Video ve tüm parçaları kalıcı olarak silinir."
+      : "Kalıcı olarak silinir.",
+    okLabel: "Sil", icon: "🗑"
+  });
   if (!ok) return;
   try {
+    // Önce chunk'ları sil (varsa)
+    if (currentPubItem.hasChunks && currentPubItem.chunkCount > 0) {
+      toast("🗑 Video parçaları siliniyor…");
+      await deleteVideoChunks(currentPubItem.id, currentPubItem.chunkCount);
+      // Cache'den temizle
+      const cached = _chunkBlobCache.get(currentPubItem.id);
+      if (cached) { URL.revokeObjectURL(cached); _chunkBlobCache.delete(currentPubItem.id); }
+    }
+    // Ana dokümanı sil
     await deleteDoc(doc(db, "publishedPhotos", currentPubItem.id));
+    // Video durdurup modalı kapat
+    EL.pubVideo.pause(); EL.pubVideo.src = "";
+    EL.pubMediaWrap.classList.remove("playing");
     toast("🗑 Yayın silindi");
     closeModal(EL.pubModal);
   } catch(err) { toast("❌ Silme hatası: " + err.message); }
