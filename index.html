@@ -853,8 +853,159 @@
     .ptr-indicator.visible { max-height:40px; }
     .ptr-indicator .spinner-sm { width:14px; height:14px; border:2px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:spin .65s linear infinite; }
 
-    /* ─ Feed page head (CSS still needed for any remnants) ─ */
+    /* ─ Feed page head (hidden) ─ */
     .feed-page-head { display:none; }
+
+    /* ─ Gallery list-view ─ */
+    .group-grid.list-view {
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+    .group-grid.list-view .card {
+      aspect-ratio: 16 / 7;
+      border-radius: var(--r-md);
+    }
+    .group-grid.list-view .card-gradient { font-size: 12.5px; }
+
+    /* ─ Pub page toolbar ─ */
+    .pub-page-toolbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 2px 14px;
+    }
+    .pub-page-label {
+      font-size: 20px; font-weight: 800; color: var(--pink-dark);
+      letter-spacing: -.01em;
+    }
+    .pub-view-toggle {
+      display: flex; gap: 3px;
+      background: rgba(255,255,255,.55);
+      border-radius: var(--r-sm); padding: 3px;
+      border: 1.5px solid rgba(160,60,100,.1);
+    }
+    .pub-view-btn {
+      width: 32px; height: 30px; border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--text-muted);
+      transition: background .15s, color .15s;
+    }
+    .pub-view-btn.active {
+      background: #fff; color: var(--pink-mid);
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+    }
+
+    /* Published — grid view */
+    .pub-grid-view {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 3px;
+    }
+    .pub-grid-view .pub-grid-card {
+      aspect-ratio: 1;
+      overflow: hidden;
+      position: relative;
+      cursor: pointer;
+      border-radius: 0;
+      transition: transform .14s;
+    }
+    .pub-grid-view .pub-grid-card:active { transform: scale(.92); }
+    .pub-grid-view .pub-grid-card img,
+    .pub-grid-view .pub-grid-card video { width:100%; height:100%; object-fit:cover; display:block; }
+    /* corner rounding for grid groups */
+    .pub-grid-view .pub-grid-card:first-child  { border-radius: var(--r-sm) 0 0 0; }
+    .pub-grid-view .pub-grid-card:nth-child(3) { border-radius: 0 var(--r-sm) 0 0; }
+    .pub-grid-view .pub-grid-card:last-child   { border-radius: 0 0 0 var(--r-sm); }
+    .pub-grid-view .pub-grid-card:nth-last-child(1):nth-child(3n) { border-radius: 0 0 var(--r-sm) 0; }
+
+    .pub-grid-card-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(transparent 55%, rgba(0,0,0,.65));
+      pointer-events: none;
+    }
+    .pub-grid-card-meta {
+      position: absolute; bottom: 5px; left: 7px; right: 7px;
+      display: flex; align-items: center; justify-content: space-between;
+      pointer-events: none;
+    }
+    .pub-grid-card-likes {
+      color: #fff; font-size: 10px; font-weight: 700;
+      display: flex; align-items: center; gap: 3px;
+    }
+    .pub-grid-card-video {
+      background: rgba(0,0,0,.5); color: #fff;
+      font-size: 9px; font-weight: 700;
+      padding: 2px 6px; border-radius: 999px;
+      display: flex; align-items: center; gap: 2px;
+    }
+
+    /* Published — big/single card view */
+    .pub-big-view {
+      display: flex; flex-direction: column; gap: 12px;
+    }
+    .pub-big-card {
+      border-radius: var(--r-lg); overflow: hidden;
+      background: rgba(255,255,255,.78);
+      border: 1px solid rgba(255,255,255,.6);
+      box-shadow: var(--shadow-card);
+      cursor: pointer;
+      transition: transform .15s;
+    }
+    .pub-big-card:active { transform: scale(.988); }
+    .pub-big-media {
+      position: relative; aspect-ratio: 4/3; overflow: hidden;
+      background: #0a0a0a;
+    }
+    .pub-big-media img,
+    .pub-big-media video { width:100%; height:100%; object-fit:cover; display:block; }
+    .pub-big-video-badge {
+      position: absolute; top: 8px; right: 8px;
+      background: rgba(0,0,0,.55); color: #fff;
+      font-size: 9.5px; font-weight: 700;
+      padding: 3px 8px; border-radius: 999px;
+      display: flex; align-items: center; gap: 3px;
+    }
+    .pub-big-footer {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 13px 12px;
+    }
+    .pub-big-avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--pink-mid), #e07ba8);
+      background-size: cover; background-position: center;
+      color: #fff; font-size: 12px; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; border: 1.5px solid var(--pink-light);
+    }
+    .pub-big-info { flex: 1; min-width: 0; }
+    .pub-big-name { font-size: 13px; font-weight: 800; color: var(--pink-dark); }
+    .pub-big-note {
+      font-size: 12px; color: var(--text-muted);
+      overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+      margin-top: 1px;
+    }
+    .pub-big-likes {
+      display: flex; align-items: center; gap: 4px;
+      font-size: 12.5px; font-weight: 700; color: var(--text-muted);
+      flex-shrink: 0;
+    }
+
+    /* Side search */
+    .side-search-wrap {
+      padding: 10px 14px 0;
+    }
+    .side-search-inner {
+      display: flex; align-items: center; gap: 8px;
+      background: rgba(255,255,255,.72);
+      border-radius: var(--r-md);
+      padding: 10px 13px;
+      border: 1.5px solid rgba(160,60,100,.1);
+    }
+    .side-search-inner svg { color: var(--text-muted); flex-shrink: 0; }
+    .side-search-inner input {
+      flex: 1; background: none; border: none; outline: none;
+      font-size: 14px; color: var(--text-primary);
+    }
+    .side-search-inner input::placeholder { color: var(--text-muted); }
+    .side-search-clear { color: var(--text-muted); font-size: 15px; padding: 2px; }
 
     /* ═══════════════════════════════════════════
        SIDE MENU
@@ -1032,32 +1183,33 @@
       <span class="header-title">Pelus Takip</span>
     </div>
     <div class="header-right">
-      <button id="searchToggleBtn" class="header-icon-btn" type="button" aria-label="Ara">
-        <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0Z" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
-      </button>
       <button id="userBtn" class="user-btn" type="button" aria-label="Profil">?</button>
     </div>
   </header>
-
-  <!-- Search bar -->
-  <div class="search-bar" id="searchBar">
-    <div class="search-input-wrap">
-      <svg viewBox="0 0 24 24" width="16" height="16"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0Z"/></svg>
-      <input id="searchInput" type="search" placeholder="Fotoğraf veya not ara…" autocomplete="off">
-      <button id="searchClear" class="search-clear" style="display:none;" type="button">✕</button>
-    </div>
-  </div>
 
   <div class="pages">
     <!-- Galeri -->
     <div id="localPage" class="scroll-page active" role="main">
       <div id="statsArea" class="stats-banner"></div>
-      <div id="filterChips" class="filter-chips"></div>
       <div id="galleryPage" class="gallery"></div>
     </div>
 
     <!-- Yayınlar -->
     <div id="publishedPage" class="scroll-page" role="main">
+      <div class="pub-page-toolbar">
+        <span class="pub-page-label">Yayınlar</span>
+        <div class="pub-view-toggle">
+          <button class="pub-view-btn active" id="pubViewFeed" type="button" title="Feed">
+            <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M3 5h18v2H3V5zm0 6h18v2H3v-2zm0 6h18v2H3v-2z"/></svg>
+          </button>
+          <button class="pub-view-btn" id="pubViewGrid" type="button" title="Grid">
+            <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M3 3h8v8H3V3zm10 0h8v8h-8V3zM3 13h8v8H3v-8zm10 0h8v8h-8v-8z"/></svg>
+          </button>
+          <button class="pub-view-btn" id="pubViewBig" type="button" title="Büyük">
+            <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M4 4h16v16H4V4zm2 2v12h12V6H6z"/></svg>
+          </button>
+        </div>
+      </div>
       <div id="publishedGallery" class="published-gallery"></div>
     </div>
 
@@ -1147,10 +1299,19 @@
       </div>
     </div>
 
+    <!-- Arama -->
+    <div class="side-search-wrap">
+      <div class="side-search-inner">
+        <svg viewBox="0 0 24 24" width="15" height="15"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0Z"/></svg>
+        <input id="searchInput" type="search" placeholder="Not veya tarih ara…" autocomplete="off">
+        <button id="searchClear" class="side-search-clear" style="display:none;" type="button">✕</button>
+      </div>
+    </div>
+
     <div class="side-divider"></div>
 
-    <!-- Filtreler -->
-    <div class="side-section-title">Galeri Filtresi</div>
+    <!-- Galeri Filtreleri -->
+    <div class="side-section-title">Galeri</div>
     <div class="side-filters" id="sideFilters">
       <button class="side-filter-btn active" data-filter="all" type="button">
         <span class="side-filter-icon">🗂</span>
@@ -1169,29 +1330,29 @@
       </button>
       <button class="side-filter-btn" data-filter="published" type="button">
         <span class="side-filter-icon">🌐</span>
-        <span class="side-filter-label">Yayınanlar</span>
+        <span class="side-filter-label">Yayınlananlar</span>
         <span class="side-filter-count" id="sf-count-published">0</span>
       </button>
     </div>
 
     <div class="side-divider"></div>
 
-    <!-- Görünüm seçenekleri -->
-    <div class="side-section-title">Görünüm</div>
+    <!-- Galeri Görünümü -->
+    <div class="side-section-title">Galeri Görünümü</div>
     <div class="side-view-opts">
       <button class="side-view-btn active" id="sideViewGrid" type="button">
-        <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M3 3h8v8H3V3zm10 0h8v8h-8V3zM3 13h8v8H3v-8zm10 0h8v8h-8v-8z"/></svg>
+        <svg viewBox="0 0 24 24" width="17" height="17"><path fill="currentColor" d="M3 3h8v8H3V3zm10 0h8v8h-8V3zM3 13h8v8H3v-8zm10 0h8v8h-8v-8z"/></svg>
         Grid
       </button>
       <button class="side-view-btn" id="sideViewList" type="button">
-        <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <svg viewBox="0 0 24 24" width="17" height="17"><path fill="currentColor" d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
         Liste
       </button>
     </div>
 
     <div class="side-divider"></div>
 
-    <!-- Aksiyonlar -->
+    <!-- Hesap -->
     <div class="side-section-title">Hesap</div>
     <button class="side-action-btn" id="sideNotifBtn" type="button">
       <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M12 22a2 2 0 0 0 2-2h-4a2 2 0 0 0 2 2Zm6-6V11a6 6 0 0 0-5-5.91V4a1 1 0 0 0-2 0v1.09A6 6 0 0 0 6 11v5l-2 2v1h16v-1l-2-2Z"/></svg>
@@ -1416,15 +1577,17 @@ const EL = {
   loginWarning:    q("loginWarning"),
   userBtn:         q("userBtn"),
 
-  searchToggleBtn: q("searchToggleBtn"),
-  searchBar:       q("searchBar"),
+  searchBar:       null,  // side menüde artık yok, compat için null
   searchInput:     q("searchInput"),
   searchClear:     q("searchClear"),
 
   statsArea:       q("statsArea"),
-  filterChips:     q("filterChips"),
+  filterChips:     null,  // kaldırıldı
   galleryPage:     q("galleryPage"),
   publishedGallery:q("publishedGallery"),
+  pubViewFeed:     q("pubViewFeed"),
+  pubViewGrid:     q("pubViewGrid"),
+  pubViewBig:      q("pubViewBig"),
 
   menuToggleBtn:   q("menuToggleBtn"),
   sideMenuOverlay: q("sideMenuOverlay"),
@@ -1618,6 +1781,7 @@ let activePage    = "local";
 let searchQuery   = "";
 let allPhotos     = [];
 let activeFilter  = "all";   // "all" | "favorites" | "videos" | "published"
+let pubViewMode   = "feed";  // "feed" | "grid" | "big"
 
 let camStream = null, camTrack = null, camGen = 0;
 let facingMode = "environment";
@@ -1666,23 +1830,19 @@ function closeModal(el) { el.classList.remove("open"); }
 
 document.addEventListener("keydown", e => {
   if (e.key !== "Escape") return;
+  // Side menü açıksa kapat
+  if (sideMenuOpen) { closeSideMenu(); return; }
   // Açık modal varsa kapat
   if (q("fullscreenModal").classList.contains("open"))  { closeModal(EL.fullscreenModal); return; }
   if (q("confirmModal").classList.contains("open"))     { resolveConfirm(false); return; }
   if (q("pubModal").classList.contains("open"))         { closeModal(EL.pubModal); return; }
   if (q("photoModal").classList.contains("open"))       { closePhotoModal(); return; }
   if (q("settingsModal").classList.contains("open"))    { closeModal(EL.settingsModal); return; }
-  // Search bar açıksa kapat
-  if (EL.searchBar.classList.contains("visible")) {
-    EL.searchBar.classList.remove("visible");
-    EL.searchInput.value = "";
-    searchQuery = "";
-    applyFilters();
-  }
 });
 
 function pushModalState(name) { history.pushState({ modal: name }, ""); }
 window.addEventListener("popstate", () => {
+  if (sideMenuOpen) { closeSideMenu(); return; }
   if (q("fullscreenModal").classList.contains("open"))  { closeModal(EL.fullscreenModal); return; }
   if (q("confirmModal").classList.contains("open"))     { resolveConfirm(false); return; }
   if (q("pubModal").classList.contains("open"))         { closeModal(EL.pubModal); return; }
@@ -1691,23 +1851,13 @@ window.addEventListener("popstate", () => {
 });
 
 /* ═══════════════════════════════════════════
-   SEARCH
+   SEARCH — side menü içinden çalışır
 ═══════════════════════════════════════════ */
-EL.searchToggleBtn.addEventListener("click", () => {
-  const visible = EL.searchBar.classList.toggle("visible");
-  if (visible) {
-    EL.searchInput.focus();
-  } else {
-    EL.searchInput.value = "";
-    searchQuery = "";
-    EL.searchClear.style.display = "none";
-    applyFilters();
-  }
-});
-
 EL.searchInput.addEventListener("input", () => {
   searchQuery = EL.searchInput.value.trim().toLowerCase();
   EL.searchClear.style.display = searchQuery ? "block" : "none";
+  // Galeri sayfasına geç (yayınlar ekranındaysa)
+  if (activePage !== "local") showPage("local");
   applyFilters();
 });
 
@@ -1817,36 +1967,8 @@ function renderStats(photos) {
     <div class="stat-pill"><div class="stat-val">${pubs}</div><div class="stat-lbl">Yayın</div></div>`;
 }
 
-/** Filtre çiplerini sayılarla render et */
-function renderFilterChips() {
-  if (!allPhotos.length) { EL.filterChips.innerHTML = ""; return; }
-  const counts = {
-    all:        allPhotos.length,
-    favorites:  allPhotos.filter(p => p.favorite).length,
-    videos:     allPhotos.filter(p => p.isVideo).length,
-    published:  allPhotos.filter(p => p.publishedId).length,
-  };
-  const chips = [
-    { key: "all",       label: "Tümü",      icon: "🗂" },
-    { key: "favorites", label: "Favoriler", icon: "⭐" },
-    { key: "videos",    label: "Videolar",  icon: "🎬" },
-    { key: "published", label: "Yayınlar",  icon: "🌐" },
-  ];
-  EL.filterChips.innerHTML = chips.map(c => `
-    <button class="filter-chip${activeFilter === c.key ? " active" : ""}" data-filter="${c.key}" type="button">
-      <span>${c.icon}</span> ${c.label}
-      <span class="chip-count">${counts[c.key]}</span>
-    </button>`).join("");
-
-  EL.filterChips.querySelectorAll(".filter-chip").forEach(chip => {
-    chip.addEventListener("click", () => {
-      activeFilter = chip.dataset.filter;
-      renderFilterChips();
-      updateSideMenuFilters();
-      applyFilters();
-    });
-  });
-}
+/** Artık kullanılmıyor — side menu'ye taşındı */
+function renderFilterChips() { /* no-op */ }
 
 /** Search + aktif filtre çipini birleştirip galeriyi günceller */
 function applyFilters() {
@@ -1871,9 +1993,7 @@ function listenPhotos(uid) {
     snap => {
       allPhotos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       renderStats(allPhotos);
-      renderFilterChips();
       applyFilters();
-      // Side menü sayaçlarını güncelle (tanımlıysa)
       if (typeof updateSideMenuFilters === "function") updateSideMenuFilters();
       // İlk snapshot geldi — splash kapatma tetikleyicisi
       if (firstSnap) { firstSnap = false; tryHideSplash("photos"); }
@@ -2093,7 +2213,20 @@ function renderPublished() {
     setBadge(0); return;
   }
 
-  // Feed grid wrapper
+  // Yeni rozet sayısını güncelle
+  setBadge(pubCache.filter(i => (i.createdAtClient||0) > lastSeen).length);
+
+  if (pubViewMode === "grid") {
+    _renderPublishedGrid();
+  } else if (pubViewMode === "big") {
+    _renderPublishedBig();
+  } else {
+    _renderPublishedFeed();
+  }
+}
+
+/* ─── Feed görünümü ─── */
+function _renderPublishedFeed() {
   const grid = document.createElement("div");
   grid.className = "feed-grid";
 
@@ -2102,16 +2235,11 @@ function renderPublished() {
     const likes   = item.likes ? Object.keys(item.likes).length : 0;
     const liked   = currentUser && !!item.likes?.[currentUser.uid];
     const isVideo = !!item.isVideo;
+    const avatarStyle = item.photoURL ? `background-image:url(${item.photoURL});` : "";
+    const avatarText  = item.photoURL ? "" : initials(item.displayName);
 
     const card = document.createElement("div");
     card.className = "feed-card";
-
-    // Avatar
-    const avatarStyle = item.photoURL
-      ? `background-image:url(${item.photoURL});`
-      : "";
-    const avatarText = item.photoURL ? "" : initials(item.displayName);
-
     card.innerHTML = `
       <div class="feed-header">
         <div class="feed-avatar" style="${avatarStyle}">${avatarText}</div>
@@ -2122,66 +2250,112 @@ function renderPublished() {
         ${isNew ? '<div class="feed-new-dot"></div>' : ""}
       </div>
       <div class="feed-media">
-        <img src="${item.image}" loading="lazy" decoding="async" alt=""
-             style="width:100%;height:100%;object-fit:cover;display:block;">
+        <img src="${item.image}" loading="lazy" decoding="async" alt="">
         ${isVideo ? `
-          <div class="feed-play-overlay">
-            <div class="feed-play-circle">
-              <svg viewBox="0 0 24 24" width="20" height="20">
-                <path fill="#fff" d="M8 5.14v14l11-7-11-7z"/>
-              </svg>
-            </div>
-          </div>
-          <div class="feed-video-badge">
-            <svg viewBox="0 0 24 24" width="9" height="9">
-              <path fill="#fff" d="M4 6.5A2.5 2.5 0 0 1 6.5 4h7A2.5 2.5 0 0 1 16 6.5v.86l3.36-1.68A1 1 0 0 1 21 6.5v11a1 1 0 0 1-1.64.82L16 16.64V17.5A2.5 2.5 0 0 1 13.5 20h-7A2.5 2.5 0 0 1 4 17.5v-11Z"/>
-            </svg>
-            ${item.hasChunks ? "VİDEO" : "ÖNİZLEME"}
-          </div>` : ""}
+          <div class="feed-play-overlay"><div class="feed-play-circle"><svg viewBox="0 0 24 24" width="20" height="20"><path fill="#fff" d="M8 5.14v14l11-7-11-7z"/></svg></div></div>
+          <div class="feed-video-badge"><svg viewBox="0 0 24 24" width="9" height="9"><path fill="#fff" d="M4 6.5A2.5 2.5 0 0 1 6.5 4h7A2.5 2.5 0 0 1 16 6.5v.86l3.36-1.68A1 1 0 0 1 21 6.5v11a1 1 0 0 1-1.64.82L16 16.64V17.5A2.5 2.5 0 0 1 13.5 20h-7A2.5 2.5 0 0 1 4 17.5v-11Z"/> </svg>VİDEO</div>` : ""}
       </div>
       <div class="feed-footer">
         <button class="feed-like-btn${liked ? " liked" : ""}" data-id="${item.id}" type="button">
-          <span class="heart">❤️</span>
-          ${likes > 0 ? `<span>${likes}</span>` : ""}
+          <span class="heart">❤️</span>${likes > 0 ? `<span>${likes}</span>` : ""}
         </button>
-        ${item.note ? `<div class="feed-note">${item.note}</div>` : `<div class="feed-note feed-note-empty"></div>`}
+        <div class="feed-note${item.note ? "" : " feed-note-empty"}">${item.note || ""}</div>
         ${(currentUser && item.uid === currentUser.uid) ? '<div class="feed-own-tag">Sen</div>' : ''}
       </div>`;
 
-    // Feed like butonu (satır içi, modal açmadan)
-    const feedLikeBtn = card.querySelector(".feed-like-btn");
-    feedLikeBtn.addEventListener("click", async e => {
-      e.stopPropagation();
-      if (!currentUser) { toast("⚠️ Giriş yapın"); return; }
-      const id = feedLikeBtn.dataset.id;
-      const it = pubCache.find(p => p.id === id);
-      if (!it) return;
-      const wasLiked = !!it.likes?.[currentUser.uid];
-      const update = {};
-      if (wasLiked) { update[`likes.${currentUser.uid}`] = deleteField(); if (it.likes) delete it.likes[currentUser.uid]; }
-      else          { update[`likes.${currentUser.uid}`] = true; if (!it.likes) it.likes = {}; it.likes[currentUser.uid] = true; }
-      feedLikeBtn.classList.toggle("liked", !wasLiked);
-      const newLikes = it.likes ? Object.keys(it.likes).length : 0;
-      const likeSpan = feedLikeBtn.querySelector("span:last-child");
-      if (likeSpan && likeSpan !== feedLikeBtn.querySelector(".heart")) {
-        likeSpan.textContent = newLikes > 0 ? newLikes : "";
-      } else if (newLikes > 0 && !feedLikeBtn.querySelector("span:not(.heart)")) {
-        const s = document.createElement("span"); s.textContent = newLikes; feedLikeBtn.appendChild(s);
-      }
-      try { await updateDoc(doc(db, "publishedPhotos", id), update); } catch(e) { toast("❌ Hata"); }
-    });
-
-    // Kart tıklama → modal
-    card.addEventListener("click", e => {
-      if (e.target.closest(".feed-like-btn")) return;
-      openPubModal(item);
-    });
-
+    _bindFeedLike(card, item);
+    card.addEventListener("click", e => { if (!e.target.closest(".feed-like-btn")) openPubModal(item); });
     grid.appendChild(card);
   });
 
   EL.publishedGallery.appendChild(grid);
-  setBadge(pubCache.filter(i => (i.createdAtClient||0) > lastSeen).length);
+}
+
+/* ─── Grid görünümü ─── */
+function _renderPublishedGrid() {
+  const wrap = document.createElement("div");
+  wrap.className = "pub-grid-view";
+
+  pubCache.forEach(item => {
+    const isNew   = (item.createdAtClient || 0) > lastSeen;
+    const likes   = item.likes ? Object.keys(item.likes).length : 0;
+    const isVideo = !!item.isVideo;
+
+    const card = document.createElement("div");
+    card.className = "pub-grid-card";
+    card.innerHTML = `
+      <img src="${item.image}" loading="lazy" decoding="async" alt="">
+      <div class="pub-grid-card-overlay"></div>
+      <div class="pub-grid-card-meta">
+        ${likes > 0 ? `<span class="pub-grid-card-likes">❤️ ${likes}</span>` : "<span></span>"}
+        ${isVideo ? `<span class="pub-grid-card-video">▶</span>` : ""}
+      </div>
+      ${isNew ? '<div class="new-dot"></div>' : ""}`;
+
+    card.addEventListener("click", () => openPubModal(item));
+    wrap.appendChild(card);
+  });
+
+  EL.publishedGallery.appendChild(wrap);
+}
+
+/* ─── Büyük/tek kart görünümü ─── */
+function _renderPublishedBig() {
+  const wrap = document.createElement("div");
+  wrap.className = "pub-big-view";
+
+  pubCache.forEach(item => {
+    const isNew   = (item.createdAtClient || 0) > lastSeen;
+    const likes   = item.likes ? Object.keys(item.likes).length : 0;
+    const liked   = currentUser && !!item.likes?.[currentUser.uid];
+    const isVideo = !!item.isVideo;
+    const avatarStyle = item.photoURL ? `background-image:url(${item.photoURL}); background-size:cover;` : "";
+    const avatarText  = item.photoURL ? "" : initials(item.displayName);
+
+    const card = document.createElement("div");
+    card.className = "pub-big-card";
+    card.innerHTML = `
+      <div class="pub-big-media">
+        <img src="${item.image}" loading="lazy" decoding="async" alt="">
+        ${isVideo ? `<div class="pub-big-video-badge"><svg viewBox="0 0 24 24" width="9" height="9"><path fill="#fff" d="M4 6.5A2.5 2.5 0 0 1 6.5 4h7A2.5 2.5 0 0 1 16 6.5v.86l3.36-1.68A1 1 0 0 1 21 6.5v11a1 1 0 0 1-1.64.82L16 16.64V17.5A2.5 2.5 0 0 1 13.5 20h-7A2.5 2.5 0 0 1 4 17.5v-11Z"/></svg> VİDEO</div>` : ""}
+        ${isNew ? '<div class="new-dot"></div>' : ""}
+      </div>
+      <div class="pub-big-footer">
+        <div class="pub-big-avatar" style="${avatarStyle}">${avatarText}</div>
+        <div class="pub-big-info">
+          <div class="pub-big-name">${item.displayName || "Anonim"}</div>
+          <div class="pub-big-note">${item.note || (item.createdAtClient ? timeAgo(item.createdAtClient) : "")}</div>
+        </div>
+        <div class="pub-big-likes">❤️ ${likes}</div>
+      </div>`;
+
+    card.addEventListener("click", () => openPubModal(item));
+    wrap.appendChild(card);
+  });
+
+  EL.publishedGallery.appendChild(wrap);
+}
+
+/* ─── Feed inline like helper ─── */
+function _bindFeedLike(card, item) {
+  const btn = card.querySelector(".feed-like-btn");
+  if (!btn) return;
+  btn.addEventListener("click", async e => {
+    e.stopPropagation();
+    if (!currentUser) { toast("⚠️ Giriş yapın"); return; }
+    const it = pubCache.find(p => p.id === item.id);
+    if (!it) return;
+    const wasLiked = !!it.likes?.[currentUser.uid];
+    const update = {};
+    if (wasLiked) { update[`likes.${currentUser.uid}`] = deleteField(); if (it.likes) delete it.likes[currentUser.uid]; }
+    else          { update[`likes.${currentUser.uid}`] = true; if (!it.likes) it.likes = {}; it.likes[currentUser.uid] = true; }
+    btn.classList.toggle("liked", !wasLiked);
+    const newLikes = it.likes ? Object.keys(it.likes).length : 0;
+    const likeSpan = btn.querySelector("span:not(.heart)");
+    if (likeSpan) likeSpan.textContent = newLikes > 0 ? newLikes : "";
+    else if (newLikes > 0) { const s = document.createElement("span"); s.textContent = newLikes; btn.appendChild(s); }
+    try { await updateDoc(doc(db, "publishedPhotos", item.id), update); } catch { toast("❌ Hata"); }
+  });
 }
 
 /* ═══════════════════════════════════════════
@@ -3600,6 +3774,19 @@ EL.sideViewList.addEventListener("click", () => {
   applyFilters();
   closeSideMenu();
 });
+
+/* ─── Yayınlar görünüm toggle ─── */
+function setPubView(mode) {
+  pubViewMode = mode;
+  EL.pubViewFeed.classList.toggle("active", mode === "feed");
+  EL.pubViewGrid.classList.toggle("active", mode === "grid");
+  EL.pubViewBig.classList.toggle("active",  mode === "big");
+  renderPublished();
+}
+
+EL.pubViewFeed.addEventListener("click", () => setPubView("feed"));
+EL.pubViewGrid.addEventListener("click", () => setPubView("grid"));
+EL.pubViewBig.addEventListener("click",  () => setPubView("big"));
 
 // Bildirim butonu
 EL.sideNotifBtn.addEventListener("click", async () => {
