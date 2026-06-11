@@ -1020,6 +1020,124 @@
     .side-search-clear { color: var(--text-muted); font-size: 15px; padding: 2px; }
 
     /* ═══════════════════════════════════════════
+       YORUM SİSTEMİ — Pub Modal
+    ═══════════════════════════════════════════ */
+    .pub-comments-section {
+      border-top: 1px solid rgba(160,60,100,.08);
+      padding: 0 14px 14px;
+    }
+    .pub-comments-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 0 8px;
+      font-size: 13px; font-weight: 700; color: var(--text-secondary);
+    }
+    .pub-comments-count {
+      font-size: 12px; color: var(--text-muted); font-weight: 600;
+    }
+    /* Yorum listesi */
+    .pub-comments-list {
+      display: flex; flex-direction: column; gap: 10px;
+      max-height: 220px; overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(192,100,138,.2) transparent;
+      margin-bottom: 12px;
+    }
+    .pub-comments-list::-webkit-scrollbar { width: 3px; }
+    .pub-comments-list::-webkit-scrollbar-thumb { background: rgba(192,100,138,.2); border-radius: 999px; }
+    .comment-item {
+      display: flex; gap: 8px; align-items: flex-start;
+      animation: fadeIn .2s ease;
+    }
+    .comment-avatar {
+      width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--pink-mid), #e07ba8);
+      background-size: cover; background-position: center;
+      color: #fff; font-size: 10px; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      border: 1.5px solid var(--pink-light);
+      margin-top: 1px;
+    }
+    .comment-bubble {
+      flex: 1; min-width: 0;
+      background: rgba(255,255,255,.65);
+      border-radius: 0 var(--r-sm) var(--r-sm) var(--r-sm);
+      padding: 8px 10px;
+      border: 1px solid rgba(160,60,100,.08);
+    }
+    .comment-meta {
+      display: flex; align-items: baseline; gap: 6px; margin-bottom: 3px;
+    }
+    .comment-name { font-size: 12px; font-weight: 800; color: var(--pink-dark); }
+    .comment-time { font-size: 10px; color: var(--text-muted); }
+    .comment-text { font-size: 13px; color: var(--text-primary); line-height: 1.45; word-break: break-word; }
+    .comment-own .comment-bubble { background: rgba(192,100,138,.1); border-color: rgba(192,100,138,.15); }
+    /* Kendi yorumunu sil butonu */
+    .comment-delete {
+      flex-shrink: 0; margin-top: 4px; padding: 3px;
+      color: var(--text-muted); opacity: 0;
+      transition: opacity .15s;
+      font-size: 13px;
+    }
+    .comment-item:hover .comment-delete,
+    .comment-item:focus-within .comment-delete { opacity: 1; }
+    .comment-delete:active { color: var(--danger); }
+    /* Yorum yükleniyor skeleton */
+    .comment-skeleton {
+      display: flex; gap: 8px; align-items: flex-start;
+    }
+    .comment-skeleton-avatar {
+      width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+      background: linear-gradient(90deg, rgba(255,255,255,.4) 25%, rgba(255,255,255,.65) 50%, rgba(255,255,255,.4) 75%);
+      background-size: 200% 100%; animation: shimmer 1.5s infinite;
+    }
+    .comment-skeleton-lines { flex: 1; }
+    .comment-skeleton-line {
+      height: 10px; border-radius: 999px; margin-bottom: 5px;
+      background: linear-gradient(90deg, rgba(255,255,255,.4) 25%, rgba(255,255,255,.65) 50%, rgba(255,255,255,.4) 75%);
+      background-size: 200% 100%; animation: shimmer 1.5s infinite;
+    }
+    /* Yorum giriş alanı */
+    .pub-comment-input-row {
+      display: flex; gap: 8px; align-items: flex-end;
+    }
+    .comment-input-wrap {
+      flex: 1;
+      background: rgba(255,255,255,.72);
+      border-radius: var(--r-md);
+      border: 1.5px solid rgba(160,60,100,.12);
+      display: flex; align-items: center;
+      padding: 8px 12px; gap: 6px;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .comment-input-wrap:focus-within {
+      border-color: var(--pink-mid);
+      box-shadow: 0 0 0 3px rgba(192,100,138,.1);
+    }
+    .comment-input-wrap textarea {
+      flex: 1; border: none; background: none; outline: none; resize: none;
+      font-size: 13.5px; line-height: 1.4; color: var(--text-primary);
+      max-height: 80px; min-height: 20px; height: 20px;
+      font-family: inherit; padding: 0;
+    }
+    .comment-input-wrap textarea::placeholder { color: var(--text-muted); }
+    .comment-send-btn {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--pink-mid); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      box-shadow: 0 2px 8px rgba(192,100,138,.3);
+      transition: transform .1s, opacity .15s, background .15s;
+    }
+    .comment-send-btn:active { transform: scale(.88); }
+    .comment-send-btn:disabled { opacity: .4; pointer-events: none; }
+    /* Giriş yapılmamışsa yorum kutusu yerine bilgi */
+    .comment-login-hint {
+      text-align: center; padding: 10px 0 4px;
+      font-size: 12.5px; color: var(--text-muted);
+    }
+
+    /* ═══════════════════════════════════════════
        SIDE MENU
     ═══════════════════════════════════════════ */
     .side-overlay {
@@ -1587,6 +1705,28 @@
           Yayını Sil
         </button>
       </div>
+
+      <!-- Yorumlar -->
+      <div class="pub-comments-section" id="pubCommentsSection">
+        <div class="pub-comments-header">
+          <span>Yorumlar</span>
+          <span class="pub-comments-count" id="pubCommentsCount"></span>
+        </div>
+        <div class="pub-comments-list" id="pubCommentsList">
+          <!-- Yorumlar JS ile doldurulur -->
+        </div>
+        <!-- Yorum giriş alanı -->
+        <div id="pubCommentInputArea">
+          <div class="pub-comment-input-row">
+            <div class="comment-input-wrap">
+              <textarea id="pubCommentInput" placeholder="Yorum yaz…" rows="1" maxlength="300"></textarea>
+            </div>
+            <button id="pubCommentSend" class="comment-send-btn" type="button" disabled aria-label="Gönder">
+              <svg viewBox="0 0 24 24" width="16" height="16"><path fill="#fff" d="M2.01 21 23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -1765,6 +1905,11 @@ const EL = {
   pubOwnerActions: q("pubOwnerActions"),
   pubDeleteBtn:    q("pubDeleteBtn"),
   pubFullscreenBtn:q("pubFullscreenBtn"),
+  pubCommentsSection: q("pubCommentsSection"),
+  pubCommentsList:    q("pubCommentsList"),
+  pubCommentsCount:   q("pubCommentsCount"),
+  pubCommentInput:    q("pubCommentInput"),
+  pubCommentSend:     q("pubCommentSend"),
 
   settingsModal:   q("settingsModal"),
   settingsClose:   q("settingsClose"),
@@ -3064,6 +3209,21 @@ function openPubModal(item) {
   EL.pubOwnerActions.classList.toggle("show", isOwner);
   EL.pubFullscreenBtn.style.display = isVideo ? "none" : "";
 
+  // Yorum input sıfırla
+  EL.pubCommentInput.value = "";
+  EL.pubCommentInput.style.height = "20px";
+  EL.pubCommentSend.disabled = true;
+  if (!currentUser) {
+    EL.pubCommentInput.placeholder = "Yorum yazmak için giriş yapın";
+    EL.pubCommentInput.disabled = true;
+  } else {
+    EL.pubCommentInput.placeholder = "Yorum yaz…";
+    EL.pubCommentInput.disabled = false;
+  }
+
+  // Yorum dinleyicisini başlat
+  _startCommentsListener(item.id);
+
   openModal(EL.pubModal);
   pushModalState("pubModal");
 }
@@ -3195,9 +3355,9 @@ EL.pubLikeBtn.addEventListener("click", async () => {
 
 EL.pubClose.addEventListener("click", e => {
   e.stopPropagation();
-  // Video oynatılıyorsa durdur ama src'yi temizleme (önbellek korunur)
   if (!EL.pubVideo.paused) EL.pubVideo.pause();
   EL.pubMediaWrap.classList.remove("playing");
+  _stopCommentsListener();
   closeModal(EL.pubModal);
 });
 
@@ -3218,23 +3378,163 @@ EL.pubDeleteBtn.addEventListener("click", async () => {
   });
   if (!ok) return;
   try {
-    // Önce chunk'ları sil (varsa)
     if (currentPubItem.hasChunks && currentPubItem.chunkCount > 0) {
       toast("🗑 Video parçaları siliniyor…");
       await deleteVideoChunks(currentPubItem.id, currentPubItem.chunkCount);
-      // Cache'den temizle
       const cached = _chunkBlobCache.get(currentPubItem.id);
       if (cached) { URL.revokeObjectURL(cached); _chunkBlobCache.delete(currentPubItem.id); }
     }
-    // Ana dokümanı sil
     await deleteDoc(doc(db, "publishedPhotos", currentPubItem.id));
-    // Video durdurup modalı kapat
     EL.pubVideo.pause(); EL.pubVideo.src = "";
     EL.pubMediaWrap.classList.remove("playing");
+    _stopCommentsListener();
     toast("🗑 Yayın silindi");
     closeModal(EL.pubModal);
   } catch(err) { toast("❌ Silme hatası: " + err.message); }
 });
+
+/* ═══════════════════════════════════════════
+   YORUM SİSTEMİ
+   Koleksiyon: publishedPhotos/{pubId}/comments
+   Doküman: { uid, displayName, photoURL, text, createdAt }
+═══════════════════════════════════════════ */
+let _unsubComments = null;
+
+function _stopCommentsListener() {
+  if (_unsubComments) { _unsubComments(); _unsubComments = null; }
+}
+
+function _startCommentsListener(pubId) {
+  _stopCommentsListener();
+
+  // Skeleton göster
+  EL.pubCommentsList.innerHTML = `
+    <div class="comment-skeleton">
+      <div class="comment-skeleton-avatar"></div>
+      <div class="comment-skeleton-lines">
+        <div class="comment-skeleton-line" style="width:60%"></div>
+        <div class="comment-skeleton-line" style="width:85%"></div>
+      </div>
+    </div>`;
+
+  const commentsRef = collection(db, "publishedPhotos", pubId, "comments");
+  const commentsQ   = query(commentsRef, orderBy("createdAt", "asc"));
+
+  _unsubComments = onSnapshot(commentsQ, snap => {
+    const comments = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    _renderComments(pubId, comments);
+  }, err => {
+    console.error("comments:", err);
+    EL.pubCommentsList.innerHTML = `<div style="padding:8px 0;font-size:12px;color:var(--text-muted);">Yorumlar yüklenemedi</div>`;
+  });
+}
+
+function _renderComments(pubId, comments) {
+  EL.pubCommentsCount.textContent = comments.length > 0 ? `${comments.length} yorum` : "";
+
+  if (!comments.length) {
+    EL.pubCommentsList.innerHTML = `
+      <div style="padding:8px 0 4px;font-size:12.5px;color:var(--text-muted);text-align:center;">
+        Henüz yorum yok. İlk yorumu sen yaz!
+      </div>`;
+    return;
+  }
+
+  const frag = document.createDocumentFragment();
+  comments.forEach(c => {
+    const isOwn = currentUser && c.uid === currentUser.uid;
+    const item  = document.createElement("div");
+    item.className = "comment-item" + (isOwn ? " comment-own" : "");
+
+    // Avatar
+    const avatarStyle = c.photoURL ? `background-image:url(${c.photoURL}); background-size:cover;` : "";
+    const avatarText  = c.photoURL ? "" : initials(c.displayName || "?");
+
+    item.innerHTML = `
+      <div class="comment-avatar" style="${avatarStyle}">${avatarText}</div>
+      <div class="comment-bubble">
+        <div class="comment-meta">
+          <span class="comment-name">${c.displayName || "Anonim"}</span>
+          <span class="comment-time">${c.createdAt ? timeAgo(c.createdAt) : ""}</span>
+        </div>
+        <div class="comment-text">${_escapeHtml(c.text || "")}</div>
+      </div>
+      ${isOwn ? `<button class="comment-delete" data-cid="${c.id}" type="button" title="Sil">✕</button>` : ""}`;
+
+    // Kendi yorumunu sil
+    const delBtn = item.querySelector(".comment-delete");
+    if (delBtn) {
+      delBtn.addEventListener("click", async e => {
+        e.stopPropagation();
+        try {
+          await deleteDoc(doc(db, "publishedPhotos", pubId, "comments", c.id));
+        } catch { toast("❌ Yorum silinemedi"); }
+      });
+    }
+
+    frag.appendChild(item);
+  });
+
+  EL.pubCommentsList.innerHTML = "";
+  EL.pubCommentsList.appendChild(frag);
+  // En alta kaydır
+  EL.pubCommentsList.scrollTop = EL.pubCommentsList.scrollHeight;
+}
+
+function _escapeHtml(str) {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+// Yorum input auto-resize
+EL.pubCommentInput.addEventListener("input", () => {
+  const val = EL.pubCommentInput.value;
+  EL.pubCommentSend.disabled = val.trim().length === 0;
+  // Auto-resize
+  EL.pubCommentInput.style.height = "20px";
+  EL.pubCommentInput.style.height = Math.min(EL.pubCommentInput.scrollHeight, 80) + "px";
+});
+
+// Enter → gönder (Shift+Enter → satır sonu)
+EL.pubCommentInput.addEventListener("keydown", e => {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    if (!EL.pubCommentSend.disabled) _sendComment();
+  }
+});
+
+EL.pubCommentSend.addEventListener("click", _sendComment);
+
+async function _sendComment() {
+  if (!currentUser || !currentPubItem) return;
+  const text = EL.pubCommentInput.value.trim();
+  if (!text) return;
+
+  EL.pubCommentSend.disabled = true;
+  const original = EL.pubCommentInput.value;
+  EL.pubCommentInput.value = "";
+  EL.pubCommentInput.style.height = "20px";
+
+  try {
+    await addDoc(
+      collection(db, "publishedPhotos", currentPubItem.id, "comments"),
+      {
+        uid:         currentUser.uid,
+        displayName: currentUser.displayName || "Anonim",
+        photoURL:    currentUser.photoURL || null,
+        text,
+        createdAt:   Date.now(),
+      }
+    );
+  } catch(err) {
+    toast("❌ Yorum gönderilemedi");
+    EL.pubCommentInput.value = original;
+    EL.pubCommentSend.disabled = false;
+  }
+}
 
 /* ═══════════════════════════════════════════
    SETTINGS
@@ -3297,38 +3597,76 @@ async function openCamera(mode) {
   }
   await new Promise(r => setTimeout(r, 80));
   if (gen !== camGen) return;
+
+  // Zoom bar sıfırla
+  EL.camZoomBar.dataset.zoomAvailable = "0";
+  EL.camZoomBar.classList.remove("pinch-visible");
+  clearTimeout(_zoomHideTimer);
+
   try {
+    // Yüksek çözünürlük istiyoruz — cihaz desteklediği kadar versin
+    const videoConstraints = mode === "user"
+      ? {
+          facingMode: "user",
+          width:  { ideal: 1920, min: 640 },
+          height: { ideal: 1080, min: 480 },
+        }
+      : {
+          facingMode: { ideal: "environment" },
+          width:  { ideal: 1920, min: 640 },
+          height: { ideal: 1080, min: 480 },
+        };
+
     camStream = await navigator.mediaDevices.getUserMedia({
-      video: mode === "user" ? { facingMode: "user" } : { facingMode: { ideal: "environment" } },
-      audio: true
+      video: videoConstraints,
+      audio: true,
     });
+
     if (gen !== camGen) { camStream.getTracks().forEach(t => t.stop()); camStream = null; return; }
+
     EL.cameraVideo.srcObject = camStream;
     await EL.cameraVideo.play().catch(() => {});
     camTrack = camStream.getVideoTracks()[0];
     facingMode = mode;
     EL.camBadge.textContent = mode === "user" ? "Ön Kamera" : "Arka Kamera";
     EL.cameraVideo.classList.toggle("front-cam", mode === "user");
+
+    // Zoom desteği kontrolü
     try {
       const caps = camTrack?.getCapabilities?.();
-      if (caps?.zoom) {
-        zoomMin = caps.zoom.min ?? 1; zoomMax = caps.zoom.max ?? 1;
+      if (caps?.zoom && (caps.zoom.max - caps.zoom.min) > 0) {
+        zoomMin = caps.zoom.min ?? 1;
+        zoomMax = caps.zoom.max ?? 1;
         currentZoom = zoomMin;
-        EL.zoomRange.min = zoomMin; EL.zoomRange.max = zoomMax;
-        EL.zoomRange.step = caps.zoom.step ?? 0.1;
+        EL.zoomRange.min   = zoomMin;
+        EL.zoomRange.max   = zoomMax;
+        EL.zoomRange.step  = caps.zoom.step ?? 0.1;
         EL.zoomRange.value = currentZoom;
         EL.zoomLabel.textContent = currentZoom.toFixed(1) + "x";
-        // Zoom bar kullanılabilir ama pinch yapılana kadar gizli kalır
         EL.camZoomBar.dataset.zoomAvailable = "1";
-        EL.camZoomBar.classList.remove("pinch-visible");
-      } else {
-        EL.camZoomBar.dataset.zoomAvailable = "0";
-        EL.camZoomBar.classList.remove("pinch-visible");
       }
-    } catch { EL.camZoomBar.classList.remove("pinch-visible"); }
+      // Zoom yoksa bar gizli kalır (data-zoom-available="0")
+    } catch { /* zoom desteklenmiyor */ }
   } catch (err) {
-    console.error("Camera:", err);
-    toast("⚠️ Kamera açılamadı. Lütfen izin verin.");
+    // Yüksek çözünürlük başarısız olduysa varsayılanla tekrar dene
+    if (gen !== camGen) return;
+    console.warn("Yüksek çözünürlük başarısız, varsayılana dönülüyor:", err.message);
+    try {
+      camStream = await navigator.mediaDevices.getUserMedia({
+        video: mode === "user" ? { facingMode: "user" } : { facingMode: { ideal: "environment" } },
+        audio: true,
+      });
+      if (gen !== camGen) { camStream.getTracks().forEach(t => t.stop()); camStream = null; return; }
+      EL.cameraVideo.srcObject = camStream;
+      await EL.cameraVideo.play().catch(() => {});
+      camTrack = camStream.getVideoTracks()[0];
+      facingMode = mode;
+      EL.camBadge.textContent = mode === "user" ? "Ön Kamera" : "Arka Kamera";
+      EL.cameraVideo.classList.toggle("front-cam", mode === "user");
+    } catch (err2) {
+      console.error("Kamera:", err2);
+      toast("⚠️ Kamera açılamadı. Lütfen izin verin.");
+    }
   }
 }
 
@@ -3643,15 +3981,17 @@ EL.switchCamBtn.addEventListener("click", () => openCamera(facingMode === "user"
 let _zoomHideTimer = null;
 
 function showZoomBar() {
+  // Zoom desteklenmeyen cihazlarda gösterme
+  if (EL.camZoomBar.dataset.zoomAvailable !== "1") return;
   EL.camZoomBar.classList.add("pinch-visible");
   clearTimeout(_zoomHideTimer);
   _zoomHideTimer = setTimeout(() => {
     EL.camZoomBar.classList.remove("pinch-visible");
-  }, 2000);
+  }, 2200);
 }
 
 function applyZoom(z) {
-  if (!camTrack) return;
+  if (!camTrack || EL.camZoomBar.dataset.zoomAvailable !== "1") return;
   z = Math.max(zoomMin, Math.min(zoomMax, z));
   currentZoom = z;
   EL.zoomRange.value = z;
