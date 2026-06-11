@@ -564,32 +564,39 @@
 
     /* Mod Toggle (Fotoğraf / Video) */
     .cam-mode-toggle {
-      position: absolute; bottom: calc(var(--safe-bottom) + 108px);
+      position: absolute; bottom: calc(var(--safe-bottom) + 112px);
       left: 50%; transform: translateX(-50%);
       z-index: 20;
       display: flex; gap: 0;
-      background: rgba(0,0,0,.45); border-radius: 999px;
-      padding: 4px; backdrop-filter: blur(8px);
+      background: rgba(0,0,0,.5); border-radius: 999px;
+      padding: 4px; backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,.12);
     }
     .cam-mode-btn {
-      padding: 7px 20px; border-radius: 999px;
-      font-size: 12px; font-weight: 700; color: rgba(255,255,255,.65);
+      padding: 8px 22px; border-radius: 999px;
+      font-size: 12px; font-weight: 700; color: rgba(255,255,255,.6);
       transition: background .2s, color .2s;
       display: flex; align-items: center; gap: 5px;
+      white-space: nowrap;
     }
-    .cam-mode-btn.active { background: rgba(255,255,255,.2); color: #fff; }
+    .cam-mode-btn.active {
+      background: rgba(255,255,255,.22); color: #fff;
+      box-shadow: 0 1px 6px rgba(0,0,0,.2);
+    }
     .cam-mode-btn svg { flex-shrink: 0; }
+    /* Kayıt sırasında mod toggle gizlenir */
+    .cam-video-mode.recording .cam-mode-toggle { opacity: 0; pointer-events: none; }
 
     /* Capture / Record butonu */
     #captureBtn {
-      position: absolute; bottom: calc(var(--safe-bottom) + 24px);
+      position: absolute; bottom: calc(var(--safe-bottom) + 20px);
       left: 50%; transform: translateX(-50%);
-      width: 72px; height: 72px; border-radius: 50%;
+      width: 76px; height: 76px; border-radius: 50%;
       background: #fff;
-      border: 4px solid rgba(255,255,255,.5);
-      outline: 3px solid rgba(255,255,255,.3);
+      border: 5px solid rgba(255,255,255,.5);
+      outline: 3px solid rgba(255,255,255,.25);
       z-index: 20;
-      box-shadow: 0 4px 20px rgba(0,0,0,.3);
+      box-shadow: 0 4px 24px rgba(0,0,0,.35);
       transition: transform .1s;
       display: flex; align-items: center; justify-content: center;
     }
@@ -599,38 +606,35 @@
     #captureBtnInner {
       width: 28px; height: 28px; border-radius: 50%;
       background: transparent;
-      transition: background .2s, border-radius .2s, width .2s, height .2s;
+      transition: background .2s, border-radius .25s var(--ease-spring), width .2s, height .2s;
     }
     .cam-video-mode #captureBtnInner {
       background: var(--danger);
-      width: 26px; height: 26px; border-radius: 50%;
+      width: 28px; height: 28px; border-radius: 50%;
     }
     .cam-video-mode.recording #captureBtnInner {
       background: var(--danger);
-      width: 22px; height: 22px; border-radius: 6px; /* Kare = dur */
+      width: 20px; height: 20px; border-radius: 5px;
     }
 
-    /* Kayıt halkası animasyonu */
     @keyframes recRing {
-      0%   { stroke-dashoffset: 201; }
+      0%   { stroke-dashoffset: 214; }
       100% { stroke-dashoffset: 0; }
     }
     .rec-ring-svg {
-      position: absolute; top: 50%; left: 50%;
-      transform: translate(-50%,-50%) rotate(-90deg);
-      width: 84px; height: 84px; z-index: 19;
+      position: absolute;
+      bottom: calc(var(--safe-bottom) + 14px);
+      left: 50%; transform: translateX(-50%) rotate(-90deg);
+      width: 90px; height: 90px; z-index: 19;
       opacity: 0; transition: opacity .2s;
       pointer-events: none;
     }
     .cam-video-mode.recording .rec-ring-svg { opacity: 1; }
     .rec-ring-circle {
-      fill: none; stroke: var(--danger); stroke-width: 4;
+      fill: none; stroke: var(--danger); stroke-width: 5;
       stroke-linecap: round;
-      stroke-dasharray: 201;
-      stroke-dashoffset: 201;
-    }
-    .cam-video-mode.recording .rec-ring-circle {
-      animation: recRing 6s linear forwards;
+      stroke-dasharray: 214;
+      stroke-dashoffset: 214;
     }
 
     /* Kayıt süresi göstergesi */
@@ -639,16 +643,19 @@
       left: 50%; transform: translateX(-50%);
       z-index: 22; display: none;
       background: var(--danger); color: #fff;
-      padding: 5px 14px; border-radius: 999px;
-      font-size: 13px; font-weight: 800; letter-spacing: .05em;
-      align-items: center; gap: 6px;
-      box-shadow: 0 2px 10px rgba(217,79,98,.4);
+      padding: 6px 16px; border-radius: 999px;
+      font-size: 14px; font-weight: 800; letter-spacing: .06em;
+      align-items: center; gap: 7px;
+      box-shadow: 0 2px 12px rgba(217,79,98,.5);
+      white-space: nowrap;
     }
     .rec-timer.show { display: flex; }
     .rec-dot {
       width: 8px; height: 8px; border-radius: 50%;
       background: #fff; animation: pulse 1s ease-in-out infinite;
     }
+    /* Kayıt sırasında kamera badge'ini gizle */
+    .cam-video-mode.recording .cam-badge { opacity: 0; pointer-events: none; }
 
     .cam-switch-btn {
       position: absolute; top: calc(var(--safe-top) + 14px); right: 14px;
@@ -660,20 +667,22 @@
     .cam-switch-btn:active { transform: scale(.88); }
     .cam-video-mode.recording .cam-switch-btn { opacity: .3; pointer-events: none; }
 
-    /* FIX: Zoom bar başlangıçta gizli — .show class ile görünür */
+    /* Zoom bar */
     .cam-zoom-bar {
-      position: absolute; left: 14px; right: 14px;
-      bottom: calc(var(--safe-bottom) + 156px);
+      position: absolute; left: 20px; right: 20px;
+      bottom: calc(var(--safe-bottom) + 162px);
       z-index: 20;
       display: none;
       gap: 10px; align-items: center;
       padding: 10px 16px; border-radius: var(--radius-md);
-      background: rgba(255,255,255,.9);
+      background: rgba(255,255,255,.92);
+      box-shadow: 0 2px 12px rgba(0,0,0,.15);
     }
     .cam-zoom-bar.show { display: flex; }
     .cam-zoom-bar label { font-size: 12px; font-weight: 600; white-space: nowrap; color: var(--text-secondary); }
     .cam-zoom-bar input { flex: 1; accent-color: var(--pink-mid); }
-    .cam-zoom-bar span  { font-size: 12px; font-weight: 700; white-space: nowrap; color: var(--pink-dark); }
+    .cam-zoom-bar span  { font-size: 12px; font-weight: 700; white-space: nowrap; color: var(--pink-dark); min-width: 36px; text-align: right; }
+    .cam-video-mode.recording .cam-zoom-bar { opacity: 0; pointer-events: none; }
 
     /* Galeri kartında video oynatma işareti */
     .card-video-badge {
@@ -1255,7 +1264,7 @@
       <!-- Kayıt zamanlayıcısı -->
       <div class="rec-timer" id="recTimer">
         <div class="rec-dot"></div>
-        <span id="recTimerText">0:00</span>
+        <span id="recTimerText">00:00</span>
       </div>
 
       <!-- Kamera değiştir -->
@@ -1285,8 +1294,8 @@
       </div>
 
       <!-- Capture / Record butonu + halka -->
-      <svg class="rec-ring-svg" id="recRingSvg" viewBox="0 0 84 84">
-        <circle class="rec-ring-circle" id="recRingCircle" cx="42" cy="42" r="38"/>
+      <svg class="rec-ring-svg" id="recRingSvg" viewBox="0 0 90 90">
+        <circle class="rec-ring-circle" id="recRingCircle" cx="45" cy="45" r="34"/>
       </svg>
       <button id="captureBtn" type="button" aria-label="Fotoğraf Çek / Video Kaydet">
         <div id="captureBtnInner"></div>
@@ -1725,7 +1734,7 @@ let mediaRecorder = null;
 let recChunks     = [];
 let recStartTime  = 0;
 let recTimerInterval = null;
-const REC_MAX_MS  = 6000; // 6 saniye
+const REC_MAX_MS  = 30000; // 30 saniye
 
 const pm = {
   id: null, image: "", created: null, note: "",
@@ -2754,30 +2763,36 @@ function openPubModal(item) {
   currentPubItem = item;
   const isVideo = !!item.isVideo;
 
-  EL.pubImg.style.display          = "block";
+  // Her açılışta video elementini temiz başlat
+  EL.pubVideo.pause();
+  EL.pubVideo.src = "";
   EL.pubVideo.style.display        = "none";
+  EL.pubImg.style.display          = "block";
   EL.pubVideoPlayOverlay.style.display = "none";
-  EL.pubMediaBadge.style.display   = isVideo ? "flex" : "none";
   EL.pubMediaWrap.classList.remove("playing");
-  EL.pubImg.src         = item.image; // thumbnail her zaman
+
+  EL.pubMediaBadge.style.display   = isVideo ? "flex" : "none";
+  EL.pubImg.src         = item.image;
   EL.pubImg.dataset.id  = item.id;
 
-  if (isVideo && item.hasChunks) {
-    EL.pubMediaBadge.innerHTML = `
-      <svg viewBox="0 0 24 24" width="10" height="10">
-        <path fill="#fff" d="M4 6.5A2.5 2.5 0 0 1 6.5 4h7A2.5 2.5 0 0 1 16 6.5v.86l3.36-1.68A1 1 0 0 1 21 6.5v11a1 1 0 0 1-1.64.82L16 16.64V17.5A2.5 2.5 0 0 1 13.5 20h-7A2.5 2.5 0 0 1 4 17.5v-11Z"/>
-      </svg> VİDEO — oynatmak için dokun`;
-    // Önbellekte zaten varsa videoyu hemen hazırla
-    if (_chunkBlobCache.has(item.id)) {
-      _showPubVideo(_chunkBlobCache.get(item.id));
+  if (isVideo) {
+    if (item.hasChunks) {
+      EL.pubMediaBadge.innerHTML = `
+        <svg viewBox="0 0 24 24" width="10" height="10">
+          <path fill="#fff" d="M4 6.5A2.5 2.5 0 0 1 6.5 4h7A2.5 2.5 0 0 1 16 6.5v.86l3.36-1.68A1 1 0 0 1 21 6.5v11a1 1 0 0 1-1.64.82L16 16.64V17.5A2.5 2.5 0 0 1 13.5 20h-7A2.5 2.5 0 0 1 4 17.5v-11Z"/>
+        </svg>&nbsp;▶ OYNAT`;
+      // Önbellekte varsa hemen göster, yoksa play overlay göster
+      if (_chunkBlobCache.has(item.id)) {
+        _showPubVideo(_chunkBlobCache.get(item.id));
+      } else {
+        EL.pubVideoPlayOverlay.style.display = "flex";
+      }
     } else {
-      EL.pubVideoPlayOverlay.style.display = "flex";
+      EL.pubMediaBadge.innerHTML = `
+        <svg viewBox="0 0 24 24" width="10" height="10">
+          <path fill="#fff" d="M4 6.5A2.5 2.5 0 0 1 6.5 4h7A2.5 2.5 0 0 1 16 6.5v.86l3.36-1.68A1 1 0 0 1 21 6.5v11a1 1 0 0 1-1.64.82L16 16.64V17.5A2.5 2.5 0 0 1 13.5 20h-7A2.5 2.5 0 0 1 4 17.5v-11Z"/>
+        </svg>&nbsp;VİDEO`;
     }
-  } else if (isVideo) {
-    EL.pubMediaBadge.innerHTML = `
-      <svg viewBox="0 0 24 24" width="10" height="10">
-        <path fill="#fff" d="M4 6.5A2.5 2.5 0 0 1 6.5 4h7A2.5 2.5 0 0 1 16 6.5v.86l3.36-1.68A1 1 0 0 1 21 6.5v11a1 1 0 0 1-1.64.82L16 16.64V17.5A2.5 2.5 0 0 1 13.5 20h-7A2.5 2.5 0 0 1 4 17.5v-11Z"/>
-      </svg> VİDEO`;
   }
 
   // Avatar
@@ -3105,7 +3120,6 @@ function startRecording() {
   if (!camStream || mediaRecorder) return;
   recChunks = [];
 
-  // Tercih edilen codec
   const mimeType = ["video/webm;codecs=vp9,opus","video/webm;codecs=vp8,opus","video/webm","video/mp4"]
     .find(t => MediaRecorder.isTypeSupported(t)) || "";
 
@@ -3117,27 +3131,31 @@ function startRecording() {
 
   mediaRecorder.ondataavailable = e => { if (e.data?.size > 0) recChunks.push(e.data); };
   mediaRecorder.onstop = () => finalizeVideo();
-  mediaRecorder.start(100); // 100ms chunk
+  mediaRecorder.start(200);
   recStartTime = Date.now();
 
   // UI
   EL.cameraPage.classList.add("recording");
   EL.recTimer.classList.add("show");
-  // Ring animasyonunu yeniden başlat
-  EL.recRingCircle.style.animation = "none";
-  void EL.recRingCircle.offsetWidth;
-  EL.recRingCircle.style.animation = "";
 
-  // Zamanlayıcı göster
+  // Ring animasyonu: süreye göre dinamik
+  EL.recRingCircle.style.animation      = "none";
+  EL.recRingCircle.style.strokeDashoffset = "214";
+  void EL.recRingCircle.offsetWidth;
+  EL.recRingCircle.style.strokeDashoffset = "";
+  EL.recRingCircle.style.animation      = `recRing ${REC_MAX_MS / 1000}s linear forwards`;
+
+  // MM:SS zamanlayıcı
   recTimerInterval = setInterval(() => {
     const elapsed = Date.now() - recStartTime;
-    const secs = Math.floor(elapsed / 1000);
-    EL.recTimerText.textContent = `${secs}`;
-    if (elapsed >= REC_MAX_MS) stopRecording(false);
-  }, 100);
-
-  // Oto durdur
-  setTimeout(() => { if (mediaRecorder?.state === "recording") stopRecording(false); }, REC_MAX_MS);
+    const total   = REC_MAX_MS;
+    const secs    = Math.floor(elapsed / 1000);
+    const mm      = String(Math.floor(secs / 60)).padStart(2, "0");
+    const ss      = String(secs % 60).padStart(2, "0");
+    const remaining = Math.ceil((total - elapsed) / 1000);
+    EL.recTimerText.textContent = `${mm}:${ss} / ${String(Math.floor(total/1000/60)).padStart(2,"0")}:${String(Math.floor((total/1000)%60)).padStart(2,"0")}`;
+    if (elapsed >= total) stopRecording(false);
+  }, 250);
 }
 
 // ─── Video kayıt durdur ───
@@ -3145,13 +3163,21 @@ function stopRecording(cancel = false) {
   clearInterval(recTimerInterval); recTimerInterval = null;
   EL.cameraPage.classList.remove("recording");
   EL.recTimer.classList.remove("show");
-  EL.recTimerText.textContent = "0";
+  EL.recTimerText.textContent = "00:00";
+  // Ring animasyonunu durdur
+  EL.recRingCircle.style.animation = "none";
 
   if (!mediaRecorder) return;
   const mr = mediaRecorder; mediaRecorder = null;
   if (mr.state !== "inactive") {
-    if (cancel) { mr.ondataavailable = null; mr.onstop = null; mr.stop(); recChunks = []; }
-    else mr.stop(); // onstop → finalizeVideo
+    if (cancel) {
+      mr.ondataavailable = null;
+      mr.onstop = null;
+      mr.stop();
+      recChunks = [];
+    } else {
+      mr.stop(); // onstop → finalizeVideo
+    }
   }
 }
 
@@ -3207,28 +3233,42 @@ async function deleteVideoBlob(id) {
   });
 }
 
-/** Video blob'undan ilk kareyi JPEG data URL olarak çeker */
-function extractThumbnail(blob, maxPx = 480, quality = 0.72) {
+/** Video blob'undan thumbnail JPEG data URL çeker */
+function extractThumbnail(blob, maxPx = 540, quality = 0.75) {
   return new Promise(res => {
     const url = URL.createObjectURL(blob);
     const vid = document.createElement("video");
-    vid.muted = true; vid.playsInline = true; vid.preload = "metadata";
-    vid.onloadeddata = () => {
-      vid.currentTime = 0.1;
-    };
-    vid.onseeked = () => {
-      const c = document.createElement("canvas");
-      let w = vid.videoWidth, h = vid.videoHeight;
-      if (w > maxPx || h > maxPx) {
-        if (w >= h) { h = Math.round(h * maxPx / w); w = maxPx; }
-        else        { w = Math.round(w * maxPx / h); h = maxPx; }
+    vid.muted = true; vid.playsInline = true; vid.preload = "auto";
+    let settled = false;
+
+    function grabFrame() {
+      if (settled) return;
+      settled = true;
+      try {
+        const c = document.createElement("canvas");
+        let w = vid.videoWidth  || 480;
+        let h = vid.videoHeight || 480;
+        if (w > maxPx || h > maxPx) {
+          if (w >= h) { h = Math.round(h * maxPx / w); w = maxPx; }
+          else        { w = Math.round(w * maxPx / h); h = maxPx; }
+        }
+        c.width = w; c.height = h;
+        c.getContext("2d").drawImage(vid, 0, 0, w, h);
+        URL.revokeObjectURL(url);
+        vid.src = "";
+        res(c.toDataURL("image/jpeg", quality));
+      } catch(e) {
+        URL.revokeObjectURL(url);
+        res(null);
       }
-      c.width = w; c.height = h;
-      c.getContext("2d").drawImage(vid, 0, 0, w, h);
-      URL.revokeObjectURL(url);
-      res(c.toDataURL("image/jpeg", quality));
-    };
-    vid.onerror = () => { URL.revokeObjectURL(url); res(null); };
+    }
+
+    vid.onloadedmetadata = () => { vid.currentTime = 0.5; };
+    vid.onseeked         = grabFrame;
+    vid.onloadeddata     = () => { if (vid.readyState >= 2) setTimeout(grabFrame, 80); };
+    vid.onerror          = () => { URL.revokeObjectURL(url); res(null); };
+    // Fallback timeout
+    setTimeout(() => { if (!settled) grabFrame(); }, 3000);
     vid.src = url;
   });
 }
@@ -3249,18 +3289,16 @@ async function finalizeVideo() {
   if (!recChunks.length) { toast("⚠️ Video kaydedilemedi"); return; }
 
   const dur = Date.now() - recStartTime;
-  if (dur < 500) { toast("⚠️ Video çok kısa (en az 0.5 sn)"); recChunks = []; return; }
+  if (dur < 800) { toast("⚠️ Video çok kısa"); recChunks = []; return; }
 
   const mimeType = recChunks[0].type || "video/webm";
   const blob     = new Blob(recChunks, { type: mimeType });
   recChunks = [];
 
-  // Boyut kontrolü — 50 MB üstü reddet
-  if (blob.size > 50 * 1024 * 1024) {
-    toast("⚠️ Video çok büyük, daha kısa kaydedin"); return;
+  if (blob.size > 200 * 1024 * 1024) {
+    toast("⚠️ Video çok büyük (maks 200 MB)"); return;
   }
 
-  // Toast ile kullanıcıyı bilgilendir
   toast("🎬 Video işleniyor…");
 
   // 1) Thumbnail çek
@@ -3278,11 +3316,9 @@ async function finalizeVideo() {
   const blobUrl = URL.createObjectURL(blob);
   _videoBlobUrls.set(videoId, blobUrl);
 
-  stopCamera();
+  // stopCamera burada çağrılmamalı — zaten stopCamera() → stopRecording(true) zinciri var
+  // Sadece sayfayı değiştir ve modal aç
   showPage("local");
-  // pm.image = thumbnail (Firestore'a gidecek),
-  // pm.videoId = IndexedDB key,
-  // pm.videoBlobUrl = önizleme için
   setTimeout(() => openNewVideoModal(thumbnail, videoId, blobUrl), 220);
 }
 
@@ -3308,15 +3344,17 @@ function blobToDataUrl(blob) {
   });
 }
 
-// ─── Capture butonu: foto → tıkla | video → bas-bırak ───
+// ─── Capture butonu: foto → tıkla | video → bas/bırak ───
 EL.captureBtn.addEventListener("click", e => {
-  if (camMode === "photo") capture();
+  // Video modunda click event'i touchstart/mousedown ile çakışır — yoksay
+  if (camMode === "video") return;
+  capture();
 });
 
 // Touch: video modunda bas-bırak
 EL.captureBtn.addEventListener("touchstart", e => {
   if (camMode !== "video") return;
-  e.preventDefault();
+  e.preventDefault(); // click'i tetikleme
   startRecording();
 }, { passive: false });
 
@@ -3326,9 +3364,15 @@ EL.captureBtn.addEventListener("touchend", e => {
   stopRecording(false);
 }, { passive: false });
 
+EL.captureBtn.addEventListener("touchcancel", e => {
+  if (camMode !== "video") return;
+  stopRecording(false);
+}, { passive: true });
+
 // Mouse (desktop): video modunda mousedown-mouseup
 EL.captureBtn.addEventListener("mousedown", e => {
   if (camMode !== "video") return;
+  e.preventDefault();
   startRecording();
 });
 EL.captureBtn.addEventListener("mouseup", e => {
@@ -3336,7 +3380,7 @@ EL.captureBtn.addEventListener("mouseup", e => {
   stopRecording(false);
 });
 EL.captureBtn.addEventListener("mouseleave", e => {
-  if (camMode === "video" && mediaRecorder) stopRecording(false);
+  if (camMode === "video" && mediaRecorder?.state === "recording") stopRecording(false);
 });
 
 EL.switchCamBtn.addEventListener("click", () => openCamera(facingMode === "user" ? "environment" : "user"));
