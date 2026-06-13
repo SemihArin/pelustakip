@@ -7,7 +7,7 @@
   <title>Pelus Takip</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400..700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
   <style>
     /* ═══════════════════════════════════════════
        DESIGN TOKENS — Pelus Pembe Tema
@@ -77,7 +77,7 @@
       width: 100%; height: 100%;
       background: var(--bg);
       overflow: hidden;
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", system-ui, sans-serif;
+      font-family: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
       font-size: 15px;
       color: var(--text-primary);
       -webkit-tap-highlight-color: transparent;
@@ -126,62 +126,119 @@
     @keyframes petal2   { 0%{ transform:translate(0,0) rotate(0) scale(1); opacity:.7; } 100%{ transform:translate(22px,90px) rotate(-160deg) scale(.25); opacity:0; } }
     @keyframes petal3   { 0%{ transform:translate(0,0) rotate(0) scale(1); opacity:.6; } 100%{ transform:translate(-12px,75px) rotate(220deg) scale(.28); opacity:0; } }
 
+
     /* ═══════════════════════════════════════════
        SPLASH SCREEN
     ═══════════════════════════════════════════ */
     #splashScreen {
-      position:fixed; inset:0; z-index:20000;
-      background:var(--bg);
-      background-image:
-        radial-gradient(ellipse at 20% 10%, rgba(255,210,230,.85) 0%, transparent 50%), radial-gradient(ellipse at 80% 90%, rgba(200,120,160,.6) 0%, transparent 50%)  0%, transparent 55%);
-      display:flex; flex-direction:column; align-items:center; justify-content:center;
-      overflow:hidden;
+      position: fixed; inset: 0; z-index: 20000;
+      background: linear-gradient(160deg, #fce8f0 0%, #f5b8d0 55%, #ebb0ca 100%);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      overflow: hidden;
     }
-    #splashScreen.hiding { animation: splashOut .5s var(--ease-out) forwards; pointer-events:none; }
-    #splashScreen.hidden { display:none; }
+    #splashScreen.hiding { animation: splashOut .55s var(--ease-out) forwards; pointer-events: none; }
+    #splashScreen.hidden { display: none; }
 
-    .splash-ring {
-      position:absolute; border-radius:50%;
-      border: 1px solid rgba(224,64,160,.12); pointer-events:none;
-    }
-    .splash-ring-1 { width:300px; height:300px; top:50%; left:50%; transform:translate(-50%,-50%); }
-    .splash-ring-2 { width:500px; height:500px; top:50%; left:50%; transform:translate(-50%,-50%); opacity:.5; }
-    .splash-ring-3 { width:700px; height:700px; top:50%; left:50%; transform:translate(-50%,-50%); opacity:.2; }
+    .splash-ring { position: absolute; border-radius: 50%; pointer-events: none; }
+    .splash-ring-1 { width:320px; height:320px; top:50%; left:50%; transform:translate(-50%,-50%); border:1.5px solid rgba(160,60,100,.14); }
+    .splash-ring-2 { width:520px; height:520px; top:50%; left:50%; transform:translate(-50%,-50%); border:1px solid rgba(160,60,100,.08); }
+    .splash-ring-3 { width:720px; height:720px; top:50%; left:50%; transform:translate(-50%,-50%); border:1px solid rgba(160,60,100,.04); }
 
-    .splash-petal { position:absolute; font-size:20px; pointer-events:none; opacity:0; }
-    .splash-petal.p1 { top:27%; left:35%; animation: petal1 3.5s ease-in 1s infinite; }
-    .splash-petal.p2 { top:21%; left:54%; animation: petal2 3s   ease-in 1.5s infinite; }
-    .splash-petal.p3 { top:29%; left:63%; animation: petal3 4s   ease-in .8s  infinite; }
+    .splash-petal { position:absolute; font-size:22px; pointer-events:none; opacity:0; }
+    .splash-petal.p1 { top:24%; left:32%; animation: petal1 3.5s ease-in 1s infinite; }
+    .splash-petal.p2 { top:19%; left:56%; animation: petal2 3s ease-in 1.5s infinite; }
+    .splash-petal.p3 { top:31%; left:65%; animation: petal3 4s ease-in .8s infinite; }
 
-    .splash-logo {
-      display:flex; flex-direction:column; align-items:center; margin-bottom:40px; position:relative;
-    }
+    .splash-logo { display:flex; flex-direction:column; align-items:center; margin-bottom:48px; }
     .splash-paw-wrap {
-      width:100px; height:100px; border-radius:32px;
-      background: rgba(255,255,255,.75);
-      border: 1.5px solid rgba(255,255,255,.9);
-      backdrop-filter: blur(16px);
-      display:flex; align-items:center; justify-content:center; font-size:54px;
-      box-shadow: 0 8px 32px rgba(160,60,100,.2), 0 2px 8px rgba(160,60,100,.1);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 72px; line-height: 1;
       animation: pawFloat 2.6s ease-in-out infinite;
-      margin-bottom:22px;
+      margin-bottom: 14px;
+      filter: drop-shadow(0 6px 18px rgba(160,60,100,.25));
     }
     .splash-title {
-      font-family:"Caveat",cursive;
-      font-size:46px; font-weight:900;
+      font-family: "Pacifico", cursive;
+      font-size: 46px;
       color: var(--pink-dark);
-      letter-spacing:.01em;
       animation: titleIn .7s var(--spring) .2s both;
     }
     .splash-subtitle {
-      font-size:13px; font-weight:500; color:var(--text-muted); margin-top:6px;
+      font-family: "Nunito", sans-serif;
+      font-size: 13.5px; font-weight: 600;
+      color: var(--text-secondary); margin-top: 7px;
       animation: subIn .6s var(--ease-out) .45s both;
     }
-    .splash-status { display:flex; flex-direction:column; align-items:center; gap:12px; animation: subIn .5s var(--ease-out) .7s both; }
-    .splash-status-text { font-size:12.5px; color:var(--text-muted); font-weight:500; min-height:18px; transition:opacity .3s; }
-    .splash-bar-track { width:120px; height:2px; background:rgba(255,255,255,.08); border-radius:999px; overflow:hidden; }
-    .splash-bar-fill { height:100%; width:0%; background:linear-gradient(90deg,var(--accent),var(--accent2)); border-radius:999px; transition:width .4s var(--ease-out); }
-    .splash-bar-fill.indeterminate { width:40%; animation: indeterminateSlide 1.4s ease-in-out infinite; }
+
+    .splash-status {
+      display: flex; flex-direction: column; align-items: center; gap: 16px;
+      width: 230px;
+      animation: subIn .5s var(--ease-out) .6s both;
+    }
+
+    /* Adım etiketi */
+    .splash-status-text {
+      font-family: "Nunito", sans-serif;
+      font-size: 12.5px; font-weight: 700;
+      color: var(--text-secondary);
+      min-height: 18px;
+      transition: opacity .22s, transform .22s;
+      letter-spacing: .01em;
+    }
+    .splash-status-text.fade { opacity: 0; transform: translateY(5px); }
+
+    /* Bar */
+    .splash-bar-wrap { width: 100%; }
+    .splash-bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+    .splash-bar-track {
+      flex: 1; height: 6px;
+      background: rgba(160,60,100,.15);
+      border-radius: 999px; overflow: hidden;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,.07);
+    }
+    .splash-bar-fill {
+      height: 100%; width: 0%;
+      background: linear-gradient(90deg, var(--pink-mid), #e07ba8 60%, #f5a8c8 100%);
+      border-radius: 999px;
+      transition: width .6s cubic-bezier(.4,0,.2,1);
+      position: relative;
+    }
+    .splash-bar-fill::after {
+      content: ''; position: absolute;
+      top: 0; right: 0; bottom: 0; width: 28px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.5));
+      border-radius: 999px;
+    }
+    .splash-bar-fill.indeterminate { width: 42% !important; animation: indeterminateSlide 1.3s ease-in-out infinite; }
+    .splash-bar-fill.indeterminate::after { display: none; }
+    .splash-pct {
+      font-family: "Nunito", sans-serif;
+      font-size: 11px; font-weight: 800;
+      color: var(--pink-mid); min-width: 30px;
+      text-align: right; flex-shrink: 0;
+      transition: opacity .2s;
+    }
+    .splash-pct.hidden { opacity: 0; }
+
+    /* Adım göstergeleri */
+    .splash-steps { display: flex; gap: 0; align-items: center; justify-content: space-between; }
+    .splash-step {
+      display: flex; align-items: center; gap: 5px;
+      font-family: "Nunito", sans-serif;
+      font-size: 10px; font-weight: 700;
+      color: rgba(160,60,100,.3);
+      transition: color .3s;
+    }
+    .splash-step::before {
+      content: ''; width: 5px; height: 5px; border-radius: 50%;
+      background: rgba(160,60,100,.2); flex-shrink: 0;
+      transition: background .3s, transform .3s, box-shadow .3s;
+    }
+    .splash-step.active { color: var(--text-secondary); }
+    .splash-step.active::before { background: var(--pink-mid); transform: scale(1.4); box-shadow: 0 0 6px rgba(192,100,138,.4); animation: pulse .9s ease-in-out infinite; }
+    .splash-step.done { color: var(--pink-mid); }
+    .splash-step.done::before { background: var(--pink-mid); }
 
     /* Page loader */
     .page-loader { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; pointer-events:none; opacity:0; transition:opacity .25s; z-index:10; }
@@ -265,7 +322,7 @@
     .header-brand { display:flex; align-items:center; gap:8px; }
     .header-paw { font-size:22px; line-height:1; }
     .header-title {
-      font-family:"Caveat",cursive;
+      font-family:"Pacifico",cursive;
       font-size:30px; font-weight:900; line-height:1;
       color: var(--pink-dark);
     }
@@ -1337,6 +1394,228 @@
     .settings-panel.active { display: block; }
 
     /* ═══════════════════════════════════════════
+       CHAT SAYFASI
+    ═══════════════════════════════════════════ */
+
+    /* Side menü unread badge */
+    .side-unread-badge {
+      margin-left: auto; min-width: 18px; height: 18px;
+      background: var(--danger); color: #fff;
+      font-size: 10px; font-weight: 800;
+      border-radius: 999px; padding: 0 5px;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    /* Chat sayfası — scroll-page gibi ama overflow hidden (sub-view'lar yönetir) */
+    .chat-page-root {
+      display: flex; flex-direction: column;
+      padding: 0 !important;              /* scroll-page padding'ini iptal et */
+      overflow: hidden !important;        /* scroll sub-view'larda */
+    }
+
+    /* Sub-viewlar: liste ↔ konuşma arası geçiş */
+    .chat-subview {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column;
+      background: linear-gradient(170deg, #fce8f0 0%, #f5b8d0 100%);
+      transform: translateX(100%);
+      transition: transform .28s var(--ease-out);
+      pointer-events: none;
+    }
+    .chat-subview.active {
+      transform: translateX(0);
+      pointer-events: auto;
+    }
+
+    /* Liste başlık */
+    .chat-page-head {
+      padding: 16px 18px 12px;
+      border-bottom: 1.5px solid rgba(160,60,100,.1);
+      flex-shrink: 0;
+    }
+    .chat-page-title {
+      font-size: 22px; font-weight: 900; color: var(--pink-dark);
+      font-family: "Nunito", sans-serif;
+    }
+
+    /* Konuşma topbar */
+    .chat-conv-topbar {
+      display: flex; align-items: center; gap: 10px;
+      padding: calc(var(--safe-top) + 10px) 14px 10px;
+      border-bottom: 1.5px solid rgba(160,60,100,.1);
+      flex-shrink: 0;
+      background: rgba(255,255,255,.3);
+    }
+    .chat-conv-back-btn {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: rgba(255,255,255,.7);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--pink-dark); flex-shrink: 0;
+      transition: transform .1s;
+    }
+    .chat-conv-back-btn:active { transform: scale(.88); }
+
+    .chat-conv-header-info { flex: 1; min-width: 0; }
+    .chat-conv-name {
+      font-size: 15px; font-weight: 800; color: var(--pink-dark);
+    }
+    .chat-conv-status {
+      font-size: 11.5px; color: var(--text-muted);
+      display: flex; align-items: center; gap: 4px; margin-top: 1px;
+    }
+    .online-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--green); box-shadow: 0 0 5px rgba(76,175,125,.6);
+      display: inline-block; flex-shrink: 0;
+    }
+    .offline-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--text-muted); display: inline-block; flex-shrink: 0;
+    }
+
+    /* Konuşma avatar (topbar'da) */
+    .chat-conv-avatar {
+      width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--pink-mid), #e07ba8);
+      background-size: cover; background-position: center;
+      color: #fff; font-size: 13px; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      border: 2px solid rgba(255,255,255,.8);
+    }
+
+    /* Kullanıcı listesi */
+    .chat-user-list {
+      flex: 1 1 0; min-height: 0;
+      overflow-y: auto; -webkit-overflow-scrolling: touch;
+      padding: 8px 10px;
+      display: flex; flex-direction: column; gap: 2px;
+    }
+    .chat-user-item {
+      display: flex; align-items: center; gap: 11px;
+      padding: 10px 12px; border-radius: var(--r-sm);
+      cursor: pointer; transition: background .15s, transform .1s;
+      position: relative;
+    }
+    .chat-user-item:active { transform: scale(.97); background: rgba(255,255,255,.5); }
+    .chat-user-avatar {
+      width: 48px; height: 48px; border-radius: 50%; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--pink-mid), #e07ba8);
+      background-size: cover; background-position: center;
+      color: #fff; font-size: 16px; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      border: 2px solid rgba(255,255,255,.8); position: relative;
+    }
+    .chat-user-avatar::after {
+      content: ''; position: absolute; bottom: 1px; right: 1px;
+      width: 12px; height: 12px; border-radius: 50%;
+      border: 2px solid #fce8f0; background: var(--text-muted);
+    }
+    .chat-user-avatar.online::after { background: var(--green); box-shadow: 0 0 4px rgba(76,175,125,.6); }
+
+    .chat-user-info { flex: 1; min-width: 0; }
+    .chat-user-name { font-size: 14.5px; font-weight: 800; color: var(--pink-dark); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .chat-user-last { font-size: 12.5px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 2px; }
+    .chat-user-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; flex-shrink: 0; }
+    .chat-user-time { font-size: 11px; color: var(--text-muted); font-weight: 600; }
+    .chat-user-unread {
+      min-width: 20px; height: 20px; border-radius: 999px;
+      background: var(--pink-mid); color: #fff;
+      font-size: 10.5px; font-weight: 800;
+      display: flex; align-items: center; justify-content: center; padding: 0 5px;
+    }
+
+    .chat-empty {
+      display: flex; flex-direction: column; align-items: center;
+      padding: 56px 24px; gap: 10px; text-align: center;
+      color: var(--text-muted); font-size: 13.5px;
+    }
+    .chat-empty-icon { font-size: 44px; }
+
+    /* Mesaj alanı */
+    .chat-messages {
+      flex: 1 1 0; min-height: 0;
+      overflow-y: auto; overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+      padding: 12px 14px;
+      display: flex; flex-direction: column; gap: 4px;
+    }
+
+    .msg-row { display: flex; align-items: flex-end; gap: 7px; animation: fadeIn .18s ease; }
+    .msg-row.mine { flex-direction: row-reverse; }
+
+    .msg-avatar-sm {
+      width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--pink-mid), #e07ba8);
+      background-size: cover; background-position: center;
+      color: #fff; font-size: 9px; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      border: 1.5px solid var(--pink-light); align-self: flex-end;
+    }
+    .msg-row.mine .msg-avatar-sm { display: none; }
+
+    .msg-bubble {
+      max-width: 72%; padding: 9px 13px; border-radius: 18px;
+      font-size: 14px; line-height: 1.45; word-break: break-word;
+    }
+    .msg-row:not(.mine) .msg-bubble {
+      background: rgba(255,255,255,.85); color: var(--text-primary);
+      border-radius: 4px 18px 18px 18px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.07);
+    }
+    .msg-row.mine .msg-bubble {
+      background: var(--pink-mid); color: #fff;
+      border-radius: 18px 4px 18px 18px;
+      box-shadow: 0 2px 8px rgba(192,100,138,.3);
+    }
+    .msg-time { font-size: 10px; opacity: .55; margin-top: 3px; text-align: right; }
+    .msg-row:not(.mine) .msg-time { text-align: left; color: var(--text-muted); }
+    .msg-status { font-size: 11px; opacity: .7; margin-left: 3px; }
+
+    .msg-date-sep {
+      text-align: center; font-size: 11px; font-weight: 700;
+      color: var(--text-muted); padding: 8px 0 4px; letter-spacing: .02em;
+    }
+
+    /* Yazıyor */
+    .typing-row { display: flex; align-items: center; gap: 8px; padding: 4px 0; }
+    .typing-dots span {
+      width: 5px; height: 5px; border-radius: 50%;
+      background: var(--pink-mid); display: inline-block;
+      animation: pulse 1.2s ease-in-out infinite;
+    }
+    .typing-dots span:nth-child(2) { animation-delay: .2s; }
+    .typing-dots span:nth-child(3) { animation-delay: .4s; }
+
+    /* Input */
+    .chat-input-row {
+      display: flex; align-items: flex-end; gap: 8px;
+      padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px));
+      border-top: 1.5px solid rgba(160,60,100,.1);
+      background: rgba(255,255,255,.35); flex-shrink: 0;
+    }
+    .chat-input {
+      flex: 1; background: rgba(255,255,255,.85);
+      border: 1.5px solid rgba(160,60,100,.15);
+      border-radius: var(--r-md); padding: 10px 13px;
+      font-size: 14.5px; line-height: 1.4; color: var(--text-primary);
+      resize: none; max-height: 100px; min-height: 42px;
+      outline: none; transition: border-color .15s;
+      font-family: "Nunito", sans-serif;
+    }
+    .chat-input:focus { border-color: var(--pink-mid); }
+    .chat-input::placeholder { color: var(--text-muted); }
+    .chat-send-btn {
+      width: 42px; height: 42px; border-radius: 50%;
+      background: var(--pink-mid); color: #fff;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+      box-shadow: 0 3px 10px rgba(192,100,138,.35);
+      transition: transform .1s, opacity .15s;
+    }
+    .chat-send-btn:active { transform: scale(.88); }
+    .chat-send-btn:disabled { opacity: .4; pointer-events: none; }
+
+
+    /* ═══════════════════════════════════════════
        SIDE MENU
     ═══════════════════════════════════════════ */
     .side-overlay {
@@ -1536,9 +1815,6 @@
 
 <!-- ═══ SPLASH SCREEN ═══ -->
 <div id="splashScreen" aria-hidden="true">
-  <div class="splash-ring splash-ring-1"></div>
-  <div class="splash-ring splash-ring-2"></div>
-  <div class="splash-ring splash-ring-3"></div>
   <div class="splash-petal p1">🌸</div>
   <div class="splash-petal p2">🌸</div>
   <div class="splash-petal p3">🌸</div>
@@ -1550,9 +1826,20 @@
   </div>
 
   <div class="splash-status">
-    <div class="splash-status-text" id="splashStatusText">Yükleniyor…</div>
-    <div class="splash-bar-track">
-      <div class="splash-bar-fill indeterminate" id="splashBarFill"></div>
+    <div class="splash-status-text" id="splashStatusText">Başlatılıyor…</div>
+    <div class="splash-bar-wrap">
+      <div class="splash-bar-row">
+        <div class="splash-bar-track">
+          <div class="splash-bar-fill indeterminate" id="splashBarFill"></div>
+        </div>
+        <div class="splash-pct hidden" id="splashPct">0%</div>
+      </div>
+      <div class="splash-steps">
+        <div class="splash-step" id="splashStep1">Firebase</div>
+        <div class="splash-step" id="splashStep2">Hesap</div>
+        <div class="splash-step" id="splashStep3">Veriler</div>
+        <div class="splash-step" id="splashStep4">Hazır</div>
+      </div>
     </div>
   </div>
 </div>
@@ -1622,6 +1909,40 @@
         </div>
       </div>
       <div id="publishedGallery" class="published-gallery"></div>
+    </div>
+
+    <!-- Chat -->
+    <div id="chatPage" class="scroll-page chat-page-root">
+
+      <!-- Sub-view A: Konuşma Listesi -->
+      <div id="chatListView" class="chat-subview active">
+        <div class="chat-page-head">
+          <span class="chat-page-title">Mesajlar</span>
+        </div>
+        <div id="chatUserList" class="chat-user-list"></div>
+      </div>
+
+      <!-- Sub-view B: Konuşma -->
+      <div id="chatConvView" class="chat-subview">
+        <div class="chat-conv-topbar">
+          <button id="chatConvBack" class="chat-conv-back-btn" type="button">
+            <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M15.5 19 8 12l7.5-7"/></svg>
+          </button>
+          <div id="chatConvAvatar" class="chat-conv-avatar">?</div>
+          <div class="chat-conv-header-info">
+            <div id="chatConvName" class="chat-conv-name">—</div>
+            <div id="chatConvStatus" class="chat-conv-status"></div>
+          </div>
+        </div>
+        <div id="chatMessages" class="chat-messages"></div>
+        <div class="chat-input-row">
+          <textarea id="chatInput" class="chat-input" placeholder="Mesaj yaz…" rows="1" maxlength="1000"></textarea>
+          <button id="chatSendBtn" class="chat-send-btn" type="button" disabled>
+            <svg viewBox="0 0 24 24" width="18" height="18"><path fill="#fff" d="M2.01 21 23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+          </button>
+        </div>
+      </div>
+
     </div>
 
     <!-- Kamera -->
@@ -1710,6 +2031,13 @@
       </svg>
       <span class="nav-label">Kamera</span>
     </button>
+    <button id="navChat" class="nav-btn" type="button" aria-label="Mesajlar">
+      <svg viewBox="0 0 24 24" width="22" height="22">
+        <path fill="currentColor" d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2Zm-2 12H6v-2h12v2Zm0-3H6V9h12v2Zm0-3H6V6h12v2Z"/>
+      </svg>
+      <span class="nav-label">Mesajlar</span>
+      <span id="navChatBadge" class="nav-badge" style="display:none;"></span>
+    </button>
   </nav>
 </div>
 
@@ -1782,6 +2110,11 @@
 
     <!-- Hesap -->
     <div class="side-section-title">Hesap</div>
+    <button class="side-action-btn" id="sideChatBtn" type="button">
+      <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2ZM6 9h12v2H6V9Zm8 5H6v-2h8v2Zm4-6H6V6h12v2Z"/></svg>
+      Mesajlar
+      <span id="chatUnreadBadge" class="side-unread-badge" style="display:none;"></span>
+    </button>
     <button class="side-action-btn" id="sideNotifBtn" type="button">
       <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M12 22a2 2 0 0 0 2-2h-4a2 2 0 0 0 2 2Zm6-6V11a6 6 0 0 0-5-5.91V4a1 1 0 0 0-2 0v1.09A6 6 0 0 0 6 11v5l-2 2v1h16v-1l-2-2Z"/></svg>
       <span id="sideNotifLabel">Bildirimleri Etkinleştir</span>
@@ -2035,6 +2368,10 @@ import {
 import {
   getMessaging, getToken, onMessage
 } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-messaging.js";
+import {
+  getDatabase, ref as rtRef, set, get, push, onValue, off,
+  serverTimestamp as rtServerTs, onDisconnect, update as rtUpdate
+} from "https://www.gstatic.com/firebasejs/10.12.4/firebase-database.js";
 
 /* ─── Firebase ─── */
 const FB = initializeApp({
@@ -2043,9 +2380,11 @@ const FB = initializeApp({
   projectId:         "pelustakip-3be95",
   storageBucket:     "pelustakip-3be95.firebasestorage.app",
   messagingSenderId: "1080638886274",
-  appId:             "1:1080638886274:web:ccc5ca53699e4d0fa53f9b"
+  appId:             "1:1080638886274:web:ccc5ca53699e4d0fa53f9b",
+  databaseURL:       "https://pelustakip-3be95-default-rtdb.europe-west1.firebasedatabase.app"
 });
 const db       = getFirestore(FB);
+const rtdb     = getDatabase(FB);
 const auth     = getAuth(FB);
 const provider = new GoogleAuthProvider();
 
@@ -2103,6 +2442,23 @@ const EL = {
   sideNotifBtn:    q("sideNotifBtn"),
   sideNotifLabel:  q("sideNotifLabel"),
   sideLogoutBtn:   q("sideLogoutBtn"),
+
+  // Chat (sayfa bazlı)
+  chatPage:        q("chatPage"),
+  chatListView:    q("chatListView"),
+  chatConvView:    q("chatConvView"),
+  chatUserList:    q("chatUserList"),
+  chatMessages:    q("chatMessages"),
+  chatInput:       q("chatInput"),
+  chatSendBtn:     q("chatSendBtn"),
+  chatConvBack:    q("chatConvBack"),
+  chatConvAvatar:  q("chatConvAvatar"),
+  chatConvName:    q("chatConvName"),
+  chatConvStatus:  q("chatConvStatus"),
+  navChat:         q("navChat"),
+  navChatBadge:    q("navChatBadge"),
+  sideChatBtn:     q("sideChatBtn"),
+  chatUnreadBadge: q("chatUnreadBadge"),
 
   cameraPage:      q("cameraPage"),
   cameraVideo:     q("cameraVideo"),
@@ -2200,65 +2556,88 @@ const EL = {
   splashScreen:    q("splashScreen"),
   splashStatusText:q("splashStatusText"),
   splashBarFill:   q("splashBarFill"),
+  splashPct:       q("splashPct"),
+  splashStep1:     q("splashStep1"),
+  splashStep2:     q("splashStep2"),
+  splashStep3:     q("splashStep3"),
+  splashStep4:     q("splashStep4"),
+  splashStep1:     q("splashStep1"),
+  splashStep2:     q("splashStep2"),
+  splashStep3:     q("splashStep3"),
+  splashStep4:     q("splashStep4"),
 };
 
 /* ═══════════════════════════════════════════
-   SPLASH SCREEN
+   SPLASH SCREEN — Gerçek adım bazlı progress
+   Adımlar:
+     1. Sayfa yüklendi        →  15%
+     2. Auth tamamlandı       →  40%
+     3. Fotoğraflar yüklendi  →  75%
+     4. Yayınlar yüklendi     → 100%
 ═══════════════════════════════════════════ */
-const SPLASH_MSGS = [
-  "Firebase bağlanıyor…",
-  "Hesap doğrulanıyor…",
-  "Fotoğraflar yükleniyor…",
-  "Hazırlanıyor…",
+
+const SPLASH_STEPS = [
+  { pct: 15,  msg: "Uygulama başlatılıyor…",  step: 1 },
+  { pct: 40,  msg: "Hesap doğrulanıyor…",     step: 2 },
+  { pct: 75,  msg: "Fotoğraflar yükleniyor…", step: 3 },
+  { pct: 100, msg: "Her şey hazır! 🐾",       step: 4 },
 ];
-let splashMsgTimer = null;
-let splashMsgIndex = 0;
 
 function splashSetStatus(msg) {
   if (!EL.splashStatusText) return;
-  EL.splashStatusText.style.opacity = "0";
+  EL.splashStatusText.classList.add("fade");
   setTimeout(() => {
     EL.splashStatusText.textContent = msg;
-    EL.splashStatusText.style.opacity = "1";
-  }, 180);
-}
-
-function splashStartCycling() {
-  splashMsgIndex = 0;
-  splashSetStatus(SPLASH_MSGS[0]);
-  splashMsgTimer = setInterval(() => {
-    splashMsgIndex = (splashMsgIndex + 1) % SPLASH_MSGS.length;
-    splashSetStatus(SPLASH_MSGS[splashMsgIndex]);
-  }, 1800);
+    EL.splashStatusText.classList.remove("fade");
+  }, 160);
 }
 
 function splashSetProgress(pct) {
-  // pct: 0-100; null → indeterminate
   if (!EL.splashBarFill) return;
+
   if (pct === null) {
     EL.splashBarFill.classList.add("indeterminate");
     EL.splashBarFill.style.width = "";
-  } else {
-    EL.splashBarFill.classList.remove("indeterminate");
-    EL.splashBarFill.style.width = pct + "%";
+    if (EL.splashPct) EL.splashPct.classList.add("hidden");
+    [1,2,3,4].forEach(i => { const el = EL[`splashStep${i}`]; if (el) el.className = "splash-step"; });
+    return;
   }
+
+  EL.splashBarFill.classList.remove("indeterminate");
+  EL.splashBarFill.style.width = pct + "%";
+
+  // Yüzde etiketi
+  if (EL.splashPct) {
+    EL.splashPct.textContent = Math.round(pct) + "%";
+    EL.splashPct.classList.toggle("hidden", pct <= 5);
+  }
+
+  // Adım noktaları: eşik [15, 45, 75, 100]
+  const thresholds = [15, 45, 75, 100];
+  thresholds.forEach((threshold, i) => {
+    const el = EL[`splashStep${i+1}`];
+    if (!el) return;
+    const prev = thresholds[i-1] || 0;
+    if (pct >= threshold)     el.className = "splash-step done";
+    else if (pct > prev)      el.className = "splash-step active";
+    else                      el.className = "splash-step";
+  });
 }
 
 function hideSplash() {
-  clearInterval(splashMsgTimer);
-  splashSetStatus("Hazır!");
+  splashSetStatus("Her şey hazır! 🐾");
   splashSetProgress(100);
   setTimeout(() => {
     EL.splashScreen.classList.add("hiding");
     EL.splashScreen.addEventListener("animationend", () => {
       EL.splashScreen.classList.add("hidden");
     }, { once: true });
-  }, 380);
+  }, 500);
 }
 
-// Splash başlatılıyor — sayfa açıldığında hemen
-splashStartCycling();
-splashSetProgress(null); // indeterminate başlangıç
+// Başlangıç: sayfa yüklendi — adım 1
+splashSetProgress(15);
+splashSetStatus("Uygulama başlatılıyor…");
 
 /* ═══════════════════════════════════════════
    PAGE LOADER (ara yüklemeler için inline overlay)
@@ -2495,21 +2874,44 @@ function applyFilters() {
 ═══════════════════════════════════════════ */
 function listenPhotos(uid) {
   unsubPhotos?.(); unsubPhotos = null;
-  EL.galleryPage.innerHTML = `<div class="skeleton-grid">${Array(6).fill('<div class="skeleton-card"></div>').join("")}</div>`;
+  EL.galleryPage.innerHTML = `<div class="skeleton-grid">${Array(9).fill('<div class="skeleton-card"></div>').join("")}</div>`;
   splashSetStatus("Fotoğraflar yükleniyor…");
-  const q2 = query(collection(db, "users", uid, "photos"), orderBy("createdAtClient", "desc"));
+  splashSetProgress(65);
+
+  const col = collection(db, "users", uid, "photos");
+
+  // createdAtClient ile sıralı sorgu — index yoksa basit sorguya düş
+  const q2 = query(col, orderBy("createdAtClient", "desc"));
   let firstSnap = true;
-  unsubPhotos = onSnapshot(q2,
-    snap => {
-      allPhotos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      renderStats(allPhotos);
-      applyFilters();
-      if (typeof updateSideMenuFilters === "function") updateSideMenuFilters();
-      // İlk snapshot geldi — splash kapatma tetikleyicisi
-      if (firstSnap) { firstSnap = false; tryHideSplash("photos"); }
-    },
-    err => { console.error("photos:", err); tryHideSplash(); }
-  );
+
+  const handleSnap = snap => {
+    allPhotos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderStats(allPhotos);
+    applyFilters();
+    if (typeof updateSideMenuFilters === "function") updateSideMenuFilters();
+    if (firstSnap) {
+      firstSnap = false;
+      splashSetProgress(85);
+      splashSetStatus("Neredeyse hazır…");
+      tryHideSplash("photos");
+    }
+  };
+
+  const handleErr = err => {
+    // Index yoksa veya alan eksikse sırasız çek
+    if (err.code === "failed-precondition" || err.code === "unimplemented" || err.message?.includes("index")) {
+      console.warn("listenPhotos: orderBy başarısız, sırasız dinleniyor:", err.message);
+      unsubPhotos = onSnapshot(col, handleSnap, e2 => {
+        console.error("photos fallback:", e2);
+        tryHideSplash();
+      });
+    } else {
+      console.error("photos:", err);
+      tryHideSplash();
+    }
+  };
+
+  unsubPhotos = onSnapshot(q2, handleSnap, handleErr);
 }
 
 function listenPublished() {
@@ -2624,8 +3026,10 @@ function renderGallery(photos) {
     return;
   }
   const groups = new Map();
+  // createdAtClient yoksa createdAt veya şimdiki zamanı kullan
   photos.forEach(p => {
-    const k = dtKey(p.createdAtClient || Date.now());
+    const ts = p.createdAtClient || p.createdAt || Date.now();
+    const k  = dtKey(ts);
     (groups.get(k) || groups.set(k, []).get(k)).push(p);
   });
   const frag = document.createDocumentFragment();
@@ -4165,17 +4569,21 @@ function showPage(page) {
   EL.localPage.classList.toggle("active",     page === "local");
   EL.publishedPage.classList.toggle("active", page === "published");
   EL.cameraPage.classList.toggle("active",    page === "camera");
+  EL.chatPage.classList.toggle("active",      page === "chat");
   EL.navLocal.classList.toggle("active",      page === "local");
   EL.navPublished.classList.toggle("active",  page === "published");
   EL.navCamera.classList.toggle("active",     page === "camera");
+  EL.navChat.classList.toggle("active",       page === "chat");
 
   if (page === "camera")    openCamera("environment");
   if (page === "published") markSeen();
+  if (page === "chat")      { renderChatList(); }
 }
 
 EL.navLocal.addEventListener("click",     () => showPage("local"));
 EL.navPublished.addEventListener("click", () => showPage("published"));
 EL.navCamera.addEventListener("click",    () => showPage("camera"));
+EL.navChat.addEventListener("click",      () => showPage("chat"));
 
 /* ═══════════════════════════════════════════
    CAMERA — Fotoğraf + Video (maks 6 sn)
@@ -4925,6 +5333,421 @@ document.addEventListener("keydown", e => {
 }, { capture: true });
 
 /* ═══════════════════════════════════════════
+   CHAT SİSTEMİ — Firebase RTDB
+═══════════════════════════════════════════ */
+let chatKnownUsers = [], chatActiveUid = null, chatActiveChatId = null;
+let _chatMsgListener = null, _chatListListeners = [], _presenceListeners = {}, _totalChatUnread = 0;
+
+function chatId(a,b){ return [a,b].sort().join("_"); }
+
+function setupPresence(uid, displayName, photoURL) {
+  if (!rtdb) { console.error("[Presence] RTDB başlatılmadı"); return; }
+
+  const pr = rtRef(rtdb, `presence/${uid}`);
+  const onlineData  = { online: true,  lastSeen: Date.now(), displayName: displayName||"", photoURL: photoURL||null };
+  const offlineData = { online: false, lastSeen: Date.now(), displayName: displayName||"", photoURL: photoURL||null };
+
+  // Test: önce RTDB'ye yazabilir miyiz?
+  set(pr, onlineData)
+    .then(() => console.log("[Presence] ✅ presence yazıldı"))
+    .catch(e  => console.error("[Presence] ❌ set hatası:", e.code, e.message,
+      "→ Firebase Console'da RTDB Rules'ı kontrol et: .write: 'auth != null'"));
+
+  // Bağlantı kopunca offline yap
+  onDisconnect(pr).set(offlineData)
+    .catch(e => console.error("[Presence] onDisconnect hata:", e.message));
+
+  // RTDB bağlantı durumu
+  const connRef = rtRef(rtdb, ".info/connected");
+  onValue(connRef, snap => {
+    const connected = !!snap.val();
+    console.log("[RTDB] Bağlantı:", connected ? "✅ Bağlı" : "❌ Yok");
+    if (connected) {
+      // Yeniden bağlanınca online yap
+      set(pr, { ...onlineData, lastSeen: Date.now() }).catch(() => {});
+      onDisconnect(pr).set({ ...offlineData, lastSeen: Date.now() }).catch(() => {});
+    }
+  });
+
+  // Sekme değişimi
+  document.addEventListener("visibilitychange", () => {
+    if (!currentUser || currentUser.uid !== uid) return;
+    rtUpdate(pr, { online: !document.hidden, lastSeen: Date.now() })
+      .catch(e => console.error("[Presence] visibility update hata:", e.message));
+  });
+
+  console.log("[Presence] kuruldu →", uid.slice(0,8));
+}
+
+/** Kullanıcının aktif konuşmasını RTDB'ye yaz — bildirim throttle için */
+function setActiveChat(chatIdStr) {
+  if (!currentUser || !rtdb) return;
+  const pr = rtRef(rtdb, `presence/${currentUser.uid}`);
+  rtUpdate(pr, { activeChat: chatIdStr || null }).catch(() => {});
+}
+
+async function loadChatUsers() {
+  if (!currentUser) return;
+  const snap = await getDocs(collection(db,"publishedPhotos")).catch(()=>null);
+  if (!snap) return;
+  const seen = new Set([currentUser.uid]);
+  chatKnownUsers = [];
+  snap.forEach(d => {
+    const uid = d.data().uid;
+    if (!uid || seen.has(uid)) return;
+    seen.add(uid);
+    chatKnownUsers.push({ uid, displayName: d.data().displayName||"Kullanıcı", photoURL: d.data().photoURL||null });
+  });
+}
+
+async function renderChatList() {
+  EL.chatUserList.innerHTML = `<div class="chat-empty"><span class="chat-empty-icon">⏳</span><span>Yükleniyor…</span></div>`;
+  await loadChatUsers();
+  if (!chatKnownUsers.length) {
+    EL.chatUserList.innerHTML = `<div class="chat-empty"><span class="chat-empty-icon">💬</span><span>Yayınlar bölümünden kullanıcılar görünür olacak.</span></div>`;
+    return;
+  }
+  const items = await Promise.all(chatKnownUsers.map(async u => {
+    const cid = chatId(currentUser.uid, u.uid);
+    const s   = await get(rtRef(rtdb,`chats/${cid}/meta`)).catch(()=>null);
+    const m   = s?.val() || {};
+    return { ...u, lastMsg:m.lastMsg||"", lastTs:m.lastTs||0, unread:m[`unread_${currentUser.uid}`]||0, cid };
+  }));
+  items.sort((a,b) => b.lastTs - a.lastTs);
+  _totalChatUnread = items.reduce((s,i) => s+i.unread, 0);
+  updateChatBadge();
+  _stopChatListeners();
+  const frag = document.createDocumentFragment();
+  items.forEach(u => {
+    const el = document.createElement("div");
+    el.className = "chat-user-item";
+    const av = u.photoURL ? `style="background-image:url(${u.photoURL});"` : "";
+    const at = u.photoURL ? "" : initials(u.displayName);
+    el.innerHTML = `
+      <div class="chat-user-avatar" id="cua-${u.uid}" ${av}>${at}</div>
+      <div class="chat-user-info">
+        <div class="chat-user-name">${_esc(u.displayName)}</div>
+        <div class="chat-user-last" id="cul-${u.uid}">${u.lastMsg ? _esc(u.lastMsg) : "<em style='color:var(--text-muted)'>Mesaj yok</em>"}</div>
+      </div>
+      <div class="chat-user-meta">
+        <div class="chat-user-time" id="cut-${u.uid}">${u.lastTs ? _chatTimeAgo(u.lastTs) : ""}</div>
+        <div id="cur-${u.uid}" class="chat-user-unread" style="display:${u.unread>0?"flex":"none"}">${u.unread}</div>
+      </div>`;
+    el.addEventListener("click", () => openChatConv(u));
+    frag.appendChild(el);
+    _watchPresenceInList(u.uid);
+    _watchChatMeta(u.cid, u.uid);
+  });
+  EL.chatUserList.innerHTML = "";
+  EL.chatUserList.appendChild(frag);
+}
+
+function _watchPresenceInList(uid) {
+  if (_presenceListeners[uid]) return;
+  const ref = rtRef(rtdb,`presence/${uid}`);
+  onValue(ref, snap => {
+    const d  = snap.val()||{};
+    const el = document.getElementById(`cua-${uid}`);
+    if (el) el.classList.toggle("online", !!d.online);
+    if (chatActiveUid === uid) _updateConvStatus(d);
+  });
+  _presenceListeners[uid] = () => off(ref);
+}
+
+function _watchChatMeta(cid, partnerUid) {
+  const ref = rtRef(rtdb,`chats/${cid}/meta`);
+  onValue(ref, snap => {
+    const m = snap.val()||{};
+    const unread = m[`unread_${currentUser.uid}`]||0;
+    const le = document.getElementById(`cul-${partnerUid}`);
+    const te = document.getElementById(`cut-${partnerUid}`);
+    const ue = document.getElementById(`cur-${partnerUid}`);
+    if (le) le.innerHTML = m.lastMsg ? _esc(m.lastMsg) : "<em style='color:var(--text-muted)'>Mesaj yok</em>";
+    if (te && m.lastTs) te.textContent = _chatTimeAgo(m.lastTs);
+    if (ue) { ue.textContent = unread; ue.style.display = unread>0?"flex":"none"; }
+  });
+  _chatListListeners.push(() => off(ref));
+}
+
+function _stopChatListeners() {
+  Object.values(_presenceListeners).forEach(fn=>fn());
+  _presenceListeners = {};
+  _chatListListeners.forEach(fn=>fn());
+  _chatListListeners = [];
+}
+
+function _updateConvStatus(d) {
+  if (!d) return;
+  EL.chatConvStatus.innerHTML = d.online
+    ? `<span class="online-dot"></span> Çevrimiçi`
+    : `<span class="offline-dot"></span> ${d.lastSeen ? "Son görülme: "+_chatTimeAgo(d.lastSeen) : "Çevrimdışı"}`;
+}
+
+function _startMsgListener() {
+  // Önceki listener'ı temizle
+  if (_chatMsgListener) { try { _chatMsgListener(); } catch(e){} _chatMsgListener = null; }
+
+  if (!chatActiveChatId) { console.error("[Chat] chatActiveChatId yok"); return; }
+  if (!currentUser)      { console.error("[Chat] currentUser yok"); return; }
+
+  const msgsRef = rtRef(rtdb, `chats/${chatActiveChatId}/messages`);
+  console.log("[Chat] Dinleniyor:", `chats/${chatActiveChatId}/messages`);
+
+  // Loading göster
+  EL.chatMessages.innerHTML = `<div style="text-align:center;padding:32px;color:var(--text-muted);font-size:13px;">Yükleniyor…</div>`;
+
+  const unsubscribe = onValue(msgsRef, snap => {
+    console.log("[Chat] Snapshot geldi, exists:", snap.exists(), "size:", snap.size);
+
+    // Tüm mesajları topla
+    const msgs = [];
+    if (snap.exists()) {
+      snap.forEach(child => {
+        const val = child.val();
+        if (val && val.ts) msgs.push({ id: child.key, ...val });
+      });
+    }
+    console.log("[Chat] Mesaj sayısı:", msgs.length);
+
+    // Zaman sırasına göre sırala (RTDB genelde sıralı ama garantilemek için)
+    msgs.sort((a, b) => a.ts - b.ts);
+
+    // DOM'u temizle ve yeniden çiz
+    EL.chatMessages.innerHTML = "";
+    let lastDate = "";
+
+    if (msgs.length === 0) {
+      EL.chatMessages.innerHTML = `<div style="text-align:center;padding:40px 20px;color:var(--text-muted);font-size:13px;">
+        Henüz mesaj yok.<br><span style="font-size:11px">İlk mesajı gönder 👋</span></div>`;
+      return;
+    }
+
+    const frag = document.createDocumentFragment();
+
+    msgs.forEach(msg => {
+      // Tarih ayracı
+      const d   = new Date(msg.ts);
+      const ds  = d.toLocaleDateString("tr-TR", { day:"numeric", month:"long", year:"numeric" });
+      if (ds !== lastDate) {
+        const sep = document.createElement("div");
+        sep.className = "msg-date-sep";
+        sep.textContent = ds;
+        frag.appendChild(sep);
+        lastDate = ds;
+      }
+
+      const mine = msg.from === currentUser.uid;
+      const row  = document.createElement("div");
+      row.className = "msg-row" + (mine ? " mine" : "");
+
+      // Karşı taraf avatarı
+      if (!mine) {
+        const av  = document.createElement("div");
+        av.className = "msg-avatar-sm";
+        const u   = chatKnownUsers.find(u => u.uid === msg.from);
+        if (u?.photoURL) {
+          av.style.backgroundImage = `url(${u.photoURL})`;
+        } else {
+          av.textContent = initials(u?.displayName || "?");
+        }
+        row.appendChild(av);
+      }
+
+      // Balon
+      const bubble = document.createElement("div");
+      bubble.className = "msg-bubble";
+      const timeStr = d.toLocaleTimeString("tr-TR", { hour:"2-digit", minute:"2-digit" });
+      const statusHtml = mine
+        ? `<span class="msg-status">${msg.read ? " ✓✓" : " ✓"}</span>`
+        : "";
+      bubble.innerHTML =
+        `<div>${_esc(msg.text || "").replace(/\n/g, "<br>")}</div>` +
+        `<div class="msg-time">${timeStr}${statusHtml}</div>`;
+      row.appendChild(bubble);
+      frag.appendChild(row);
+    });
+
+    EL.chatMessages.appendChild(frag);
+
+    // Scroll en alta
+    requestAnimationFrame(() => {
+      EL.chatMessages.scrollTop = EL.chatMessages.scrollHeight;
+    });
+
+    // Okundu işaretle
+    _markChatRead();
+
+  }, err => {
+    console.error("[Chat] onValue hatası:", err.code, err.message);
+    EL.chatMessages.innerHTML = `<div style="text-align:center;padding:32px;color:var(--danger);font-size:13px;">
+      ❌ Mesajlar yüklenemedi<br><span style="font-size:11px;color:var(--text-muted);">${err.message}</span>
+      <br><button onclick="_startMsgListener()" style="margin-top:12px;padding:8px 16px;border-radius:8px;background:var(--pink-mid);color:#fff;font-weight:700;">Tekrar Dene</button>
+    </div>`;
+  });
+
+  _chatMsgListener = unsubscribe;
+}
+
+async function sendChatMsg() {
+  const text = EL.chatInput.value.trim();
+  if (!text || !chatActiveChatId || !currentUser) return;
+
+  EL.chatInput.value = "";
+  EL.chatInput.style.height = "42px";
+  EL.chatSendBtn.disabled = true;
+
+  const ts = Date.now();
+  try {
+    const msgRef = await push(rtRef(rtdb, `chats/${chatActiveChatId}/messages`), {
+      from: currentUser.uid, text, ts, read: false
+    });
+    console.log("[Chat] Mesaj gönderildi:", msgRef.key);
+
+    const metaRef    = rtRef(rtdb, `chats/${chatActiveChatId}/meta`);
+    const metaSnap   = await get(metaRef).catch(() => null);
+    const prevUnread = (metaSnap?.val() || {})[`unread_${chatActiveUid}`] || 0;
+
+    await rtUpdate(metaRef, {
+      users:   [currentUser.uid, chatActiveUid],
+      lastMsg: text.slice(0, 80),
+      lastTs:  ts,
+      [`unread_${chatActiveUid}`]:   prevUnread + 1,
+      [`unread_${currentUser.uid}`]: 0,
+    });
+
+    // ── Akıllı bildirim gönderimi ──
+    // WhatsApp/Telegram mantığı:
+    //   • Karşı taraf bu konuşmada aktifse → bildirim gönderme (onlar zaten görüyor)
+    //   • Karşı taraf uygulamadaysa ama başka sayfadaysa → bildirim gönder
+    //   • Karşı taraf çevrimdışıysa → bildirim gönder
+    //   • Kısa süre içinde çok mesaj gidiyorsa → sadece 1 bildirim (throttle 30s)
+    const presSnap    = await get(rtRef(rtdb, `presence/${chatActiveUid}`)).catch(() => null);
+    const presData    = presSnap?.val() || {};
+    const theirOnline = !!presData.online;
+    // Karşı tarafın aktif konuşması aynı chat mi?
+    const theirActive = (presData.activeChat === chatActiveChatId);
+
+    // Bildirim gönder — karşı taraf bu konuşmada değilse
+    if (!theirActive) {
+      // Throttle: aynı konuşmada son 30 saniyede bildirim gittiyse gönderme
+      const throttleKey = `lastNotif_${chatActiveChatId}`;
+      const lastNotifTs  = (metaSnap?.val() || {})[throttleKey] || 0;
+      const shouldNotify = (ts - lastNotifTs) > 30_000;
+
+      if (shouldNotify) {
+        // lastNotif zamanını güncelle
+        rtUpdate(metaRef, { [throttleKey]: ts }).catch(() => {});
+        // Firestore appNotifications → sunucu push'u tetikler
+        addDoc(collection(db, "users", chatActiveUid, "appNotifications"), {
+          type:      "message",
+          fromUid:   currentUser.uid,
+          fromName:  currentUser.displayName || "Biri",
+          fromPhoto: currentUser.photoURL    || null,
+          chatId:    chatActiveChatId,
+          text:      text.slice(0, 80),
+          createdAt: ts,
+          read:      false,
+        }).catch(() => {});
+      }
+    }
+  } catch(e) {
+    console.error("[Chat] Gönderim hatası:", e.code, e.message);
+    toast("❌ Mesaj gönderilemedi");
+    EL.chatInput.value = text;
+    EL.chatSendBtn.disabled = false;
+  }
+}
+
+async function _markChatRead() {
+  if (!chatActiveChatId||!currentUser) return;
+  try {
+    await rtUpdate(rtRef(rtdb,`chats/${chatActiveChatId}/meta`), { [`unread_${currentUser.uid}`]:0 });
+    const s = await get(rtRef(rtdb,`chats/${chatActiveChatId}/messages`));
+    const u = {};
+    s.forEach(c => { if (c.val().from!==currentUser.uid && !c.val().read) u[`${c.key}/read`]=true; });
+    if (Object.keys(u).length) await rtUpdate(rtRef(rtdb,`chats/${chatActiveChatId}/messages`),u);
+  } catch {}
+}
+
+function _esc(s){ return s?(s+"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"):""; }
+function _chatTimeAgo(ts) {
+  if (!ts) return "";
+  const s = Math.floor((Date.now()-ts)/1000);
+  if (s<60) return "az önce";
+  if (s<3600) return Math.floor(s/60)+"dk";
+  if (s<86400) return Math.floor(s/3600)+"sa";
+  if (s<7*86400) return Math.floor(s/86400)+"g";
+  return new Date(ts).toLocaleDateString("tr-TR",{day:"numeric",month:"short"});
+}
+
+EL.sideChatBtn.addEventListener("click", () => {
+  closeSideMenu();
+  showPage("chat");
+});
+
+EL.chatConvBack.addEventListener("click", () => {
+  if (_chatMsgListener) { try { _chatMsgListener(); } catch {} _chatMsgListener = null; }
+  setActiveChat(null); // Konuşmadan çıktım
+  chatActiveUid = null; chatActiveChatId = null;
+  EL.chatConvView.classList.remove("active");
+  EL.chatListView.classList.add("active");
+  renderChatList();
+});
+
+EL.chatInput.addEventListener("input", () => {
+  EL.chatSendBtn.disabled = EL.chatInput.value.trim().length === 0;
+  EL.chatInput.style.height = "42px";
+  EL.chatInput.style.height = Math.min(EL.chatInput.scrollHeight, 100) + "px";
+});
+EL.chatInput.addEventListener("keydown", e => {
+  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); if (!EL.chatSendBtn.disabled) sendChatMsg(); }
+});
+EL.chatSendBtn.addEventListener("click", sendChatMsg);
+
+function openChatConv(user) {
+  chatActiveUid    = user.uid;
+  chatActiveChatId = chatId(currentUser.uid, user.uid);
+
+  if (user.photoURL) {
+    EL.chatConvAvatar.style.backgroundImage = `url(${user.photoURL})`;
+    EL.chatConvAvatar.style.backgroundSize  = "cover";
+    EL.chatConvAvatar.textContent = "";
+  } else {
+    EL.chatConvAvatar.style.backgroundImage = "";
+    EL.chatConvAvatar.textContent = initials(user.displayName);
+  }
+  EL.chatConvName.textContent   = user.displayName;
+  EL.chatConvStatus.innerHTML   = "…";
+
+  // Sub-view geçişi
+  EL.chatListView.classList.remove("active");
+  EL.chatConvView.classList.add("active");
+
+  EL.chatMessages.innerHTML = "";
+  _startMsgListener();
+  setActiveChat(chatActiveChatId); // Presence'a "bu konuşmadayım" yaz
+
+  // Presence dinle
+  const pr = rtRef(rtdb, `presence/${user.uid}`);
+  onValue(pr, snap => _updateConvStatus(snap.val()));
+
+  setTimeout(() => EL.chatInput.focus(), 300);
+  _markChatRead();
+}
+
+function updateChatBadge() {
+  if (!EL.navChatBadge) return;
+  if (_totalChatUnread > 0) {
+    EL.navChatBadge.textContent   = _totalChatUnread > 99 ? "99+" : String(_totalChatUnread);
+    EL.navChatBadge.style.display = "flex";
+    if (EL.chatUnreadBadge) { EL.chatUnreadBadge.textContent = EL.navChatBadge.textContent; EL.chatUnreadBadge.style.display = "flex"; }
+  } else {
+    EL.navChatBadge.style.display = "none";
+    if (EL.chatUnreadBadge) EL.chatUnreadBadge.style.display = "none";
+  }
+}
+
+/* ═══════════════════════════════════════════
    AUTH + SPLASH ENTEGRASYONu
    FIX: getRedirectResult sadece bir kez çalışır, onAuthStateChanged içinde
    değil ayrı bir try bloğunda — çift tetiklenme önlendi
@@ -4955,10 +5778,10 @@ function tryHideSplash(source) {
 function applyUser(user) {
   currentUser = user;
   if (user) {
-    // Splash: auth tamamlandı, veri bekleniyor
+    // Splash: auth tamamlandı → %45
     _splashReady.auth = true;
-    splashSetStatus("Fotoğraflar yükleniyor…");
-    splashSetProgress(60);
+    splashSetProgress(45);
+    splashSetStatus("Veriler yükleniyor…");
 
     EL.loginOverlay.style.display = "none";
     EL.container.style.display    = "flex";
@@ -4991,6 +5814,7 @@ function applyUser(user) {
     updateSideMenuProfile();
     _startNotifListener(user.uid);
     initForegroundMessages();
+    setupPresence(user.uid, user.displayName || "Kullanıcı", user.photoURL || null);
 
     // Bildirim tercihini Firestore'dan oku ve butonu güncelle
     loadNotifPref().then(enabled => {
