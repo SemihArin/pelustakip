@@ -1683,13 +1683,29 @@
     .chat-call-btn:active { transform: scale(.88); background: rgba(255,255,255,.95); }
     .chat-call-btn.in-call { background: var(--green); color: #fff; border-color: var(--green); animation: pulse 1.5s ease-in-out infinite; }
 
-    /* Arama overlay */
-    .call-overlay {
-      position: absolute; inset: 0; z-index: 50;
+    /* Aktif arama — tam ekran, tüm uygulamanın üstünde */
+    .call-overlay-fixed {
+      position: fixed; inset: 0; z-index: 7000;
       background: linear-gradient(160deg, #4d2438 0%, #2a0e1e 100%);
       display: flex; flex-direction: column;
       align-items: center; justify-content: center;
       gap: 12px;
+    }
+
+    /* Gelen arama — aşağıdan yükselen sheet */
+    .incoming-call-overlay {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 7100;
+      animation: sheetUp .3s var(--spring);
+    }
+    .incoming-call-inner {
+      background: linear-gradient(170deg, #3a1628 0%, #2a0e1e 100%);
+      border-radius: var(--r-xl) var(--r-xl) 0 0;
+      padding: 32px 24px calc(32px + env(safe-area-inset-bottom, 0px));
+      text-align: center;
+      box-shadow: 0 -8px 40px rgba(0,0,0,.5);
+    }
+    .incoming-call-action-wrap {
+      display: flex; gap: 40px; justify-content: center; margin-top: 28px;
     }
     .call-avatar-wrap { position: relative; margin-bottom: 8px; }
     .call-avatar {
@@ -2086,57 +2102,7 @@
         </div>
       </div>
 
-      <!-- Sesli Arama Overlay -->
-      <div id="callOverlay" class="call-overlay" style="display:none;">
-        <div class="call-avatar-wrap">
-          <div id="callAvatar" class="call-avatar">?</div>
-          <div class="call-avatar-rings">
-            <div class="call-ring r1"></div>
-            <div class="call-ring r2"></div>
-            <div class="call-ring r3"></div>
-          </div>
-        </div>
-        <div id="callName"   class="call-name">—</div>
-        <div id="callStatus" class="call-status">Bağlanıyor…</div>
-        <div id="callTimer"  class="call-timer" style="display:none;">00:00</div>
-        <div class="call-actions">
-          <button id="callMuteBtn"    class="call-action-btn" type="button" title="Sessiz">
-            <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.93V21h2v-3.07A7 7 0 0 0 19 11h-2z"/></svg>
-            <span>Sessiz</span>
-          </button>
-          <button id="callEndBtn"     class="call-action-btn call-end" type="button" title="Kapat">
-            <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9a11.25 11.25 0 0 0-2.88 2.31c-.18.21-.44.33-.7.33-.28 0-.54-.11-.73-.3L.31 13.84a.98.98 0 0 1-.28-.7c0-.28.1-.54.29-.73C3.34 9.6 7.46 8 12 8s8.66 1.6 11.68 4.41c.19.19.29.45.29.73 0 .27-.1.52-.28.7l-2.22 2.22c-.19.19-.45.3-.73.3-.26 0-.52-.12-.7-.33a11.3 11.3 0 0 0-2.87-2.31 1.02 1.02 0 0 1-.57-.9v-3.1A13.2 13.2 0 0 0 12 9z"/></svg>
-            <span>Kapat</span>
-          </button>
-          <button id="callSpeakerBtn" class="call-action-btn" type="button" title="Hoparlör">
-            <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77 0-4.28-2.99-7.86-7-8.77z"/></svg>
-            <span>Hoparlör</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Gelen Arama Overlay -->
-      <div id="incomingCallOverlay" class="incoming-call-overlay" style="display:none;">
-        <div id="incomingCallAvatar" class="call-avatar" style="width:64px;height:64px;font-size:24px;margin:0 auto 12px;">?</div>
-        <div id="incomingCallName" class="call-name" style="font-size:18px;margin-bottom:6px;">—</div>
-        <div class="call-status">Sesli arama yapıyor…</div>
-        <div class="incoming-call-actions">
-          <button id="callRejectBtn" class="call-action-btn call-end" type="button">
-            <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9a11.25 11.25 0 0 0-2.88 2.31c-.18.21-.44.33-.7.33-.28 0-.54-.11-.73-.3L.31 13.84a.98.98 0 0 1-.28-.7c0-.28.1-.54.29-.73C3.34 9.6 7.46 8 12 8s8.66 1.6 11.68 4.41c.19.19.29.45.29.73 0 .27-.1.52-.28.7l-2.22 2.22c-.19.19-.45.3-.73.3-.26 0-.52-.12-.7-.33a11.3 11.3 0 0 0-2.87-2.31 1.02 1.02 0 0 1-.57-.9v-3.1A13.2 13.2 0 0 0 12 9z"/></svg>
-            Reddet
-          </button>
-          <button id="callAcceptBtn" class="call-action-btn call-accept" type="button">
-            <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z"/></svg>
-            Kabul Et
-          </button>
-        </div>
-      </div>
-
-      <!-- Gizli ses elementleri -->
-      <audio id="remoteAudio" autoplay playsinline></audio>
-      <audio id="callRingtone" loop>
-        <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAA..." type="audio/wav">
-      </audio>
+      <!-- Gizli ses elementleri kaldırıldı - root level'e taşındı -->
 
     </div>
 
@@ -2530,6 +2496,61 @@
     </div>
   </div>
 </div>
+
+<!-- ═══ ARAMA OVERLAY'LARİ (tüm uygulama üzerinde, fixed) ═══ -->
+
+<!-- Aktif arama ekranı -->
+<div id="callOverlay" class="call-overlay-fixed" style="display:none;" aria-modal="true" role="dialog">
+  <div class="call-avatar-wrap">
+    <div id="callAvatar" class="call-avatar">?</div>
+    <div class="call-avatar-rings">
+      <div class="call-ring r1"></div>
+      <div class="call-ring r2"></div>
+      <div class="call-ring r3"></div>
+    </div>
+  </div>
+  <div id="callName"   class="call-name">—</div>
+  <div id="callStatus" class="call-status">Bağlanıyor…</div>
+  <div id="callTimer"  class="call-timer" style="display:none;">00:00</div>
+  <div class="call-actions">
+    <button id="callMuteBtn" class="call-action-btn" type="button">
+      <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.93V21h2v-3.07A7 7 0 0 0 19 11h-2z"/></svg>
+      <span>Sessiz</span>
+    </button>
+    <button id="callEndBtn" class="call-action-btn call-end" type="button">
+      <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9a11.25 11.25 0 0 0-2.88 2.31c-.18.21-.44.33-.7.33-.28 0-.54-.11-.73-.3L.31 13.84a.98.98 0 0 1-.28-.7c0-.28.1-.54.29-.73C3.34 9.6 7.46 8 12 8s8.66 1.6 11.68 4.41c.19.19.29.45.29.73 0 .27-.1.52-.28.7l-2.22 2.22c-.19.19-.45.3-.73.3-.26 0-.52-.12-.7-.33a11.3 11.3 0 0 0-2.87-2.31 1.02 1.02 0 0 1-.57-.9v-3.1A13.2 13.2 0 0 0 12 9z"/></svg>
+      <span>Kapat</span>
+    </button>
+    <button id="callSpeakerBtn" class="call-action-btn" type="button">
+      <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77 0-4.28-2.99-7.86-7-8.77z"/></svg>
+      <span>Hoparlör</span>
+    </button>
+  </div>
+</div>
+
+<!-- Gelen arama bildirimi -->
+<div id="incomingCallOverlay" class="incoming-call-overlay" style="display:none;" aria-modal="true" role="dialog">
+  <div class="incoming-call-inner">
+    <div id="incomingCallAvatar" class="call-avatar" style="width:72px;height:72px;font-size:26px;margin:0 auto 14px;">?</div>
+    <div id="incomingCallName" class="call-name">—</div>
+    <div class="call-status" style="margin-top:4px;">Sesli arama yapıyor…</div>
+    <div class="incoming-call-actions">
+      <div class="incoming-call-action-wrap">
+        <button id="callRejectBtn" class="call-action-btn call-end" type="button">
+          <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9a11.25 11.25 0 0 0-2.88 2.31c-.18.21-.44.33-.7.33-.28 0-.54-.11-.73-.3L.31 13.84a.98.98 0 0 1-.28-.7c0-.28.1-.54.29-.73C3.34 9.6 7.46 8 12 8s8.66 1.6 11.68 4.41c.19.19.29.45.29.73 0 .27-.1.52-.28.7l-2.22 2.22c-.19.19-.45.3-.73.3-.26 0-.52-.12-.7-.33a11.3 11.3 0 0 0-2.87-2.31 1.02 1.02 0 0 1-.57-.9v-3.1A13.2 13.2 0 0 0 12 9z"/></svg>
+          <span>Reddet</span>
+        </button>
+        <button id="callAcceptBtn" class="call-action-btn call-accept" type="button">
+          <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z"/></svg>
+          <span>Kabul Et</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Ses elementi -->
+<audio id="remoteAudio" autoplay playsinline style="display:none;"></audio>
 
 <!-- Canlı bildirim kartı (üstten gelir) -->
 <div id="notifToastCard" class="notif-toast-card" role="alert" aria-live="assertive">
@@ -6008,12 +6029,12 @@ function updateChatBadge() {
 /* ═══════════════════════════════════════════
    SESLİ ARAMA — WebRTC + Firebase RTDB Signaling
    RTDB yapısı:
-     calls/{callId}/offer      → { sdp, type }
-     calls/{callId}/answer     → { sdp, type }
-     calls/{callId}/callerCandidates → push { candidate }
-     calls/{callId}/calleeCandidates → push { candidate }
-     calls/{callId}/meta       → { caller, callee, status, createdAt }
-   callId = chatId (her iki kullanıcıya özgü)
+     calls/{callId}/offer               → { sdp, type }
+     calls/{callId}/answer              → { sdp, type }
+     calls/{callId}/callerCandidates/*  → { candidate, sdpMid, sdpMLineIndex }
+     calls/{callId}/calleeCandidates/*  → { candidate, sdpMid, sdpMLineIndex }
+     calls/{callId}/meta                → { caller, callee, status, createdAt }
+   callId = chatId (kullanıcı çiftine özgü sabit ID)
 ═══════════════════════════════════════════ */
 
 const ICE_SERVERS = {
@@ -6021,26 +6042,29 @@ const ICE_SERVERS = {
     { urls: "stun:stun.l.google.com:19302" },
     { urls: "stun:stun1.l.google.com:19302" },
     { urls: "stun:stun2.l.google.com:19302" },
+    { urls: "stun:stun3.l.google.com:19302" },
   ],
 };
 
-let _pc          = null;   // RTCPeerConnection
-let _localStream = null;   // Mikrofon stream
-let _callId      = null;   // Aktif arama ID
-let _callTimer   = null;   // Süre sayacı
-let _callSeconds = 0;
-let _isCaller    = false;
-let _isMuted     = false;
-let _isSpeaker   = false;
-let _callListeners = [];   // RTDB listeners (cleanup için)
-let _incomingCallListener = null;
+let _pc              = null;
+let _localStream     = null;
+let _callId          = null;
+let _callTimerHandle = null;
+let _callSeconds     = 0;
+let _isCaller        = false;
+let _isMuted         = false;
+let _callCleanups    = [];         // cleanup fonksiyonları
+let _incomingUnsub   = null;
+let _trackAdded      = false;      // ontrack birden fazla tetiklenme koruması
+let _callActive      = false;      // cleanup re-entry koruması
 
 /* ── Süre sayacı ── */
 function _startCallTimer() {
+  if (_callTimerHandle) return; // zaten çalışıyor
   _callSeconds = 0;
-  EL.callTimer.style.display = "block";
   EL.callTimer.textContent   = "00:00";
-  _callTimer = setInterval(() => {
+  EL.callTimer.style.display = "block";
+  _callTimerHandle = setInterval(() => {
     _callSeconds++;
     const m = String(Math.floor(_callSeconds / 60)).padStart(2, "0");
     const s = String(_callSeconds % 60).padStart(2, "0");
@@ -6049,276 +6073,502 @@ function _startCallTimer() {
 }
 
 function _stopCallTimer() {
-  clearInterval(_callTimer); _callTimer = null;
+  clearInterval(_callTimerHandle);
+  _callTimerHandle           = null;
   EL.callTimer.style.display = "none";
 }
 
-/* ── Call overlay ── */
+/* ── UI helpers ── */
 function _showCallOverlay(name, photoURL, status) {
   EL.callOverlay.style.display = "flex";
-  EL.callName.textContent      = name;
+  EL.callName.textContent      = name || "—";
   EL.callStatus.textContent    = status;
   EL.callTimer.style.display   = "none";
   if (photoURL) {
-    EL.callAvatar.style.backgroundImage = `url(${photoURL})`;
-    EL.callAvatar.style.backgroundSize  = "cover";
-    EL.callAvatar.textContent = "";
+    EL.callAvatar.style.cssText = `background-image:url(${photoURL});background-size:cover;background-position:center;`;
+    EL.callAvatar.textContent   = "";
   } else {
-    EL.callAvatar.style.backgroundImage = "";
-    EL.callAvatar.textContent = initials(name);
+    EL.callAvatar.style.cssText = "";
+    EL.callAvatar.textContent   = initials(name || "?");
   }
   EL.callBtn.classList.add("in-call");
+  // Arama sırasında body scroll'u engelle
+  document.body.style.overflow = "hidden";
 }
 
 function _hideCallOverlay() {
   EL.callOverlay.style.display = "none";
   EL.callBtn.classList.remove("in-call");
+  document.body.style.overflow = "";
   _stopCallTimer();
+}
+
+function _showIncomingOverlay(name, photoURL) {
+  EL.incomingCallName.textContent = name || "Biri";
+  if (photoURL) {
+    EL.incomingCallAvatar.style.cssText = `background-image:url(${photoURL});background-size:cover;background-position:center;`;
+    EL.incomingCallAvatar.textContent   = "";
+  } else {
+    EL.incomingCallAvatar.style.cssText = "";
+    EL.incomingCallAvatar.textContent   = initials(name || "?");
+  }
+  EL.incomingCallOverlay.style.display = "flex";
 }
 
 function _hideIncomingOverlay() {
   EL.incomingCallOverlay.style.display = "none";
 }
 
-/* ── Bağlantıyı temizle ── */
-async function _cleanupCall() {
+/* ── Tüm kaynakları temizle ── */
+async function _cleanupCall(reason) {
+  if (!_callActive) return; // re-entry koruması
+  _callActive = false;      // hemen false yap, ikinci çağrıyı engelle
+
+  console.log("[Call] cleanup:", reason || "—");
+
+  // callId'yi hemen sakla, sonra temizle
+  const closingCallId = _callId;
+  _callId = null;
+
   _stopCallTimer();
   _hideCallOverlay();
   _hideIncomingOverlay();
 
+  // Mikrofon kapat
   if (_localStream) {
     _localStream.getTracks().forEach(t => t.stop());
     _localStream = null;
   }
-  if (_pc) { _pc.close(); _pc = null; }
 
-  EL.remoteAudio.srcObject = null;
-
-  // Listeners temizle
-  _callListeners.forEach(fn => { try { fn(); } catch {} });
-  _callListeners = [];
-
-  // RTDB'deki arama durumunu güncelle
-  if (_callId && currentUser) {
-    try {
-      await rtUpdate(rtRef(rtdb, `calls/${_callId}/meta`), {
-        status: "ended", endedAt: Date.now()
-      });
-    } catch {}
+  // PC kapat — event handler'ları önce kaldır (onconnectionstatechange loop'u önle)
+  if (_pc) {
+    _pc.onicecandidate          = null;
+    _pc.ontrack                 = null;
+    _pc.onconnectionstatechange = null;
+    _pc.onicegatheringstatechange = null;
+    _pc.close();
+    _pc = null;
   }
-  _callId = null; _isCaller = false;
-  _isMuted = false; _isSpeaker = false;
-  EL.callMuteBtn.querySelector("span").textContent = "Sessiz";
+
+  // Ses temizle
+  try { EL.remoteAudio.srcObject = null; } catch {}
+
+  // RTDB listener'larını kapat
+  _callCleanups.forEach(fn => { try { fn(); } catch {} });
+  _callCleanups = [];
+
+  // RTDB'ye "ended" yaz — callId henüz elimizde
+  if (closingCallId && currentUser) {
+    rtUpdate(rtRef(rtdb, `calls/${closingCallId}/meta`), {
+      status:  "ended",
+      endedAt: Date.now(),
+    }).catch(() => {});
+  }
+
+  // State sıfırla
+  _isCaller   = false;
+  _isMuted    = false;
+  _trackAdded = false;
+
+  // UI sıfırla
+  EL.callBtn.classList.remove("in-call");
+  const muteSpan = EL.callMuteBtn.querySelector("span");
+  if (muteSpan) muteSpan.textContent = "Sessiz";
   EL.callMuteBtn.classList.remove("muted");
+  const spkSpan = EL.callSpeakerBtn.querySelector("span");
+  if (spkSpan) spkSpan.textContent = "Hoparlör";
+
+  console.log("[Call] cleanup tamamlandı");
 }
 
-/* ── ICE candidate ekle ── */
-function _addIceCandidateListeners(isCallerSide) {
-  // Karşı tarafın candidate'larını dinle
-  const remotePath = isCallerSide
-    ? `calls/${_callId}/calleeCandidates`
-    : `calls/${_callId}/callerCandidates`;
+/* ── ICE candidates — onChildAdded ile sadece yenileri al ── */
+function _listenCandidates(path) {
+  // onChildAdded: sadece yeni eklenen child'ları verir, tüm snapshot değil
+  const ref = rtRef(rtdb, path);
 
-  const ref = rtRef(rtdb, remotePath);
+  // RTDB'de onChildAdded Firebase SDK'da `onValue` ile simüle edilir
+  // Ama burada her snapshot'ta işlenen candidate'ları takip ederek tekrarı önlüyoruz
+  const processed = new Set();
+
   const unsub = onValue(ref, snap => {
     if (!snap.exists() || !_pc) return;
     snap.forEach(child => {
+      const key = child.key;
+      if (processed.has(key)) return; // zaten eklendi
+      processed.add(key);
+
       const c = child.val();
-      if (c && c.candidate) {
-        _pc.addIceCandidate(new RTCIceCandidate(c)).catch(() => {});
-      }
+      if (!c || !c.candidate) return;
+
+      const iceCandidate = new RTCIceCandidate({
+        candidate:     c.candidate,
+        sdpMid:        c.sdpMid        || null,
+        sdpMLineIndex: c.sdpMLineIndex ?? null,
+      });
+
+      _pc.addIceCandidate(iceCandidate).catch(e => {
+        // "Cannot add ICE candidate" — PC kapatılmış olabilir, sessiz geç
+        console.warn("[ICE] addIceCandidate:", e.message);
+      });
     });
   });
-  _callListeners.push(() => off(ref));
+
+  _callCleanups.push(() => off(ref));
 }
 
-/* ── RTCPeerConnection kur ── */
+/* ── RTCPeerConnection oluştur ── */
 function _createPC() {
+  if (_pc) { _pc.close(); _pc = null; }
+  _trackAdded = false;
+
   _pc = new RTCPeerConnection(ICE_SERVERS);
 
-  _pc.onicecandidate = async e => {
+  // Kendi ICE candidate'ları gönder
+  _pc.onicecandidate = e => {
     if (!e.candidate || !_callId) return;
     const path = _isCaller
       ? `calls/${_callId}/callerCandidates`
       : `calls/${_callId}/calleeCandidates`;
-    await push(rtRef(rtdb, path), e.candidate.toJSON()).catch(() => {});
+    push(rtRef(rtdb, path), {
+      candidate:     e.candidate.candidate,
+      sdpMid:        e.candidate.sdpMid,
+      sdpMLineIndex: e.candidate.sdpMLineIndex,
+    }).catch(() => {});
   };
 
+  // Karşı tarafın sesi geldi
   _pc.ontrack = e => {
-    EL.remoteAudio.srcObject = e.streams[0];
-    EL.remoteAudio.play().catch(() => {});
-    EL.callStatus.textContent = "Bağlandı";
+    if (_trackAdded) return; // birden fazla track olsa bile bir kez
+    _trackAdded = true;
+
+    const stream = e.streams?.[0] || new MediaStream([e.track]);
+    EL.remoteAudio.srcObject = stream;
+    EL.remoteAudio.play().catch(err => console.warn("[Call] audio play:", err.message));
+
+    EL.callStatus.textContent = "Bağlandı 🟢";
     _startCallTimer();
+    console.log("[Call] Ses bağlandı");
   };
 
+  // Bağlantı durumu
   _pc.onconnectionstatechange = () => {
-    console.log("[WebRTC] State:", _pc?.connectionState);
-    if (_pc?.connectionState === "failed" || _pc?.connectionState === "disconnected") {
-      toast("📞 Bağlantı kesildi");
-      _cleanupCall();
+    const state = _pc?.connectionState;
+    console.log("[WebRTC] connectionState:", state);
+    if (!_callActive) return;
+
+    if (state === "connected") {
+      EL.callStatus.textContent = "Bağlandı 🟢";
+    } else if (state === "disconnected") {
+      EL.callStatus.textContent = "Bağlantı zayıf…";
+    } else if (state === "failed") {
+      toast("📞 Bağlantı kurulamadı");
+      _cleanupCall("connection-failed");
     }
+  };
+
+  // ICE gathering durumu
+  _pc.onicegatheringstatechange = () => {
+    console.log("[ICE] gatheringState:", _pc?.iceGatheringState);
   };
 
   return _pc;
 }
 
-/* ══ ARAMA BAŞLAT (arayan taraf) ══ */
+/* ══════════════════════════════════════════
+   ARAMA BAŞLAT (arayan taraf)
+══════════════════════════════════════════ */
 async function startCall() {
-  if (!currentUser || !chatActiveUid || !chatActiveChatId) return;
-  if (_pc) { toast("Zaten bir arama devam ediyor"); return; }
+  if (!currentUser || !chatActiveUid || !chatActiveChatId) {
+    toast("⚠️ Önce bir sohbet açın"); return;
+  }
+  if (_callActive) { toast("Zaten bir arama devam ediyor"); return; }
 
-  // Mikrofon izni al
+  // Mikrofon al
   try {
     _localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
   } catch(e) {
+    console.error("[Call] Mikrofon hatası:", e.message);
     toast("❌ Mikrofon erişimi reddedildi");
     return;
   }
 
-  _callId   = chatActiveChatId;
-  _isCaller = true;
+  _callActive = true;
+  _callId     = chatActiveChatId;
+  _isCaller   = true;
 
-  const u = chatKnownUsers.find(u => u.uid === chatActiveUid) || { displayName: "Aranan", photoURL: null };
+  const u = chatKnownUsers.find(u => u.uid === chatActiveUid)
+    || { displayName: "Aranan", photoURL: null };
   _showCallOverlay(u.displayName, u.photoURL, "Aranıyor…");
 
+  // PC kur ve track ekle
   _createPC();
   _localStream.getTracks().forEach(t => _pc.addTrack(t, _localStream));
 
   // Offer oluştur
-  const offer = await _pc.createOffer();
-  await _pc.setLocalDescription(offer);
+  let offer;
+  try {
+    offer = await _pc.createOffer({ offerToReceiveAudio: true });
+    await _pc.setLocalDescription(offer);
+  } catch(e) {
+    console.error("[Call] createOffer hatası:", e.message);
+    toast("❌ Arama başlatılamadı");
+    _cleanupCall("offer-failed");
+    return;
+  }
 
-  // RTDB'ye yaz
-  await set(rtRef(rtdb, `calls/${_callId}`), {
-    meta: {
-      caller:    currentUser.uid,
-      callee:    chatActiveUid,
-      status:    "calling",
-      createdAt: Date.now(),
-    },
-    offer: { sdp: offer.sdp, type: offer.type },
-  });
+  // RTDB'ye yaz — önceki aramayı sil, yenisini yaz
+  try {
+    await set(rtRef(rtdb, `calls/${_callId}`), {
+      meta: {
+        caller:    currentUser.uid,
+        callee:    chatActiveUid,
+        status:    "calling",
+        createdAt: Date.now(),
+      },
+      offer: { sdp: offer.sdp, type: offer.type },
+    });
+  } catch(e) {
+    console.error("[Call] RTDB yazma hatası:", e.message);
+    toast("❌ Bağlantı kurulamadı");
+    _cleanupCall("rtdb-write-failed");
+    return;
+  }
 
   // Answer dinle
   const answerRef = rtRef(rtdb, `calls/${_callId}/answer`);
   const unsubAnswer = onValue(answerRef, async snap => {
-    if (!snap.exists() || _pc?.remoteDescription) return;
+    if (!snap.exists() || !_pc || _pc.remoteDescription) return;
     const answer = snap.val();
-    if (answer?.type === "answer") {
-      await _pc.setRemoteDescription(new RTCSessionDescription(answer)).catch(() => {});
+    if (answer?.type !== "answer") return;
+    try {
+      await _pc.setRemoteDescription(new RTCSessionDescription(answer));
+      console.log("[Call] Remote description set (answer)");
+    } catch(e) {
+      console.error("[Call] setRemoteDescription (answer):", e.message);
     }
   });
-  _callListeners.push(() => off(answerRef));
+  _callCleanups.push(() => off(answerRef));
 
-  // Meta dinle (reddedildi/sonlandı)
+  // Meta dinle — reddedildi / bitirildi
   const metaRef = rtRef(rtdb, `calls/${_callId}/meta`);
   const unsubMeta = onValue(metaRef, snap => {
+    if (!_callActive) return;
     const status = snap.val()?.status;
-    if (status === "rejected") { toast("📞 Arama reddedildi"); _cleanupCall(); }
-    if (status === "ended" && !_isCaller) _cleanupCall();
+    if (status === "rejected") {
+      toast("📞 Arama reddedildi");
+      _cleanupCall("rejected");
+    } else if (status === "ended") {
+      // Kendi kapattığımızda zaten _callActive=false, bu tetiklenmez
+      // Karşı taraf kapattıysa burada yakalanır
+      if (_callActive) {
+        toast("📞 Arama bitti");
+        _cleanupCall("remote-ended");
+      }
+    }
   });
-  _callListeners.push(() => off(metaRef));
+  _callCleanups.push(() => off(metaRef));
 
-  _addIceCandidateListeners(true);
+  // Karşı tarafın ICE candidate'larını dinle
+  _listenCandidates(`calls/${_callId}/calleeCandidates`);
+
+  // 30 saniye zaman aşımı
+  const timeoutHandle = setTimeout(() => {
+    if (_callActive && EL.callStatus.textContent === "Aranıyor…") {
+      toast("📞 Cevap yok");
+      _cleanupCall("timeout");
+    }
+  }, 30_000);
+  _callCleanups.push(() => clearTimeout(timeoutHandle));
 }
 
-/* ══ GELEN ARAMAYA CEVAP VER ══ */
+/* ══════════════════════════════════════════
+   GELEN ARAMAYA CEVAP VER
+══════════════════════════════════════════ */
 async function acceptCall() {
+  if (!_callId || !_pc || !_callActive) return;
   _hideIncomingOverlay();
-  if (!_callId || !_pc) return;
 
-  _showCallOverlay(
-    EL.incomingCallName.textContent,
-    null, "Bağlanıyor…"
-  );
+  const callerName = EL.incomingCallName.textContent || "Arayan";
+  _showCallOverlay(callerName, null, "Bağlanıyor…");
 
   // Answer oluştur
-  const answer = await _pc.createAnswer();
-  await _pc.setLocalDescription(answer);
-  await rtUpdate(rtRef(rtdb, `calls/${_callId}`), {
-    answer: { sdp: answer.sdp, type: answer.type },
-    "meta/status": "in-call",
+  let answer;
+  try {
+    answer = await _pc.createAnswer();
+    await _pc.setLocalDescription(answer);
+  } catch(e) {
+    console.error("[Call] createAnswer hatası:", e.message);
+    toast("❌ Bağlantı kurulamadı");
+    _cleanupCall("answer-failed");
+    return;
+  }
+
+  // RTDB'ye answer ve status yaz (iç içe nesne — noktalı path değil)
+  try {
+    await set(rtRef(rtdb, `calls/${_callId}/answer`), {
+      sdp:  answer.sdp,
+      type: answer.type,
+    });
+    await rtUpdate(rtRef(rtdb, `calls/${_callId}/meta`), {
+      status: "in-call",
+    });
+  } catch(e) {
+    console.error("[Call] answer yazma hatası:", e.message);
+    toast("❌ Bağlantı kurulamadı");
+    _cleanupCall("answer-rtdb-failed");
+    return;
+  }
+
+  // Meta dinle — arayan kapattı mı?
+  const metaRef = rtRef(rtdb, `calls/${_callId}/meta`);
+  const unsubMeta = onValue(metaRef, snap => {
+    if (!_callActive) return;
+    const status = snap.val()?.status;
+    if (status === "ended" && _callActive) {
+      toast("📞 Arama bitti");
+      _cleanupCall("caller-ended");
+    }
   });
-  _addIceCandidateListeners(false);
+  _callCleanups.push(() => off(metaRef));
+
+  // Arayanın ICE candidate'larını dinle
+  _listenCandidates(`calls/${_callId}/callerCandidates`);
+
+  console.log("[Call] Arama kabul edildi, ICE exchange başladı");
 }
 
-/* ══ ARAYAN TARAFTA BEKLERKEN REDDET ══ */
+/* ══════════════════════════════════════════
+   GELEN ARAMAYI REDDET
+══════════════════════════════════════════ */
 async function rejectCall() {
   if (_callId) {
-    await rtUpdate(rtRef(rtdb, `calls/${_callId}/meta`), { status: "rejected" }).catch(() => {});
+    rtUpdate(rtRef(rtdb, `calls/${_callId}/meta`), { status: "rejected" }).catch(() => {});
+  }
+  // Mikrofonu kapat (acceptCall'dan önce getUserMedia yapıldıysa)
+  if (_localStream) {
+    _localStream.getTracks().forEach(t => t.stop());
+    _localStream = null;
   }
   if (_pc) { _pc.close(); _pc = null; }
-  _callListeners.forEach(fn => fn()); _callListeners = [];
+  _callCleanups.forEach(fn => { try { fn(); } catch {} });
+  _callCleanups = [];
   _hideIncomingOverlay();
-  _callId = null;
+  _callId     = null;
+  _callActive = false;
+  _trackAdded = false;
+  console.log("[Call] Reddedildi");
 }
 
-/* ══ GELEN ARAMALARI DİNLE ══ */
+/* ══════════════════════════════════════════
+   GELEN ARAMALARI DİNLE
+══════════════════════════════════════════ */
 function _listenIncomingCalls(uid) {
-  if (_incomingCallListener) { try { _incomingCallListener(); } catch {} }
+  // Önceki listener'ı kapat
+  if (_incomingUnsub) { try { _incomingUnsub(); } catch {} _incomingUnsub = null; }
 
+  // Sadece bu kullanıcıya gelen aramaları dinle — calls/ altındaki path'e göre
+  // Her kullanıcı için ayrı bir path yerine meta.callee filtresi kullanıyoruz
   const callsRef = rtRef(rtdb, "calls");
-  let firstSnap  = true;
-  const unsub    = onValue(callsRef, async snap => {
-    if (firstSnap) { firstSnap = false; return; }
-    if (!snap.exists()) return;
 
+  // Başlangıç snapshot'taki mevcut aramaları takip et
+  const seenCalls = new Set();
+  let initialized = false;
+
+  const unsub = onValue(callsRef, async snap => {
+    if (!snap.exists()) { initialized = true; return; }
+
+    // İlk snapshot — mevcut aramalar "eski", sadece key'leri kaydet
+    if (!initialized) {
+      snap.forEach(child => seenCalls.add(child.key));
+      initialized = true;
+      return;
+    }
+
+    // Sadece yeni eklenen aramalar
     snap.forEach(async child => {
+      const callId = child.key;
+      if (seenCalls.has(callId)) return; // zaten biliyoruz
+      seenCalls.add(callId);
+
       const data = child.val();
       if (!data?.meta) return;
+
       const { caller, callee, status } = data.meta;
 
-      // Bu kullanıcıya mı geliyor?
-      if (callee !== uid || caller === uid) return;
-      if (status !== "calling") return;
-      if (_pc) return; // zaten aramadayız
+      // Bize mi geliyor?
+      if (callee !== uid) return;
+      if (caller === uid) return;     // kendi kendimize arama yok
+      if (status !== "calling") return; // "calling" değilse gösterme
 
-      const callId = child.key;
-      _callId   = callId;
-      _isCaller = false;
+      // Zaten aramadaysak
+      if (_callActive) {
+        console.log("[Call] Gelen arama var ama zaten aramadayız, reddediliyor");
+        rtUpdate(rtRef(rtdb, `calls/${callId}/meta`), { status: "rejected" }).catch(() => {});
+        return;
+      }
 
-      // Arayanın bilgisini al
-      const callerUser = chatKnownUsers.find(u => u.uid === caller) || {};
-      const callerName = callerUser.displayName || "Biri";
+      console.log("[Call] Gelen arama:", callId, "from:", caller);
+
+      // State hazırla
+      _callId     = callId;
+      _isCaller   = false;
+      _callActive = true;
+
+      // Arayanı bul — önce chatKnownUsers, yoksa presence'dan al
+      let callerName = "Biri", callerPhoto = null;
+      const knownUser = chatKnownUsers.find(u => u.uid === caller);
+      if (knownUser) {
+        callerName  = knownUser.displayName || "Biri";
+        callerPhoto = knownUser.photoURL    || null;
+      } else {
+        // Presence'dan dene
+        try {
+          const presSnap = await get(rtRef(rtdb, `presence/${caller}`));
+          if (presSnap.exists()) {
+            callerName  = presSnap.val().displayName || "Biri";
+            callerPhoto = presSnap.val().photoURL    || null;
+          }
+        } catch {}
+      }
 
       // Gelen arama UI
-      EL.incomingCallName.textContent = callerName;
-      if (callerUser.photoURL) {
-        EL.incomingCallAvatar.style.backgroundImage = `url(${callerUser.photoURL})`;
-        EL.incomingCallAvatar.textContent = "";
-      } else {
-        EL.incomingCallAvatar.style.backgroundImage = "";
-        EL.incomingCallAvatar.textContent = initials(callerName);
-      }
-      EL.incomingCallOverlay.style.display = "flex";
+      _showIncomingOverlay(callerName, callerPhoto);
 
-      // PC kur ve offer'ı set et
+      // Mikrofon al ve PC kur (kullanıcı kabul etmeden önce)
       try {
         _localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
         _createPC();
         _localStream.getTracks().forEach(t => _pc.addTrack(t, _localStream));
-        const offer = data.offer;
-        if (offer) {
-          await _pc.setRemoteDescription(new RTCSessionDescription(offer));
+
+        // Offer'ı set et
+        if (data.offer?.sdp) {
+          await _pc.setRemoteDescription(new RTCSessionDescription(data.offer));
+          console.log("[Call] Remote description set (offer)");
         }
       } catch(e) {
-        console.error("[Call] Gelen arama hatası:", e.message);
-        EL.incomingCallOverlay.style.display = "none";
-        _callId = null;
+        console.error("[Call] Gelen arama hazırlık hatası:", e.message);
+        _hideIncomingOverlay();
+        _callId     = null;
+        _callActive = false;
+        if (_pc) { _pc.close(); _pc = null; }
+        if (_localStream) { _localStream.getTracks().forEach(t=>t.stop()); _localStream=null; }
       }
     });
-  }, err => console.error("[Call] calls listener:", err.message));
+  }, err => console.error("[Call] calls listener hatası:", err.message));
 
-  _incomingCallListener = () => off(callsRef);
+  _incomingUnsub = () => off(callsRef);
 }
 
-/* ── Buton event listeners ── */
+/* ── Event listeners ── */
 EL.callBtn.addEventListener("click", () => {
-  if (_pc) { _cleanupCall(); return; } // Aktif aramaydıysa kapat
-  startCall();
+  if (_callActive) {
+    _cleanupCall("user-hangup");
+  } else {
+    startCall();
+  }
 });
 
-EL.callEndBtn.addEventListener("click", () => _cleanupCall());
+EL.callEndBtn.addEventListener("click",    () => _cleanupCall("user-hangup"));
 EL.callAcceptBtn.addEventListener("click", () => acceptCall());
 EL.callRejectBtn.addEventListener("click", () => rejectCall());
 
@@ -6326,16 +6576,27 @@ EL.callMuteBtn.addEventListener("click", () => {
   if (!_localStream) return;
   _isMuted = !_isMuted;
   _localStream.getAudioTracks().forEach(t => { t.enabled = !_isMuted; });
-  EL.callMuteBtn.querySelector("span").textContent = _isMuted ? "Sesi Aç" : "Sessiz";
+  const span = EL.callMuteBtn.querySelector("span");
+  if (span) span.textContent = _isMuted ? "Sesi Aç" : "Sessiz";
   EL.callMuteBtn.classList.toggle("muted", _isMuted);
+  console.log("[Call] Mute:", _isMuted);
 });
 
 EL.callSpeakerBtn.addEventListener("click", () => {
-  _isSpeaker = !_isSpeaker;
-  // Web'de hoparlör/kulaklık geçişi MediaDevices ile yapılabilir (sınırlı destek)
-  EL.callSpeakerBtn.querySelector("span").textContent = _isSpeaker ? "Kulaklık" : "Hoparlör";
+  const span = EL.callSpeakerBtn.querySelector("span");
   if (EL.remoteAudio.setSinkId) {
-    EL.remoteAudio.setSinkId(_isSpeaker ? "" : "default").catch(() => {});
+    // Hoparlör: boş string = default (kulaklık), "speaker" = hoparlör
+    const goSpeaker = span?.textContent === "Hoparlör";
+    EL.remoteAudio.setSinkId(goSpeaker ? "speaker" : "")
+      .catch(() => {
+        // setSinkId desteklenmiyorsa sessiz geç
+        if (span) span.textContent = "Desteklenmiyor";
+      })
+      .then(() => {
+        if (span) span.textContent = goSpeaker ? "Kulaklık" : "Hoparlör";
+      });
+  } else {
+    if (span) span.textContent = "Desteklenmiyor";
   }
 });
 
