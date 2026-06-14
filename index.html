@@ -6283,280 +6283,209 @@ async function startCall() {
   }
   if (_callActive) { toast("Zaten bir arama devam ediyor"); return; }
 
-  // Mikrofon al
   try {
     _localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
   } catch(e) {
-    console.error("[Call] Mikrofon hatası:", e.message);
-    toast("❌ Mikrofon erişimi reddedildi");
-    return;
+    console.error("[Call] Mikrofon:", e.message);
+    toast("❌ Mikrofon erişimi reddedildi"); return;
   }
 
-  _callActive = true;
-  _callId     = chatActiveChatId;
-  _isCaller   = true;
+  _callActive = true; _callId = chatActiveChatId; _isCaller = true;
 
-  const u = chatKnownUsers.find(u => u.uid === chatActiveUid)
-    || { displayName: "Aranan", photoURL: null };
+  const u = chatKnownUsers.find(u => u.uid === chatActiveUid) || { displayName:"Aranan", photoURL:null };
   _showCallOverlay(u.displayName, u.photoURL, "Aranıyor…");
-
-  // PC kur ve track ekle
   _createPC();
   _localStream.getTracks().forEach(t => _pc.addTrack(t, _localStream));
 
-  // Offer oluştur
   let offer;
   try {
     offer = await _pc.createOffer({ offerToReceiveAudio: true });
     await _pc.setLocalDescription(offer);
   } catch(e) {
-    console.error("[Call] createOffer hatası:", e.message);
-    toast("❌ Arama başlatılamadı");
-    _cleanupCall("offer-failed");
-    return;
+    console.error("[Call] createOffer:", e.message);
+    toast("❌ Arama başlatılamadı"); _cleanupCall("offer-failed"); return;
   }
 
-  // RTDB'ye yaz — önceki aramayı sil, yenisini yaz
+  // Önce calls/{callId} yaz, sonra incoming/{calleeUid}/{callId} yaz
+  // incoming path'e yazmak cevaplayan tarafı uyarır
   try {
     await set(rtRef(rtdb, `calls/${_callId}`), {
-      meta: {
-        caller:    currentUser.uid,
-        callee:    chatActiveUid,
-        status:    "calling",
-        createdAt: Date.now(),
-      },
+      meta: { caller: currentUser.uid, callee: chatActiveUid, status: "calling", createdAt: Date.now() },
       offer: { sdp: offer.sdp, type: offer.type },
     });
+    // Alıcının incoming path'ine bildirim yaz
+    await push(rtRef(rtdb, `incoming/${chatActiveUid}`), {
+      callId:  _callId,
+      caller:  currentUser.uid,
+      ts:      Date.now(),
+    });
+    console.log("[Call] Offer yazıldı, incoming bildirim gönderildi");
   } catch(e) {
-    console.error("[Call] RTDB yazma hatası:", e.message);
-    toast("❌ Bağlantı kurulamadı");
-    _cleanupCall("rtdb-write-failed");
-    return;
+    console.error("[Call] RTDB yazma:", e.message);
+    toast("❌ Bağlantı kurulamadı"); _cleanupCall("rtdb-failed"); return;
   }
 
   // Answer dinle
   const answerRef = rtRef(rtdb, `calls/${_callId}/answer`);
+  let answerSet = false;
   const unsubAnswer = onValue(answerRef, async snap => {
-    if (!snap.exists() || !_pc || _pc.remoteDescription) return;
+    if (!snap.exists() || answerSet || !_pc || !_callActive) return;
     const answer = snap.val();
-    if (answer?.type !== "answer") return;
+    if (answer?.type !== "answer" || !answer.sdp) return;
+    answerSet = true;
     try {
       await _pc.setRemoteDescription(new RTCSessionDescription(answer));
-      console.log("[Call] Remote description set (answer)");
-    } catch(e) {
-      console.error("[Call] setRemoteDescription (answer):", e.message);
-    }
+      console.log("[Call] setRemoteDescription(answer) ✅");
+    } catch(e) { console.error("[Call] setRemoteDescription(answer):", e.message); }
   });
   _callCleanups.push(() => off(answerRef));
 
-  // Meta dinle — reddedildi / bitirildi
+  // Meta dinle
   const metaRef = rtRef(rtdb, `calls/${_callId}/meta`);
+  let metaActive = true;
   const unsubMeta = onValue(metaRef, snap => {
-    if (!_callActive) return;
+    if (!metaActive || !_callActive) return;
     const status = snap.val()?.status;
-    if (status === "rejected") {
-      toast("📞 Arama reddedildi");
-      _cleanupCall("rejected");
-    } else if (status === "ended") {
-      // Kendi kapattığımızda zaten _callActive=false, bu tetiklenmez
-      // Karşı taraf kapattıysa burada yakalanır
-      if (_callActive) {
-        toast("📞 Arama bitti");
-        _cleanupCall("remote-ended");
-      }
-    }
+    if (status === "rejected") { metaActive=false; toast("📞 Arama reddedildi"); _cleanupCall("rejected"); }
+    else if (status === "ended" && _callActive) { metaActive=false; toast("📞 Arama bitti"); _cleanupCall("remote-ended"); }
   });
-  _callCleanups.push(() => off(metaRef));
+  _callCleanups.push(() => { metaActive=false; off(metaRef); });
 
-  // Karşı tarafın ICE candidate'larını dinle
   _listenCandidates(`calls/${_callId}/calleeCandidates`);
 
-  // 30 saniye zaman aşımı
-  const timeoutHandle = setTimeout(() => {
-    if (_callActive && EL.callStatus.textContent === "Aranıyor…") {
-      toast("📞 Cevap yok");
-      _cleanupCall("timeout");
-    }
+  const th = setTimeout(() => {
+    if (_callActive && _isCaller) { toast("📞 Cevap yok"); _cleanupCall("timeout"); }
   }, 30_000);
-  _callCleanups.push(() => clearTimeout(timeoutHandle));
+  _callCleanups.push(() => clearTimeout(th));
 }
 
-/* ══════════════════════════════════════════
-   GELEN ARAMAYA CEVAP VER
-══════════════════════════════════════════ */
 async function acceptCall() {
-  if (!_callId || !_pc || !_callActive) return;
+  if (!_callId || !_pc || !_callActive) {
+    console.error("[Call] acceptCall geçersiz state"); return;
+  }
   _hideIncomingOverlay();
 
-  const callerName = EL.incomingCallName.textContent || "Arayan";
-  _showCallOverlay(callerName, null, "Bağlanıyor…");
+  const callerName  = EL.incomingCallName.textContent || "Arayan";
+  const bgImg = EL.incomingCallAvatar.style.backgroundImage;
+  const callerPhoto = bgImg && bgImg !== "none" ? bgImg.slice(5,-2) : null;
+  _showCallOverlay(callerName, callerPhoto, "Bağlanıyor…");
 
-  // Answer oluştur
   let answer;
   try {
     answer = await _pc.createAnswer();
     await _pc.setLocalDescription(answer);
+    console.log("[Call] createAnswer ✅");
   } catch(e) {
-    console.error("[Call] createAnswer hatası:", e.message);
-    toast("❌ Bağlantı kurulamadı");
-    _cleanupCall("answer-failed");
-    return;
+    console.error("[Call] createAnswer:", e.message);
+    toast("❌ Bağlantı kurulamadı"); _cleanupCall("answer-failed"); return;
   }
 
-  // RTDB'ye answer ve status yaz (iç içe nesne — noktalı path değil)
   try {
-    await set(rtRef(rtdb, `calls/${_callId}/answer`), {
-      sdp:  answer.sdp,
-      type: answer.type,
-    });
-    await rtUpdate(rtRef(rtdb, `calls/${_callId}/meta`), {
-      status: "in-call",
-    });
+    await set(rtRef(rtdb, `calls/${_callId}/answer`), { sdp: answer.sdp, type: answer.type });
+    await rtUpdate(rtRef(rtdb, `calls/${_callId}/meta`), { status: "in-call" });
+    console.log("[Call] Answer RTDB'ye yazıldı ✅");
   } catch(e) {
-    console.error("[Call] answer yazma hatası:", e.message);
-    toast("❌ Bağlantı kurulamadı");
-    _cleanupCall("answer-rtdb-failed");
-    return;
+    console.error("[Call] answer yazma:", e.message);
+    toast("❌ Bağlantı kurulamadı"); _cleanupCall("answer-rtdb-failed"); return;
   }
 
-  // Meta dinle — arayan kapattı mı?
   const metaRef = rtRef(rtdb, `calls/${_callId}/meta`);
-  const unsubMeta = onValue(metaRef, snap => {
-    if (!_callActive) return;
-    const status = snap.val()?.status;
-    if (status === "ended" && _callActive) {
-      toast("📞 Arama bitti");
-      _cleanupCall("caller-ended");
-    }
+  let metaActive = true;
+  onValue(metaRef, snap => {
+    if (!metaActive || !_callActive) return;
+    if (snap.val()?.status === "ended") { metaActive=false; toast("📞 Arama bitti"); _cleanupCall("caller-ended"); }
   });
-  _callCleanups.push(() => off(metaRef));
+  _callCleanups.push(() => { metaActive=false; off(metaRef); });
 
-  // Arayanın ICE candidate'larını dinle
   _listenCandidates(`calls/${_callId}/callerCandidates`);
-
-  console.log("[Call] Arama kabul edildi, ICE exchange başladı");
+  console.log("[Call] Kabul edildi ✅");
 }
 
-/* ══════════════════════════════════════════
-   GELEN ARAMAYI REDDET
-══════════════════════════════════════════ */
 async function rejectCall() {
-  if (_callId) {
-    rtUpdate(rtRef(rtdb, `calls/${_callId}/meta`), { status: "rejected" }).catch(() => {});
-  }
-  // Mikrofonu kapat (acceptCall'dan önce getUserMedia yapıldıysa)
-  if (_localStream) {
-    _localStream.getTracks().forEach(t => t.stop());
-    _localStream = null;
-  }
-  if (_pc) { _pc.close(); _pc = null; }
-  _callCleanups.forEach(fn => { try { fn(); } catch {} });
-  _callCleanups = [];
+  const rejId = _callId;
+  _callActive = false; _callId = null; _trackAdded = false;
+  if (rejId) rtUpdate(rtRef(rtdb, `calls/${rejId}/meta`), { status: "rejected" }).catch(() => {});
+  if (_localStream) { _localStream.getTracks().forEach(t=>t.stop()); _localStream=null; }
+  if (_pc) { _pc.onicecandidate=null; _pc.ontrack=null; _pc.onconnectionstatechange=null; _pc.close(); _pc=null; }
+  _callCleanups.forEach(fn => { try{fn();}catch{} }); _callCleanups = [];
   _hideIncomingOverlay();
-  _callId     = null;
-  _callActive = false;
-  _trackAdded = false;
   console.log("[Call] Reddedildi");
 }
 
-/* ══════════════════════════════════════════
-   GELEN ARAMALARI DİNLE
-══════════════════════════════════════════ */
 function _listenIncomingCalls(uid) {
-  // Önceki listener'ı kapat
-  if (_incomingUnsub) { try { _incomingUnsub(); } catch {} _incomingUnsub = null; }
+  if (_incomingUnsub) { try{_incomingUnsub();}catch{} _incomingUnsub=null; }
 
-  // Sadece bu kullanıcıya gelen aramaları dinle — calls/ altındaki path'e göre
-  // Her kullanıcı için ayrı bir path yerine meta.callee filtresi kullanıyoruz
-  const callsRef = rtRef(rtdb, "calls");
+  // calls/{callId}/meta dinle — sadece callee===uid olanları yakala
+  // Her aramanın meta'sı ayrı ayrı değişir, tüm calls/ dinlemek yerine
+  // incoming/{uid} path'ini dinle: arayan buraya yazar
+  const inRef = rtRef(rtdb, `incoming/${uid}`);
 
-  // Başlangıç snapshot'taki mevcut aramaları takip et
-  const seenCalls = new Set();
-  let initialized = false;
+  const unsub = onValue(inRef, async snap => {
+    if (!snap.exists()) return;
 
-  const unsub = onValue(callsRef, async snap => {
-    if (!snap.exists()) { initialized = true; return; }
+    // En yeni incoming kaydını bul
+    let latest = null;
+    snap.forEach(child => {
+      const d = child.val();
+      if (d && d.callId && d.caller && (!latest || d.ts > latest.ts))
+        latest = { key: child.key, ...d };
+    });
+    if (!latest) return;
 
-    // İlk snapshot — mevcut aramalar "eski", sadece key'leri kaydet
-    if (!initialized) {
-      snap.forEach(child => seenCalls.add(child.key));
-      initialized = true;
+    // Zaten bu aramayı işliyorsak atla
+    if (_callId === latest.callId) return;
+    if (_callActive) {
+      rtUpdate(rtRef(rtdb, `calls/${latest.callId}/meta`), { status:"rejected" }).catch(()=>{});
+      set(rtRef(rtdb, `incoming/${uid}/${latest.key}`), null).catch(()=>{});
       return;
     }
 
-    // Sadece yeni eklenen aramalar
-    snap.forEach(async child => {
-      const callId = child.key;
-      if (seenCalls.has(callId)) return; // zaten biliyoruz
-      seenCalls.add(callId);
+    // Arama hâlâ "calling" mi?
+    let callData;
+    try {
+      const cs = await get(rtRef(rtdb, `calls/${latest.callId}`));
+      if (!cs.exists()) { set(rtRef(rtdb,`incoming/${uid}/${latest.key}`),null).catch(()=>{}); return; }
+      callData = cs.val();
+      if (callData.meta?.status !== "calling") { set(rtRef(rtdb,`incoming/${uid}/${latest.key}`),null).catch(()=>{}); return; }
+    } catch(e) { console.error("[Call] call data:", e.message); return; }
 
-      const data = child.val();
-      if (!data?.meta) return;
+    console.log("[Call] Gelen arama:", latest.callId, "from:", latest.caller);
 
-      const { caller, callee, status } = data.meta;
+    _callId=latest.callId; _isCaller=false; _callActive=true;
 
-      // Bize mi geliyor?
-      if (callee !== uid) return;
-      if (caller === uid) return;     // kendi kendimize arama yok
-      if (status !== "calling") return; // "calling" değilse gösterme
-
-      // Zaten aramadaysak
-      if (_callActive) {
-        console.log("[Call] Gelen arama var ama zaten aramadayız, reddediliyor");
-        rtUpdate(rtRef(rtdb, `calls/${callId}/meta`), { status: "rejected" }).catch(() => {});
-        return;
-      }
-
-      console.log("[Call] Gelen arama:", callId, "from:", caller);
-
-      // State hazırla
-      _callId     = callId;
-      _isCaller   = false;
-      _callActive = true;
-
-      // Arayanı bul — önce chatKnownUsers, yoksa presence'dan al
-      let callerName = "Biri", callerPhoto = null;
-      const knownUser = chatKnownUsers.find(u => u.uid === caller);
-      if (knownUser) {
-        callerName  = knownUser.displayName || "Biri";
-        callerPhoto = knownUser.photoURL    || null;
-      } else {
-        // Presence'dan dene
-        try {
-          const presSnap = await get(rtRef(rtdb, `presence/${caller}`));
-          if (presSnap.exists()) {
-            callerName  = presSnap.val().displayName || "Biri";
-            callerPhoto = presSnap.val().photoURL    || null;
-          }
-        } catch {}
-      }
-
-      // Gelen arama UI
-      _showIncomingOverlay(callerName, callerPhoto);
-
-      // Mikrofon al ve PC kur (kullanıcı kabul etmeden önce)
+    // Arayanın bilgisi
+    let callerName="Biri", callerPhoto=null;
+    const ku = chatKnownUsers.find(u=>u.uid===latest.caller);
+    if (ku) { callerName=ku.displayName||"Biri"; callerPhoto=ku.photoURL||null; }
+    else {
       try {
-        _localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-        _createPC();
-        _localStream.getTracks().forEach(t => _pc.addTrack(t, _localStream));
+        const ps = await get(rtRef(rtdb,`presence/${latest.caller}`));
+        if (ps.exists()) { callerName=ps.val().displayName||"Biri"; callerPhoto=ps.val().photoURL||null; }
+      } catch {}
+    }
 
-        // Offer'ı set et
-        if (data.offer?.sdp) {
-          await _pc.setRemoteDescription(new RTCSessionDescription(data.offer));
-          console.log("[Call] Remote description set (offer)");
-        }
-      } catch(e) {
-        console.error("[Call] Gelen arama hazırlık hatası:", e.message);
-        _hideIncomingOverlay();
-        _callId     = null;
-        _callActive = false;
-        if (_pc) { _pc.close(); _pc = null; }
-        if (_localStream) { _localStream.getTracks().forEach(t=>t.stop()); _localStream=null; }
-      }
-    });
-  }, err => console.error("[Call] calls listener hatası:", err.message));
+    _showIncomingOverlay(callerName, callerPhoto);
 
-  _incomingUnsub = () => off(callsRef);
+    try {
+      _localStream = await navigator.mediaDevices.getUserMedia({ audio:true, video:false });
+      _createPC();
+      _localStream.getTracks().forEach(t => _pc.addTrack(t, _localStream));
+      if (callData.offer?.sdp) {
+        await _pc.setRemoteDescription(new RTCSessionDescription(callData.offer));
+        console.log("[Call] setRemoteDescription(offer) ✅");
+      } else { throw new Error("Offer SDP eksik"); }
+      set(rtRef(rtdb,`incoming/${uid}/${latest.key}`),null).catch(()=>{});
+    } catch(e) {
+      console.error("[Call] Gelen arama hazırlık:", e.message);
+      _callId=null; _callActive=false; _trackAdded=false;
+      if (_pc) { _pc.close(); _pc=null; }
+      if (_localStream) { _localStream.getTracks().forEach(t=>t.stop()); _localStream=null; }
+      _hideIncomingOverlay();
+      set(rtRef(rtdb,`incoming/${uid}/${latest.key}`),null).catch(()=>{});
+    }
+  }, err => console.error("[Call] incoming listener:", err.message));
+
+  _incomingUnsub = () => off(inRef);
 }
 
 /* ── Event listeners ── */
