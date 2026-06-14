@@ -1406,36 +1406,45 @@
       display: flex; align-items: center; justify-content: center;
     }
 
-    /* Chat sayfası — scroll-page gibi ama overflow hidden (sub-view'lar yönetir) */
-    .chat-page-root {
-      display: flex; flex-direction: column;
-      padding: 0 !important;              /* scroll-page padding'ini iptal et */
-      overflow: hidden !important;        /* scroll sub-view'larda */
+    /* chatPage — tam ekran, bottombar yok */
+    #chatPage {
+      padding: 0 !important;
+      overflow: hidden !important;
+      background: linear-gradient(170deg, #fce8f0 0%, #f5b8d0 100%);
     }
+    /* Chat aktifken bottombar gizle */
+    body.chat-active .bottombar { display: none !important; }
+    body.chat-active #chatPage   { opacity: 1; pointer-events: auto; }
 
-    /* Sub-viewlar: liste ↔ konuşma arası geçiş */
+    /* Sub-view'lar: liste ve konuşma */
     .chat-subview {
-      position: absolute; inset: 0;
-      display: flex; flex-direction: column;
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
       background: linear-gradient(170deg, #fce8f0 0%, #f5b8d0 100%);
       transform: translateX(100%);
-      transition: transform .28s var(--ease-out);
-      pointer-events: none;
+      transition: transform .28s cubic-bezier(.4,0,.2,1);
+      will-change: transform;
     }
     .chat-subview.active {
       transform: translateX(0);
-      pointer-events: auto;
     }
+    /* Liste view başlangıçta görünür, konuşma sağda */
+    #chatListView  { transform: translateX(0); }
+    #chatListView.active { transform: translateX(0); }
+    #chatConvView  { transform: translateX(100%); }
+    #chatConvView.active { transform: translateX(0); }
 
-    /* Liste başlık */
+    /* Mesajlar sayfası topbar */
     .chat-page-head {
-      padding: 16px 18px 12px;
+      padding: calc(var(--safe-top) + 14px) 18px 12px;
       border-bottom: 1.5px solid rgba(160,60,100,.1);
       flex-shrink: 0;
+      background: rgba(255,255,255,.3);
     }
     .chat-page-title {
       font-size: 22px; font-weight: 900; color: var(--pink-dark);
-      font-family: "Nunito", sans-serif;
     }
 
     /* Konuşma topbar */
@@ -1454,64 +1463,48 @@
       transition: transform .1s;
     }
     .chat-conv-back-btn:active { transform: scale(.88); }
-
-    .chat-conv-header-info { flex: 1; min-width: 0; }
-    .chat-conv-name {
-      font-size: 15px; font-weight: 800; color: var(--pink-dark);
-    }
-    .chat-conv-status {
-      font-size: 11.5px; color: var(--text-muted);
-      display: flex; align-items: center; gap: 4px; margin-top: 1px;
-    }
-    .online-dot {
-      width: 7px; height: 7px; border-radius: 50%;
-      background: var(--green); box-shadow: 0 0 5px rgba(76,175,125,.6);
-      display: inline-block; flex-shrink: 0;
-    }
-    .offline-dot {
-      width: 7px; height: 7px; border-radius: 50%;
-      background: var(--text-muted); display: inline-block; flex-shrink: 0;
-    }
-
-    /* Konuşma avatar (topbar'da) */
     .chat-conv-avatar {
       width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
       background: linear-gradient(135deg, var(--pink-mid), #e07ba8);
       background-size: cover; background-position: center;
-      color: #fff; font-size: 13px; font-weight: 800;
+      color: #fff; font-size: 14px; font-weight: 800;
       display: flex; align-items: center; justify-content: center;
       border: 2px solid rgba(255,255,255,.8);
     }
+    .chat-conv-header-info { flex: 1; min-width: 0; }
+    .chat-conv-name { font-size: 15px; font-weight: 800; color: var(--pink-dark); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .chat-conv-status { font-size: 11.5px; color: var(--text-muted); display: flex; align-items: center; gap: 4px; margin-top: 1px; }
+
+    .online-dot  { width: 7px; height: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 5px rgba(76,175,125,.6); display: inline-block; flex-shrink: 0; }
+    .offline-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-muted); display: inline-block; flex-shrink: 0; }
 
     /* Kullanıcı listesi */
     .chat-user-list {
       flex: 1 1 0; min-height: 0;
       overflow-y: auto; -webkit-overflow-scrolling: touch;
       padding: 8px 10px;
-      display: flex; flex-direction: column; gap: 2px;
     }
     .chat-user-item {
       display: flex; align-items: center; gap: 11px;
       padding: 10px 12px; border-radius: var(--r-sm);
       cursor: pointer; transition: background .15s, transform .1s;
-      position: relative;
     }
     .chat-user-item:active { transform: scale(.97); background: rgba(255,255,255,.5); }
     .chat-user-avatar {
       width: 48px; height: 48px; border-radius: 50%; flex-shrink: 0;
       background: linear-gradient(135deg, var(--pink-mid), #e07ba8);
       background-size: cover; background-position: center;
-      color: #fff; font-size: 16px; font-weight: 800;
+      color: #fff; font-size: 17px; font-weight: 800;
       display: flex; align-items: center; justify-content: center;
       border: 2px solid rgba(255,255,255,.8); position: relative;
     }
     .chat-user-avatar::after {
       content: ''; position: absolute; bottom: 1px; right: 1px;
       width: 12px; height: 12px; border-radius: 50%;
-      border: 2px solid #fce8f0; background: var(--text-muted);
+      border: 2.5px solid #fce8f0; background: var(--text-muted);
+      transition: background .3s;
     }
     .chat-user-avatar.online::after { background: var(--green); box-shadow: 0 0 4px rgba(76,175,125,.6); }
-
     .chat-user-info { flex: 1; min-width: 0; }
     .chat-user-name { font-size: 14.5px; font-weight: 800; color: var(--pink-dark); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .chat-user-last { font-size: 12.5px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 2px; }
@@ -1523,7 +1516,6 @@
       font-size: 10.5px; font-weight: 800;
       display: flex; align-items: center; justify-content: center; padding: 0 5px;
     }
-
     .chat-empty {
       display: flex; flex-direction: column; align-items: center;
       padding: 56px 24px; gap: 10px; text-align: center;
@@ -1531,89 +1523,152 @@
     }
     .chat-empty-icon { font-size: 44px; }
 
-    /* Mesaj alanı */
+    /* ── Mesaj alanı ── */
     .chat-messages {
       flex: 1 1 0; min-height: 0;
       overflow-y: auto; overflow-x: hidden;
       -webkit-overflow-scrolling: touch;
-      padding: 12px 14px;
-      display: flex; flex-direction: column; gap: 4px;
+      padding: 14px 10px 8px;
+      display: flex; flex-direction: column;
     }
 
-    .msg-row { display: flex; align-items: flex-end; gap: 7px; animation: fadeIn .18s ease; }
-    .msg-row.mine { flex-direction: row-reverse; }
+    /* Tarih ayracı */
+    .msg-date-sep {
+      text-align: center; font-size: 11px; font-weight: 700;
+      color: var(--text-muted); margin: 12px 0 8px;
+      letter-spacing: .03em;
+    }
+    .msg-date-sep span {
+      background: rgba(160,60,100,.1); padding: 3px 10px; border-radius: 999px;
+    }
 
+    /* Mesaj satırı */
+    .msg-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 6px;
+      margin-bottom: 2px;
+      /* Kendi mesajlarım sağa yaslanır */
+    }
+    .msg-row.mine {
+      flex-direction: row-reverse;
+    }
+    .msg-row.group-end { margin-bottom: 8px; }
+
+    /* Avatar — sadece grup sonunda görünür, diğerlerinde görünmez ama yer tutar */
     .msg-avatar-sm {
       width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
       background: linear-gradient(135deg, var(--pink-mid), #e07ba8);
       background-size: cover; background-position: center;
       color: #fff; font-size: 9px; font-weight: 800;
       display: flex; align-items: center; justify-content: center;
-      border: 1.5px solid var(--pink-light); align-self: flex-end;
+      border: 1.5px solid var(--pink-light);
+      visibility: hidden; /* yer tutar ama görünmez */
     }
+    .msg-row.group-end:not(.mine) .msg-avatar-sm { visibility: visible; }
+    /* Kendi mesajlarımda avatar YOK, sağda boşluk da YOK */
     .msg-row.mine .msg-avatar-sm { display: none; }
 
+    /* Balon wrapper */
+    .msg-bubble-wrap {
+      display: flex;
+      flex-direction: column;
+      max-width: calc(100% - 44px); /* avatar (28) + gap (6) + biraz boşluk */
+    }
+    .msg-row.mine .msg-bubble-wrap {
+      align-items: flex-end;
+      /* Kendi tarafında max genişlik daha fazla — avatar yok */
+      max-width: 80%;
+    }
+
+    /* İsim etiketi */
+    .msg-sender {
+      font-size: 10.5px; font-weight: 800; color: var(--pink-mid);
+      margin-bottom: 2px; padding-left: 4px;
+    }
+
+    /* Balon */
     .msg-bubble {
-      max-width: 72%; padding: 9px 13px; border-radius: 18px;
-      font-size: 14px; line-height: 1.45; word-break: break-word;
+      padding: 8px 12px;
+      word-break: break-word;
+      font-size: 14px; line-height: 1.45;
+      border-radius: 18px;
     }
     .msg-row:not(.mine) .msg-bubble {
-      background: rgba(255,255,255,.85); color: var(--text-primary);
+      background: rgba(255,255,255,.88);
+      color: var(--text-primary);
+      box-shadow: 0 1px 2px rgba(0,0,0,.06);
       border-radius: 4px 18px 18px 18px;
-      box-shadow: 0 1px 4px rgba(0,0,0,.07);
     }
     .msg-row.mine .msg-bubble {
-      background: var(--pink-mid); color: #fff;
+      background: var(--pink-mid);
+      color: #fff;
+      box-shadow: 0 2px 6px rgba(192,100,138,.25);
       border-radius: 18px 4px 18px 18px;
-      box-shadow: 0 2px 8px rgba(192,100,138,.3);
     }
-    .msg-time { font-size: 10px; opacity: .55; margin-top: 3px; text-align: right; }
-    .msg-row:not(.mine) .msg-time { text-align: left; color: var(--text-muted); }
-    .msg-status { font-size: 11px; opacity: .7; margin-left: 3px; }
+    /* Grup köşe yuvarlama */
+    .msg-row:not(.mine).group-start .msg-bubble { border-bottom-left-radius: 4px; border-top-left-radius: 18px; }
+    .msg-row:not(.mine).group-mid   .msg-bubble { border-top-left-radius: 4px; border-bottom-left-radius: 4px; }
+    .msg-row:not(.mine).group-end   .msg-bubble { border-top-left-radius: 4px; }
+    .msg-row.mine.group-start .msg-bubble { border-bottom-right-radius: 4px; border-top-right-radius: 18px; }
+    .msg-row.mine.group-mid   .msg-bubble { border-top-right-radius: 4px; border-bottom-right-radius: 4px; }
+    .msg-row.mine.group-end   .msg-bubble { border-top-right-radius: 4px; }
 
-    .msg-date-sep {
-      text-align: center; font-size: 11px; font-weight: 700;
-      color: var(--text-muted); padding: 8px 0 4px; letter-spacing: .02em;
+    /* Meta — sadece grup sonunda */
+    .msg-meta {
+      display: none;
+      align-items: center; gap: 3px;
+      font-size: 10px; color: var(--text-muted);
+      margin-top: 3px; padding: 0 4px;
     }
+    .msg-row.group-end .msg-meta { display: flex; }
+    .msg-row.mine .msg-meta { justify-content: flex-end; }
+
+    .msg-tick { font-size: 11px; }
+    .msg-tick.read { color: #4caf7d; }
 
     /* Yazıyor */
-    .typing-row { display: flex; align-items: center; gap: 8px; padding: 4px 0; }
+    .typing-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; }
+    .typing-bubble {
+      background: rgba(255,255,255,.88); border-radius: 18px 18px 18px 4px;
+      padding: 10px 14px; display: flex; gap: 4px; align-items: center;
+    }
     .typing-dots span {
-      width: 5px; height: 5px; border-radius: 50%;
-      background: var(--pink-mid); display: inline-block;
-      animation: pulse 1.2s ease-in-out infinite;
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--text-muted); display: inline-block;
+      animation: typingDot 1.4s ease-in-out infinite;
     }
     .typing-dots span:nth-child(2) { animation-delay: .2s; }
     .typing-dots span:nth-child(3) { animation-delay: .4s; }
+    @keyframes typingDot { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-5px)} }
 
     /* Input */
     .chat-input-row {
       display: flex; align-items: flex-end; gap: 8px;
-      padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px));
+      padding: 10px 12px calc(12px + env(safe-area-inset-bottom, 0px));
       border-top: 1.5px solid rgba(160,60,100,.1);
       background: rgba(255,255,255,.35); flex-shrink: 0;
     }
     .chat-input {
-      flex: 1; background: rgba(255,255,255,.85);
+      flex: 1; background: rgba(255,255,255,.88);
       border: 1.5px solid rgba(160,60,100,.15);
-      border-radius: var(--r-md); padding: 10px 13px;
+      border-radius: 22px; padding: 10px 15px;
       font-size: 14.5px; line-height: 1.4; color: var(--text-primary);
-      resize: none; max-height: 100px; min-height: 42px;
+      resize: none; max-height: 120px; min-height: 42px;
       outline: none; transition: border-color .15s;
       font-family: "Nunito", sans-serif;
     }
     .chat-input:focus { border-color: var(--pink-mid); }
     .chat-input::placeholder { color: var(--text-muted); }
     .chat-send-btn {
-      width: 42px; height: 42px; border-radius: 50%;
+      width: 44px; height: 44px; border-radius: 50%;
       background: var(--pink-mid); color: #fff;
       display: flex; align-items: center; justify-content: center; flex-shrink: 0;
       box-shadow: 0 3px 10px rgba(192,100,138,.35);
-      transition: transform .1s, opacity .15s;
+      transition: transform .1s, opacity .15s, background .15s;
     }
     .chat-send-btn:active { transform: scale(.88); }
-    .chat-send-btn:disabled { opacity: .4; pointer-events: none; }
-
+    .chat-send-btn:disabled { opacity: .35; pointer-events: none; }
 
     /* ═══════════════════════════════════════════
        SIDE MENU
@@ -1917,7 +1972,12 @@
       <!-- Sub-view A: Konuşma Listesi -->
       <div id="chatListView" class="chat-subview active">
         <div class="chat-page-head">
-          <span class="chat-page-title">Mesajlar</span>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <button id="chatPageBack" class="chat-conv-back-btn" type="button" aria-label="Geri">
+              <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M15.5 19 8 12l7.5-7"/></svg>
+            </button>
+            <span class="chat-page-title">Mesajlar</span>
+          </div>
         </div>
         <div id="chatUserList" class="chat-user-list"></div>
       </div>
@@ -2445,6 +2505,7 @@ const EL = {
 
   // Chat (sayfa bazlı)
   chatPage:        q("chatPage"),
+  chatPageBack:    q("chatPageBack"),
   chatListView:    q("chatListView"),
   chatConvView:    q("chatConvView"),
   chatUserList:    q("chatUserList"),
@@ -4570,6 +4631,10 @@ function showPage(page) {
   EL.publishedPage.classList.toggle("active", page === "published");
   EL.cameraPage.classList.toggle("active",    page === "camera");
   EL.chatPage.classList.toggle("active",      page === "chat");
+
+  // Chat aktifken bottombar'ı gizle
+  document.body.classList.toggle("chat-active", page === "chat");
+
   EL.navLocal.classList.toggle("active",      page === "local");
   EL.navPublished.classList.toggle("active",  page === "published");
   EL.navCamera.classList.toggle("active",     page === "camera");
@@ -4577,7 +4642,7 @@ function showPage(page) {
 
   if (page === "camera")    openCamera("environment");
   if (page === "published") markSeen();
-  if (page === "chat")      { renderChatList(); }
+  if (page === "chat")      renderChatList();
 }
 
 EL.navLocal.addEventListener("click",     () => showPage("local"));
@@ -5484,105 +5549,114 @@ function _updateConvStatus(d) {
 }
 
 function _startMsgListener() {
-  // Önceki listener'ı temizle
   if (_chatMsgListener) { try { _chatMsgListener(); } catch(e){} _chatMsgListener = null; }
-
-  if (!chatActiveChatId) { console.error("[Chat] chatActiveChatId yok"); return; }
-  if (!currentUser)      { console.error("[Chat] currentUser yok"); return; }
+  if (!chatActiveChatId || !currentUser) return;
 
   const msgsRef = rtRef(rtdb, `chats/${chatActiveChatId}/messages`);
-  console.log("[Chat] Dinleniyor:", `chats/${chatActiveChatId}/messages`);
-
-  // Loading göster
-  EL.chatMessages.innerHTML = `<div style="text-align:center;padding:32px;color:var(--text-muted);font-size:13px;">Yükleniyor…</div>`;
+  EL.chatMessages.innerHTML = '<div style="text-align:center;padding:32px;color:var(--text-muted);font-size:13px;">Yükleniyor…</div>';
 
   const unsubscribe = onValue(msgsRef, snap => {
-    console.log("[Chat] Snapshot geldi, exists:", snap.exists(), "size:", snap.size);
-
-    // Tüm mesajları topla
     const msgs = [];
-    if (snap.exists()) {
-      snap.forEach(child => {
-        const val = child.val();
-        if (val && val.ts) msgs.push({ id: child.key, ...val });
-      });
-    }
-    console.log("[Chat] Mesaj sayısı:", msgs.length);
+    if (snap.exists()) snap.forEach(c => { const v=c.val(); if(v&&v.ts) msgs.push({id:c.key,...v}); });
+    msgs.sort((a,b) => a.ts - b.ts);
 
-    // Zaman sırasına göre sırala (RTDB genelde sıralı ama garantilemek için)
-    msgs.sort((a, b) => a.ts - b.ts);
-
-    // DOM'u temizle ve yeniden çiz
     EL.chatMessages.innerHTML = "";
-    let lastDate = "";
 
-    if (msgs.length === 0) {
-      EL.chatMessages.innerHTML = `<div style="text-align:center;padding:40px 20px;color:var(--text-muted);font-size:13px;">
-        Henüz mesaj yok.<br><span style="font-size:11px">İlk mesajı gönder 👋</span></div>`;
+    if (!msgs.length) {
+      EL.chatMessages.innerHTML = '<div style="text-align:center;padding:48px 20px;color:var(--text-muted);font-size:13px;">Henüz mesaj yok 👋</div>';
       return;
     }
 
-    const frag = document.createDocumentFragment();
+    const frag  = document.createDocumentFragment();
+    let lastDate = "";
+    const GROUP_GAP = 120_000; // 2 dk içindeki aynı kişi mesajları grup
 
-    msgs.forEach(msg => {
-      // Tarih ayracı
-      const d   = new Date(msg.ts);
-      const ds  = d.toLocaleDateString("tr-TR", { day:"numeric", month:"long", year:"numeric" });
+    msgs.forEach((msg, i) => {
+      const prev = msgs[i-1];
+      const next = msgs[i+1];
+      const mine = msg.from === currentUser.uid;
+      const d    = new Date(msg.ts);
+
+      // ── Tarih ayracı ──
+      const ds = d.toLocaleDateString("tr-TR", {day:"numeric",month:"long",year:"numeric"});
       if (ds !== lastDate) {
         const sep = document.createElement("div");
         sep.className = "msg-date-sep";
-        sep.textContent = ds;
-        frag.appendChild(sep);
-        lastDate = ds;
+        sep.innerHTML = `<span>${ds}</span>`;
+        frag.appendChild(sep); lastDate = ds;
       }
 
-      const mine = msg.from === currentUser.uid;
-      const row  = document.createElement("div");
-      row.className = "msg-row" + (mine ? " mine" : "");
+      // ── Gruplama mantığı ──
+      // Önceki mesajla aynı kişi mi ve 2 dk içinde mi?
+      const sameAsPrev = prev && prev.from === msg.from && (msg.ts - prev.ts) < GROUP_GAP;
+      const sameAsNext = next && next.from === msg.from && (next.ts - msg.ts) < GROUP_GAP;
 
-      // Karşı taraf avatarı
+      let groupClass = "";
+      if (sameAsPrev && sameAsNext) groupClass = "group-mid";
+      else if (sameAsPrev)          groupClass = "group-end";
+      else if (sameAsNext)          groupClass = "group-start";
+      else                           groupClass = "group-end"; // tek mesaj
+
+      // ── Satır ──
+      const row = document.createElement("div");
+      row.className = `msg-row${mine?" mine":""} ${groupClass}`;
+
+      // Karşı taraf avatarı (sadece group-end'de görünür, CSS ile)
       if (!mine) {
-        const av  = document.createElement("div");
+        const av = document.createElement("div");
         av.className = "msg-avatar-sm";
-        const u   = chatKnownUsers.find(u => u.uid === msg.from);
-        if (u?.photoURL) {
-          av.style.backgroundImage = `url(${u.photoURL})`;
-        } else {
-          av.textContent = initials(u?.displayName || "?");
-        }
+        const u = chatKnownUsers.find(u => u.uid === msg.from);
+        if (u?.photoURL) { av.style.backgroundImage=`url(${u.photoURL})`; av.style.backgroundSize="cover"; }
+        else av.textContent = initials(u?.displayName||"?");
         row.appendChild(av);
+      }
+      // Kendi mesajlarımda avatar yok, placeholder da yok
+
+      // ── Balon wrap (isim + balon + meta) ──
+      const wrap = document.createElement("div");
+      wrap.className = "msg-bubble-wrap";
+
+      // İsim — sadece grup başında ve karşı taraf için
+      if (!mine && !sameAsPrev) {
+        const u = chatKnownUsers.find(u => u.uid === msg.from);
+        if (u && chatKnownUsers.length > 1) {
+          const nm = document.createElement("div");
+          nm.className = "msg-sender";
+          nm.textContent = u.displayName || "";
+          wrap.appendChild(nm);
+        }
       }
 
       // Balon
       const bubble = document.createElement("div");
       bubble.className = "msg-bubble";
-      const timeStr = d.toLocaleTimeString("tr-TR", { hour:"2-digit", minute:"2-digit" });
-      const statusHtml = mine
-        ? `<span class="msg-status">${msg.read ? " ✓✓" : " ✓"}</span>`
-        : "";
-      bubble.innerHTML =
-        `<div>${_esc(msg.text || "").replace(/\n/g, "<br>")}</div>` +
-        `<div class="msg-time">${timeStr}${statusHtml}</div>`;
-      row.appendChild(bubble);
+      bubble.innerHTML = _esc(msg.text||"").replace(/\n/g,"<br>");
+      wrap.appendChild(bubble);
+
+      // Meta (zaman + tick) — sadece grup sonunda
+      const meta = document.createElement("div");
+      meta.className = "msg-meta";
+      const ts = d.toLocaleTimeString("tr-TR",{hour:"2-digit",minute:"2-digit"});
+      if (mine) {
+        const tick = msg.read ? "✓✓" : "✓";
+        const tickClass = msg.read ? "msg-tick read" : "msg-tick";
+        meta.innerHTML = `<span>${ts}</span><span class="${tickClass}">${tick}</span>`;
+      } else {
+        meta.innerHTML = `<span>${ts}</span>`;
+      }
+      wrap.appendChild(meta);
+      row.appendChild(wrap);
       frag.appendChild(row);
     });
 
     EL.chatMessages.appendChild(frag);
-
-    // Scroll en alta
-    requestAnimationFrame(() => {
-      EL.chatMessages.scrollTop = EL.chatMessages.scrollHeight;
-    });
-
-    // Okundu işaretle
+    requestAnimationFrame(() => { EL.chatMessages.scrollTop = EL.chatMessages.scrollHeight; });
     _markChatRead();
 
   }, err => {
-    console.error("[Chat] onValue hatası:", err.code, err.message);
+    console.error("[Chat] onValue hata:", err.code, err.message);
     EL.chatMessages.innerHTML = `<div style="text-align:center;padding:32px;color:var(--danger);font-size:13px;">
-      ❌ Mesajlar yüklenemedi<br><span style="font-size:11px;color:var(--text-muted);">${err.message}</span>
-      <br><button onclick="_startMsgListener()" style="margin-top:12px;padding:8px 16px;border-radius:8px;background:var(--pink-mid);color:#fff;font-weight:700;">Tekrar Dene</button>
-    </div>`;
+      ❌ Mesajlar yüklenemedi: ${err.message}</div>`;
   });
 
   _chatMsgListener = unsubscribe;
@@ -5679,6 +5753,8 @@ function _chatTimeAgo(ts) {
   if (s<7*86400) return Math.floor(s/86400)+"g";
   return new Date(ts).toLocaleDateString("tr-TR",{day:"numeric",month:"short"});
 }
+
+EL.chatPageBack.addEventListener("click", () => showPage("local"));
 
 EL.sideChatBtn.addEventListener("click", () => {
   closeSideMenu();
