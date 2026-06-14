@@ -1670,6 +1670,81 @@
     .chat-send-btn:active { transform: scale(.88); }
     .chat-send-btn:disabled { opacity: .35; pointer-events: none; }
 
+    /* Sesli arama butonu (topbar) */
+    .chat-call-btn {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: rgba(255,255,255,.7);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--pink-dark); flex-shrink: 0;
+      transition: all .15s; margin-left: auto;
+    }
+    .chat-call-btn:active { transform: scale(.88); }
+    .chat-call-btn.in-call { background: var(--green); color: #fff; animation: pulse 1.5s ease-in-out infinite; }
+
+    /* Arama overlay */
+    .call-overlay {
+      position: absolute; inset: 0; z-index: 50;
+      background: linear-gradient(160deg, #4d2438 0%, #2a0e1e 100%);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 12px;
+    }
+    .call-avatar-wrap { position: relative; margin-bottom: 8px; }
+    .call-avatar {
+      width: 88px; height: 88px; border-radius: 50%; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--pink-mid), #e07ba8);
+      background-size: cover; background-position: center;
+      color: #fff; font-size: 32px; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      border: 3px solid rgba(255,255,255,.3); z-index: 1; position: relative;
+    }
+    .call-avatar-rings { position: absolute; inset: 0; pointer-events: none; }
+    .call-ring {
+      position: absolute; border-radius: 50%;
+      border: 2px solid rgba(255,255,255,.2);
+      top: 50%; left: 50%; transform: translate(-50%,-50%);
+    }
+    .call-ring.r1 { width: 120px; height: 120px; animation: callRing 2s ease-out .0s infinite; }
+    .call-ring.r2 { width: 150px; height: 150px; animation: callRing 2s ease-out .5s infinite; }
+    .call-ring.r3 { width: 180px; height: 180px; animation: callRing 2s ease-out 1s infinite; }
+    @keyframes callRing { 0%{opacity:.6;transform:translate(-50%,-50%) scale(.8)} 100%{opacity:0;transform:translate(-50%,-50%) scale(1.2)} }
+
+    .call-name   { font-size: 22px; font-weight: 800; color: #fff; }
+    .call-status { font-size: 14px; color: rgba(255,255,255,.6); }
+    .call-timer  { font-size: 18px; font-weight: 700; color: rgba(255,255,255,.9); font-variant-numeric: tabular-nums; }
+
+    .call-actions {
+      display: flex; gap: 20px; align-items: center;
+      margin-top: 32px;
+    }
+    .call-action-btn {
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+      padding: 0;
+    }
+    .call-action-btn svg {
+      width: 56px; height: 56px; padding: 16px; border-radius: 50%;
+      background: rgba(255,255,255,.12); transition: background .15s;
+    }
+    .call-action-btn:active svg { background: rgba(255,255,255,.24); }
+    .call-action-btn span { font-size: 11px; color: rgba(255,255,255,.7); font-weight: 600; }
+    .call-action-btn.call-end svg { background: var(--danger); }
+    .call-action-btn.call-accept svg { background: var(--green); }
+    .call-action-btn.muted svg { background: rgba(255,255,255,.3); }
+
+    /* Gelen arama overlay */
+    .incoming-call-overlay {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 6500;
+      background: linear-gradient(170deg, #3a1628 0%, #2a0e1e 100%);
+      border-radius: var(--r-xl) var(--r-xl) 0 0;
+      padding: 28px 24px calc(28px + env(safe-area-inset-bottom, 0px));
+      text-align: center;
+      box-shadow: 0 -8px 40px rgba(0,0,0,.5);
+      animation: sheetUp .3s var(--spring);
+    }
+    .incoming-call-actions {
+      display: flex; gap: 40px; justify-content: center; margin-top: 24px;
+    }
+
     /* ═══════════════════════════════════════════
        SIDE MENU
     ═══════════════════════════════════════════ */
@@ -1993,6 +2068,12 @@
             <div id="chatConvName" class="chat-conv-name">—</div>
             <div id="chatConvStatus" class="chat-conv-status"></div>
           </div>
+          <!-- Sesli arama butonu -->
+          <button id="callBtn" class="chat-call-btn" type="button" title="Sesli Arama">
+            <svg viewBox="0 0 24 24" width="20" height="20">
+              <path fill="currentColor" d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z"/>
+            </svg>
+          </button>
         </div>
         <div id="chatMessages" class="chat-messages"></div>
         <div class="chat-input-row">
@@ -2002,6 +2083,58 @@
           </button>
         </div>
       </div>
+
+      <!-- Sesli Arama Overlay -->
+      <div id="callOverlay" class="call-overlay" style="display:none;">
+        <div class="call-avatar-wrap">
+          <div id="callAvatar" class="call-avatar">?</div>
+          <div class="call-avatar-rings">
+            <div class="call-ring r1"></div>
+            <div class="call-ring r2"></div>
+            <div class="call-ring r3"></div>
+          </div>
+        </div>
+        <div id="callName"   class="call-name">—</div>
+        <div id="callStatus" class="call-status">Bağlanıyor…</div>
+        <div id="callTimer"  class="call-timer" style="display:none;">00:00</div>
+        <div class="call-actions">
+          <button id="callMuteBtn"    class="call-action-btn" type="button" title="Sessiz">
+            <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.93V21h2v-3.07A7 7 0 0 0 19 11h-2z"/></svg>
+            <span>Sessiz</span>
+          </button>
+          <button id="callEndBtn"     class="call-action-btn call-end" type="button" title="Kapat">
+            <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9a11.25 11.25 0 0 0-2.88 2.31c-.18.21-.44.33-.7.33-.28 0-.54-.11-.73-.3L.31 13.84a.98.98 0 0 1-.28-.7c0-.28.1-.54.29-.73C3.34 9.6 7.46 8 12 8s8.66 1.6 11.68 4.41c.19.19.29.45.29.73 0 .27-.1.52-.28.7l-2.22 2.22c-.19.19-.45.3-.73.3-.26 0-.52-.12-.7-.33a11.3 11.3 0 0 0-2.87-2.31 1.02 1.02 0 0 1-.57-.9v-3.1A13.2 13.2 0 0 0 12 9z"/></svg>
+            <span>Kapat</span>
+          </button>
+          <button id="callSpeakerBtn" class="call-action-btn" type="button" title="Hoparlör">
+            <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77 0-4.28-2.99-7.86-7-8.77z"/></svg>
+            <span>Hoparlör</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Gelen Arama Overlay -->
+      <div id="incomingCallOverlay" class="incoming-call-overlay" style="display:none;">
+        <div id="incomingCallAvatar" class="call-avatar" style="width:64px;height:64px;font-size:24px;margin:0 auto 12px;">?</div>
+        <div id="incomingCallName" class="call-name" style="font-size:18px;margin-bottom:6px;">—</div>
+        <div class="call-status">Sesli arama yapıyor…</div>
+        <div class="incoming-call-actions">
+          <button id="callRejectBtn" class="call-action-btn call-end" type="button">
+            <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9a11.25 11.25 0 0 0-2.88 2.31c-.18.21-.44.33-.7.33-.28 0-.54-.11-.73-.3L.31 13.84a.98.98 0 0 1-.28-.7c0-.28.1-.54.29-.73C3.34 9.6 7.46 8 12 8s8.66 1.6 11.68 4.41c.19.19.29.45.29.73 0 .27-.1.52-.28.7l-2.22 2.22c-.19.19-.45.3-.73.3-.26 0-.52-.12-.7-.33a11.3 11.3 0 0 0-2.87-2.31 1.02 1.02 0 0 1-.57-.9v-3.1A13.2 13.2 0 0 0 12 9z"/></svg>
+            Reddet
+          </button>
+          <button id="callAcceptBtn" class="call-action-btn call-accept" type="button">
+            <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z"/></svg>
+            Kabul Et
+          </button>
+        </div>
+      </div>
+
+      <!-- Gizli ses elementleri -->
+      <audio id="remoteAudio" autoplay playsinline></audio>
+      <audio id="callRingtone" loop>
+        <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAA..." type="audio/wav">
+      </audio>
 
     </div>
 
@@ -2504,8 +2637,21 @@ const EL = {
   sideLogoutBtn:   q("sideLogoutBtn"),
 
   // Chat (sayfa bazlı)
-  chatPage:        q("chatPage"),
-  chatPageBack:    q("chatPageBack"),
+  callBtn:             q("callBtn"),
+  callOverlay:         q("callOverlay"),
+  callAvatar:          q("callAvatar"),
+  callName:            q("callName"),
+  callStatus:          q("callStatus"),
+  callTimer:           q("callTimer"),
+  callMuteBtn:         q("callMuteBtn"),
+  callEndBtn:          q("callEndBtn"),
+  callSpeakerBtn:      q("callSpeakerBtn"),
+  incomingCallOverlay: q("incomingCallOverlay"),
+  incomingCallAvatar:  q("incomingCallAvatar"),
+  incomingCallName:    q("incomingCallName"),
+  callAcceptBtn:       q("callAcceptBtn"),
+  callRejectBtn:       q("callRejectBtn"),
+  remoteAudio:         q("remoteAudio"),
   chatListView:    q("chatListView"),
   chatConvView:    q("chatConvView"),
   chatUserList:    q("chatUserList"),
@@ -3548,20 +3694,55 @@ async function saveNotifPref(enabled) {
 }
 
 async function requestNotificationPermission() {
-  if (!messaging) { toast("⚠️ Bildirimler bu tarayıcıda desteklenmiyor"); return; }
-  if (!('serviceWorker' in navigator)) { toast("⚠️ Service Worker gerekli"); return; }
+  if (!messaging) {
+    toast("⚠️ Bildirimler bu tarayıcıda desteklenmiyor");
+    console.warn("[FCM] messaging null — HTTPS gerekli veya tarayıcı desteklemiyor");
+    return;
+  }
+  if (!('serviceWorker' in navigator)) {
+    toast("⚠️ Service Worker bu tarayıcıda desteklenmiyor");
+    return;
+  }
   try {
+    // İzin iste
     const perm = await Notification.requestPermission();
+    console.log("[FCM] Bildirim izni:", perm);
     if (perm !== "granted") { toast("❌ Bildirim izni reddedildi"); return; }
-    const swReg = await navigator.serviceWorker.register("./firebase-messaging-sw.js", { scope: "./" });
+
+    // Service Worker kaydet — scope "/" olmalı (Firebase Hosting için)
+    let swReg;
+    try {
+      swReg = await navigator.serviceWorker.register("/firebase-messaging-sw.js");
+      console.log("[FCM] SW kayıt başarılı:", swReg.scope);
+    } catch (swErr) {
+      console.error("[FCM] SW kayıt hatası:", swErr.message);
+      // firebase-messaging-sw.js kök dizinde değilse dene
+      swReg = await navigator.serviceWorker.register("./firebase-messaging-sw.js");
+      console.log("[FCM] SW kayıt (./…) başarılı:", swReg.scope);
+    }
+
     await navigator.serviceWorker.ready;
-    const token = await getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: swReg });
+    console.log("[FCM] SW hazır:", swReg.active?.state);
+
+    // Token al
+    const token = await getToken(messaging, {
+      vapidKey:                    VAPID_KEY,
+      serviceWorkerRegistration:   swReg,
+    });
+
+    if (!token) {
+      console.error("[FCM] Token alınamadı — VAPID key doğru mu?");
+      toast("❌ Token alınamadı");
+      return;
+    }
+
+    console.log("[FCM] Token alındı:", token.slice(0,20) + "…");
     await saveFcmToken(token);
-    await saveNotifPref(true);   // Firestore'a kaydet
+    await saveNotifPref(true);
     updateNotifBtn(true);
     toast("🔔 Bildirimler etkinleştirildi!");
   } catch(e) {
-    console.error("FCM token:", e);
+    console.error("[FCM] requestNotificationPermission hatası:", e.name, e.message);
     toast("❌ Bildirim hatası: " + e.message);
   }
 }
@@ -3569,29 +3750,32 @@ async function requestNotificationPermission() {
 function initForegroundMessages() {
   if (!messaging) return;
   onMessage(messaging, payload => {
-    const { title = "Pelus Takip", body = "" } = payload.notification || {};
+    console.log("[FCM] Ön plan mesaj:", payload);
+    const { title = "Pelus Takip 🐾", body = "" } = payload.notification || {};
     const data = payload.data || {};
-    // Uygulama önplandayken toast + bildirim listesini güncelle
-    if (data.pubId) {
-      // Yeni bildirim geldi — cache'i güncelle
-      _updateNotifBadge();
-    }
+    // In-app toast göster — tarayıcı bildirimi göstermez (uygulama önplanda)
     toast(`🔔 ${title}: ${body}`);
+    // Badge güncelle
+    _updateNotifBadge();
   });
 }
 
 async function refreshFcmToken() {
   if (!messaging || !currentUser) return;
   if (Notification.permission !== "granted") return;
-  // Firestore'dan tercihi kontrol et
   const enabled = await loadNotifPref();
   if (!enabled) return;
   try {
-    const swReg = await navigator.serviceWorker.register("./firebase-messaging-sw.js", { scope: "./" });
+    let swReg;
+    try { swReg = await navigator.serviceWorker.register("/firebase-messaging-sw.js"); }
+    catch { swReg = await navigator.serviceWorker.register("./firebase-messaging-sw.js"); }
     await navigator.serviceWorker.ready;
     const token = await getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: swReg });
-    await saveFcmToken(token);
-  } catch(e) { console.warn("refreshFcmToken:", e.message); }
+    if (token) {
+      await saveFcmToken(token);
+      console.log("[FCM] Token yenilendi:", token.slice(0,20) + "…");
+    }
+  } catch(e) { console.warn("[FCM] refreshFcmToken:", e.message); }
 }
 
 function updateNotifBtn(forceEnabled) {
@@ -5818,6 +6002,340 @@ function updateChatBadge() {
 }
 
 /* ═══════════════════════════════════════════
+   SESLİ ARAMA — WebRTC + Firebase RTDB Signaling
+   RTDB yapısı:
+     calls/{callId}/offer      → { sdp, type }
+     calls/{callId}/answer     → { sdp, type }
+     calls/{callId}/callerCandidates → push { candidate }
+     calls/{callId}/calleeCandidates → push { candidate }
+     calls/{callId}/meta       → { caller, callee, status, createdAt }
+   callId = chatId (her iki kullanıcıya özgü)
+═══════════════════════════════════════════ */
+
+const ICE_SERVERS = {
+  iceServers: [
+    { urls: "stun:stun.l.google.com:19302" },
+    { urls: "stun:stun1.l.google.com:19302" },
+    { urls: "stun:stun2.l.google.com:19302" },
+  ],
+};
+
+let _pc          = null;   // RTCPeerConnection
+let _localStream = null;   // Mikrofon stream
+let _callId      = null;   // Aktif arama ID
+let _callTimer   = null;   // Süre sayacı
+let _callSeconds = 0;
+let _isCaller    = false;
+let _isMuted     = false;
+let _isSpeaker   = false;
+let _callListeners = [];   // RTDB listeners (cleanup için)
+let _incomingCallListener = null;
+
+/* ── Süre sayacı ── */
+function _startCallTimer() {
+  _callSeconds = 0;
+  EL.callTimer.style.display = "block";
+  EL.callTimer.textContent   = "00:00";
+  _callTimer = setInterval(() => {
+    _callSeconds++;
+    const m = String(Math.floor(_callSeconds / 60)).padStart(2, "0");
+    const s = String(_callSeconds % 60).padStart(2, "0");
+    EL.callTimer.textContent = `${m}:${s}`;
+  }, 1000);
+}
+
+function _stopCallTimer() {
+  clearInterval(_callTimer); _callTimer = null;
+  EL.callTimer.style.display = "none";
+}
+
+/* ── Call overlay ── */
+function _showCallOverlay(name, photoURL, status) {
+  EL.callOverlay.style.display = "flex";
+  EL.callName.textContent      = name;
+  EL.callStatus.textContent    = status;
+  EL.callTimer.style.display   = "none";
+  if (photoURL) {
+    EL.callAvatar.style.backgroundImage = `url(${photoURL})`;
+    EL.callAvatar.style.backgroundSize  = "cover";
+    EL.callAvatar.textContent = "";
+  } else {
+    EL.callAvatar.style.backgroundImage = "";
+    EL.callAvatar.textContent = initials(name);
+  }
+  EL.callBtn.classList.add("in-call");
+}
+
+function _hideCallOverlay() {
+  EL.callOverlay.style.display = "none";
+  EL.callBtn.classList.remove("in-call");
+  _stopCallTimer();
+}
+
+function _hideIncomingOverlay() {
+  EL.incomingCallOverlay.style.display = "none";
+}
+
+/* ── Bağlantıyı temizle ── */
+async function _cleanupCall() {
+  _stopCallTimer();
+  _hideCallOverlay();
+  _hideIncomingOverlay();
+
+  if (_localStream) {
+    _localStream.getTracks().forEach(t => t.stop());
+    _localStream = null;
+  }
+  if (_pc) { _pc.close(); _pc = null; }
+
+  EL.remoteAudio.srcObject = null;
+
+  // Listeners temizle
+  _callListeners.forEach(fn => { try { fn(); } catch {} });
+  _callListeners = [];
+
+  // RTDB'deki arama durumunu güncelle
+  if (_callId && currentUser) {
+    try {
+      await rtUpdate(rtRef(rtdb, `calls/${_callId}/meta`), {
+        status: "ended", endedAt: Date.now()
+      });
+    } catch {}
+  }
+  _callId = null; _isCaller = false;
+  _isMuted = false; _isSpeaker = false;
+  EL.callMuteBtn.querySelector("span").textContent = "Sessiz";
+  EL.callMuteBtn.classList.remove("muted");
+}
+
+/* ── ICE candidate ekle ── */
+function _addIceCandidateListeners(isCallerSide) {
+  // Karşı tarafın candidate'larını dinle
+  const remotePath = isCallerSide
+    ? `calls/${_callId}/calleeCandidates`
+    : `calls/${_callId}/callerCandidates`;
+
+  const ref = rtRef(rtdb, remotePath);
+  const unsub = onValue(ref, snap => {
+    if (!snap.exists() || !_pc) return;
+    snap.forEach(child => {
+      const c = child.val();
+      if (c && c.candidate) {
+        _pc.addIceCandidate(new RTCIceCandidate(c)).catch(() => {});
+      }
+    });
+  });
+  _callListeners.push(() => off(ref));
+}
+
+/* ── RTCPeerConnection kur ── */
+function _createPC() {
+  _pc = new RTCPeerConnection(ICE_SERVERS);
+
+  _pc.onicecandidate = async e => {
+    if (!e.candidate || !_callId) return;
+    const path = _isCaller
+      ? `calls/${_callId}/callerCandidates`
+      : `calls/${_callId}/calleeCandidates`;
+    await push(rtRef(rtdb, path), e.candidate.toJSON()).catch(() => {});
+  };
+
+  _pc.ontrack = e => {
+    EL.remoteAudio.srcObject = e.streams[0];
+    EL.remoteAudio.play().catch(() => {});
+    EL.callStatus.textContent = "Bağlandı";
+    _startCallTimer();
+  };
+
+  _pc.onconnectionstatechange = () => {
+    console.log("[WebRTC] State:", _pc?.connectionState);
+    if (_pc?.connectionState === "failed" || _pc?.connectionState === "disconnected") {
+      toast("📞 Bağlantı kesildi");
+      _cleanupCall();
+    }
+  };
+
+  return _pc;
+}
+
+/* ══ ARAMA BAŞLAT (arayan taraf) ══ */
+async function startCall() {
+  if (!currentUser || !chatActiveUid || !chatActiveChatId) return;
+  if (_pc) { toast("Zaten bir arama devam ediyor"); return; }
+
+  // Mikrofon izni al
+  try {
+    _localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+  } catch(e) {
+    toast("❌ Mikrofon erişimi reddedildi");
+    return;
+  }
+
+  _callId   = chatActiveChatId;
+  _isCaller = true;
+
+  const u = chatKnownUsers.find(u => u.uid === chatActiveUid) || { displayName: "Aranan", photoURL: null };
+  _showCallOverlay(u.displayName, u.photoURL, "Aranıyor…");
+
+  _createPC();
+  _localStream.getTracks().forEach(t => _pc.addTrack(t, _localStream));
+
+  // Offer oluştur
+  const offer = await _pc.createOffer();
+  await _pc.setLocalDescription(offer);
+
+  // RTDB'ye yaz
+  await set(rtRef(rtdb, `calls/${_callId}`), {
+    meta: {
+      caller:    currentUser.uid,
+      callee:    chatActiveUid,
+      status:    "calling",
+      createdAt: Date.now(),
+    },
+    offer: { sdp: offer.sdp, type: offer.type },
+  });
+
+  // Answer dinle
+  const answerRef = rtRef(rtdb, `calls/${_callId}/answer`);
+  const unsubAnswer = onValue(answerRef, async snap => {
+    if (!snap.exists() || _pc?.remoteDescription) return;
+    const answer = snap.val();
+    if (answer?.type === "answer") {
+      await _pc.setRemoteDescription(new RTCSessionDescription(answer)).catch(() => {});
+    }
+  });
+  _callListeners.push(() => off(answerRef));
+
+  // Meta dinle (reddedildi/sonlandı)
+  const metaRef = rtRef(rtdb, `calls/${_callId}/meta`);
+  const unsubMeta = onValue(metaRef, snap => {
+    const status = snap.val()?.status;
+    if (status === "rejected") { toast("📞 Arama reddedildi"); _cleanupCall(); }
+    if (status === "ended" && !_isCaller) _cleanupCall();
+  });
+  _callListeners.push(() => off(metaRef));
+
+  _addIceCandidateListeners(true);
+}
+
+/* ══ GELEN ARAMAYA CEVAP VER ══ */
+async function acceptCall() {
+  _hideIncomingOverlay();
+  if (!_callId || !_pc) return;
+
+  _showCallOverlay(
+    EL.incomingCallName.textContent,
+    null, "Bağlanıyor…"
+  );
+
+  // Answer oluştur
+  const answer = await _pc.createAnswer();
+  await _pc.setLocalDescription(answer);
+  await rtUpdate(rtRef(rtdb, `calls/${_callId}`), {
+    answer: { sdp: answer.sdp, type: answer.type },
+    "meta/status": "in-call",
+  });
+  _addIceCandidateListeners(false);
+}
+
+/* ══ ARAYAN TARAFTA BEKLERKEN REDDET ══ */
+async function rejectCall() {
+  if (_callId) {
+    await rtUpdate(rtRef(rtdb, `calls/${_callId}/meta`), { status: "rejected" }).catch(() => {});
+  }
+  if (_pc) { _pc.close(); _pc = null; }
+  _callListeners.forEach(fn => fn()); _callListeners = [];
+  _hideIncomingOverlay();
+  _callId = null;
+}
+
+/* ══ GELEN ARAMALARI DİNLE ══ */
+function _listenIncomingCalls(uid) {
+  if (_incomingCallListener) { try { _incomingCallListener(); } catch {} }
+
+  const callsRef = rtRef(rtdb, "calls");
+  let firstSnap  = true;
+  const unsub    = onValue(callsRef, async snap => {
+    if (firstSnap) { firstSnap = false; return; }
+    if (!snap.exists()) return;
+
+    snap.forEach(async child => {
+      const data = child.val();
+      if (!data?.meta) return;
+      const { caller, callee, status } = data.meta;
+
+      // Bu kullanıcıya mı geliyor?
+      if (callee !== uid || caller === uid) return;
+      if (status !== "calling") return;
+      if (_pc) return; // zaten aramadayız
+
+      const callId = child.key;
+      _callId   = callId;
+      _isCaller = false;
+
+      // Arayanın bilgisini al
+      const callerUser = chatKnownUsers.find(u => u.uid === caller) || {};
+      const callerName = callerUser.displayName || "Biri";
+
+      // Gelen arama UI
+      EL.incomingCallName.textContent = callerName;
+      if (callerUser.photoURL) {
+        EL.incomingCallAvatar.style.backgroundImage = `url(${callerUser.photoURL})`;
+        EL.incomingCallAvatar.textContent = "";
+      } else {
+        EL.incomingCallAvatar.style.backgroundImage = "";
+        EL.incomingCallAvatar.textContent = initials(callerName);
+      }
+      EL.incomingCallOverlay.style.display = "flex";
+
+      // PC kur ve offer'ı set et
+      try {
+        _localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+        _createPC();
+        _localStream.getTracks().forEach(t => _pc.addTrack(t, _localStream));
+        const offer = data.offer;
+        if (offer) {
+          await _pc.setRemoteDescription(new RTCSessionDescription(offer));
+        }
+      } catch(e) {
+        console.error("[Call] Gelen arama hatası:", e.message);
+        EL.incomingCallOverlay.style.display = "none";
+        _callId = null;
+      }
+    });
+  }, err => console.error("[Call] calls listener:", err.message));
+
+  _incomingCallListener = () => off(callsRef);
+}
+
+/* ── Buton event listeners ── */
+EL.callBtn.addEventListener("click", () => {
+  if (_pc) { _cleanupCall(); return; } // Aktif aramaydıysa kapat
+  startCall();
+});
+
+EL.callEndBtn.addEventListener("click", () => _cleanupCall());
+EL.callAcceptBtn.addEventListener("click", () => acceptCall());
+EL.callRejectBtn.addEventListener("click", () => rejectCall());
+
+EL.callMuteBtn.addEventListener("click", () => {
+  if (!_localStream) return;
+  _isMuted = !_isMuted;
+  _localStream.getAudioTracks().forEach(t => { t.enabled = !_isMuted; });
+  EL.callMuteBtn.querySelector("span").textContent = _isMuted ? "Sesi Aç" : "Sessiz";
+  EL.callMuteBtn.classList.toggle("muted", _isMuted);
+});
+
+EL.callSpeakerBtn.addEventListener("click", () => {
+  _isSpeaker = !_isSpeaker;
+  // Web'de hoparlör/kulaklık geçişi MediaDevices ile yapılabilir (sınırlı destek)
+  EL.callSpeakerBtn.querySelector("span").textContent = _isSpeaker ? "Kulaklık" : "Hoparlör";
+  if (EL.remoteAudio.setSinkId) {
+    EL.remoteAudio.setSinkId(_isSpeaker ? "" : "default").catch(() => {});
+  }
+});
+
+/* ═══════════════════════════════════════════
    AUTH + SPLASH ENTEGRASYONu
    FIX: getRedirectResult sadece bir kez çalışır, onAuthStateChanged içinde
    değil ayrı bir try bloğunda — çift tetiklenme önlendi
@@ -5885,12 +6403,29 @@ function applyUser(user) {
     _startNotifListener(user.uid);
     initForegroundMessages();
     setupPresence(user.uid, user.displayName || "Kullanıcı", user.photoURL || null);
+    _listenIncomingCalls(user.uid);
 
     // Bildirim tercihini Firestore'dan oku ve butonu güncelle
     loadNotifPref().then(enabled => {
       updateNotifBtn(enabled);
       if (enabled) refreshFcmToken();
     });
+
+    // Service Worker'dan gelen bildirim tıklama mesajları
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.addEventListener("message", event => {
+        const { type, data } = event.data || {};
+        if (type === "SW_NOTIF_CLICK") {
+          if (data?.pubId) {
+            const item = pubCache.find(p => p.id === data.pubId);
+            if (item) { showPage("published"); setTimeout(() => openPubModal(item), 300); }
+            else        showPage("published");
+          } else if (data?.chatId) {
+            showPage("chat");
+          }
+        }
+      });
+    }
   } else {
     // Kullanıcı yok → login ekranına geç, splash'ı kapat
     hideSplash();
