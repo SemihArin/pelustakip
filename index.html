@@ -1627,8 +1627,103 @@
     .msg-tick { font-size: 11px; }
     .msg-tick.read { color: #4caf7d; }
 
-    /* Yazıyor */
-    .typing-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; }
+    /* Yazıyor göstergesi */
+    .typing-indicator-bar {
+      display: flex; align-items: center; gap: 8px;
+      padding: 4px 14px 6px; flex-shrink: 0;
+      animation: fadeIn .2s ease;
+    }
+    .typing-bubble {
+      background: rgba(255,255,255,.85);
+      border-radius: 18px 18px 18px 4px;
+      padding: 8px 12px; display: flex; align-items: center; gap: 3px;
+      box-shadow: 0 1px 3px rgba(0,0,0,.07);
+    }
+    .typing-dots span {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--text-muted); display: inline-block;
+      animation: typingDot 1.4s ease-in-out infinite;
+    }
+    .typing-dots span:nth-child(2) { animation-delay: .2s; }
+    .typing-dots span:nth-child(3) { animation-delay: .4s; }
+    @keyframes typingDot { 0%,60%,100%{transform:translateY(0);opacity:.4} 30%{transform:translateY(-5px);opacity:1} }
+    .typing-name { font-size: 11.5px; color: var(--text-muted); font-weight: 600; }
+
+    /* ── Reply sistemi ── */
+
+    /* Swipe göstergesi — balon kaydırılırken çıkan ok */
+    .msg-swipe-icon {
+      position: absolute;
+      top: 50%; transform: translateY(-50%);
+      width: 28px; height: 28px; border-radius: 50%;
+      background: rgba(160,60,100,.15);
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; transition: opacity .15s;
+      pointer-events: none; flex-shrink: 0;
+      color: var(--pink-mid);
+    }
+    .msg-row:not(.mine) .msg-swipe-icon { right: -36px; }
+    .msg-row.mine       .msg-swipe-icon { left:  -36px; }
+    .msg-swipe-icon.visible { opacity: 1; }
+
+    /* Swipe sırasında balonun kayması */
+    .msg-bubble-wrap {
+      transition: transform .1s ease;
+      will-change: transform;
+    }
+
+    /* Alıntı kutusu (mesaj içinde) */
+    .msg-reply-quote {
+      border-left: 3px solid rgba(255,255,255,.5);
+      padding: 4px 8px;
+      margin-bottom: 5px;
+      border-radius: 4px;
+      background: rgba(0,0,0,.08);
+      max-width: 100%;
+    }
+    .msg-row:not(.mine) .msg-reply-quote {
+      border-left-color: var(--pink-mid);
+      background: rgba(192,100,138,.08);
+    }
+    .msg-reply-quote-name {
+      font-size: 10.5px; font-weight: 800;
+      color: var(--pink-mid); margin-bottom: 2px;
+    }
+    .msg-row.mine .msg-reply-quote-name { color: rgba(255,255,255,.8); }
+    .msg-reply-quote-text {
+      font-size: 12px; opacity: .8;
+      overflow: hidden; text-overflow: ellipsis;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    }
+
+    /* Reply preview (input üstü) */
+    .reply-preview {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 14px;
+      background: rgba(255,255,255,.4);
+      border-top: 1.5px solid rgba(160,60,100,.1);
+      animation: fadeIn .15s ease;
+    }
+    .reply-preview-bar {
+      width: 3px; height: 36px; border-radius: 3px;
+      background: var(--pink-mid); flex-shrink: 0;
+    }
+    .reply-preview-content { flex: 1; min-width: 0; }
+    .reply-preview-name {
+      font-size: 11px; font-weight: 800; color: var(--pink-mid); margin-bottom: 2px;
+    }
+    .reply-preview-text {
+      font-size: 12.5px; color: var(--text-muted);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .reply-preview-close {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: rgba(160,60,100,.1);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--text-muted); flex-shrink: 0;
+      transition: background .15s;
+    }
+    .reply-preview-close:active { background: rgba(160,60,100,.2); } { display: flex; align-items: center; gap: 8px; padding: 6px 0; }
     .typing-bubble {
       background: rgba(255,255,255,.88); border-radius: 18px 18px 18px 4px;
       padding: 10px 14px; display: flex; gap: 4px; align-items: center;
@@ -1642,7 +1737,31 @@
     .typing-dots span:nth-child(3) { animation-delay: .4s; }
     @keyframes typingDot { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-5px)} }
 
-    /* Input */
+    .chat-photo-btn {
+      width: 38px; height: 38px; border-radius: 50%;
+      background: rgba(255,255,255,.7);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--pink-mid); flex-shrink: 0;
+      border: 1.5px solid rgba(160,60,100,.12);
+      transition: background .15s, transform .1s;
+    }
+    .chat-photo-btn:active { transform: scale(.88); background: rgba(255,255,255,.95); }
+
+    /* Mesaj içi fotoğraf */
+    .msg-photo {
+      max-width: 220px; width: 100%;
+      border-radius: 10px;
+      cursor: pointer;
+      display: block;
+      margin-bottom: 4px;
+      object-fit: cover;
+    }
+    .msg-photo-sending {
+      opacity: .5;
+      filter: blur(1px);
+    }
+
+    /* Input alanı */
     .chat-input-row {
       display: flex; align-items: flex-end; gap: 8px;
       padding: 10px 12px calc(12px + env(safe-area-inset-bottom, 0px));
@@ -1670,27 +1789,91 @@
     .chat-send-btn:active { transform: scale(.88); }
     .chat-send-btn:disabled { opacity: .35; pointer-events: none; }
 
-    /* Sesli arama butonu (topbar) */
-    .chat-call-btn {
-      width: 38px; height: 38px; border-radius: 50%;
-      background: rgba(255,255,255,.7);
-      display: flex; align-items: center; justify-content: center;
-      color: var(--pink-dark); flex-shrink: 0;
-      margin-left: auto;
-      transition: all .15s;
-      border: 1.5px solid rgba(160,60,100,.1);
-    }
-    .chat-call-btn:active { transform: scale(.88); background: rgba(255,255,255,.95); }
-    .chat-call-btn.in-call { background: var(--green); color: #fff; border-color: var(--green); animation: pulse 1.5s ease-in-out infinite; }
+    /* ════════════════════════════════
+       SESLİ ARAMA — Overlay CSS
+    ════════════════════════════════ */
 
-    /* Aktif arama — tam ekran, tüm uygulamanın üstünde */
+    /* Tam ekran arama overlay */
     .call-overlay-fixed {
       position: fixed; inset: 0; z-index: 7000;
-      background: linear-gradient(160deg, #4d2438 0%, #2a0e1e 100%);
+      background: linear-gradient(170deg, #3d1a2c 0%, #1e0c18 100%);
       display: flex; flex-direction: column;
       align-items: center; justify-content: center;
-      gap: 12px;
+      padding: 40px 32px calc(40px + env(safe-area-inset-bottom, 0px));
+      gap: 0;
     }
+
+    /* Avatar + halkalar */
+    .call-avatar-wrap {
+      position: relative;
+      margin-bottom: 28px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .call-avatar {
+      width: 96px; height: 96px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--pink-mid), #e07ba8);
+      background-size: cover; background-position: center;
+      color: #fff; font-size: 34px; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      border: 3px solid rgba(255,255,255,.25);
+      position: relative; z-index: 1;
+      box-shadow: 0 8px 32px rgba(0,0,0,.4);
+    }
+    .call-avatar-rings { position: absolute; inset: -60px; pointer-events: none; }
+    .call-ring {
+      position: absolute; border-radius: 50%;
+      border: 1.5px solid rgba(255,255,255,.15);
+      top: 50%; left: 50%; transform: translate(-50%,-50%);
+    }
+    .call-ring.r1 { width: 140px; height: 140px; animation: callRing 2.4s ease-out 0s infinite; }
+    .call-ring.r2 { width: 180px; height: 180px; animation: callRing 2.4s ease-out .6s infinite; }
+    .call-ring.r3 { width: 220px; height: 220px; animation: callRing 2.4s ease-out 1.2s infinite; }
+    @keyframes callRing {
+      0%   { opacity: .5; transform: translate(-50%,-50%) scale(.85); }
+      100% { opacity: 0;  transform: translate(-50%,-50%) scale(1.15); }
+    }
+
+    /* İsim + durum */
+    .call-name {
+      font-size: 26px; font-weight: 800; color: #fff;
+      letter-spacing: -.01em; margin-bottom: 6px;
+    }
+    .call-status {
+      font-size: 14px; color: rgba(255,255,255,.55);
+      font-weight: 500;
+    }
+    .call-timer {
+      font-size: 20px; font-weight: 700;
+      color: rgba(255,255,255,.85);
+      font-variant-numeric: tabular-nums;
+      letter-spacing: .04em;
+      margin-top: 4px;
+    }
+
+    /* Butonlar */
+    .call-actions {
+      display: flex; gap: 32px; align-items: center;
+      margin-top: 52px;
+    }
+    .call-action-btn {
+      display: flex; flex-direction: column;
+      align-items: center; gap: 8px;
+      background: none; border: none; cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .call-action-btn .call-btn-circle {
+      width: 60px; height: 60px; border-radius: 50%;
+      background: rgba(255,255,255,.12);
+      display: flex; align-items: center; justify-content: center;
+      transition: background .15s, transform .1s;
+    }
+    .call-action-btn:active .call-btn-circle { transform: scale(.88); background: rgba(255,255,255,.22); }
+    .call-action-btn span { font-size: 11.5px; color: rgba(255,255,255,.6); font-weight: 600; }
+    .call-action-btn.call-end   .call-btn-circle { background: var(--danger); }
+    .call-action-btn.call-accept .call-btn-circle { background: var(--green); }
+    .call-action-btn.muted      .call-btn-circle { background: rgba(255,255,255,.25); }
+    .call-action-btn.call-end:active   .call-btn-circle { background: #c0392b; }
+    .call-action-btn.call-accept:active .call-btn-circle { background: #388e3c; }
 
     /* Gelen arama — aşağıdan yükselen sheet */
     .incoming-call-overlay {
@@ -1698,70 +1881,33 @@
       animation: sheetUp .3s var(--spring);
     }
     .incoming-call-inner {
-      background: linear-gradient(170deg, #3a1628 0%, #2a0e1e 100%);
-      border-radius: var(--r-xl) var(--r-xl) 0 0;
-      padding: 32px 24px calc(32px + env(safe-area-inset-bottom, 0px));
+      background: linear-gradient(170deg, #3d1a2c 0%, #1e0c18 100%);
+      border-radius: 24px 24px 0 0;
+      padding: 28px 24px calc(32px + env(safe-area-inset-bottom, 0px));
       text-align: center;
-      box-shadow: 0 -8px 40px rgba(0,0,0,.5);
+      box-shadow: 0 -8px 48px rgba(0,0,0,.55);
     }
+    .incoming-call-inner .call-avatar {
+      width: 72px; height: 72px; font-size: 26px;
+      margin: 0 auto 14px;
+    }
+    .incoming-call-inner .call-name { font-size: 20px; margin-bottom: 4px; }
+    .incoming-call-inner .call-status { font-size: 13px; }
     .incoming-call-action-wrap {
-      display: flex; gap: 40px; justify-content: center; margin-top: 28px;
+      display: flex; gap: 48px; justify-content: center; margin-top: 28px;
     }
-    .call-avatar-wrap { position: relative; margin-bottom: 8px; }
-    .call-avatar {
-      width: 88px; height: 88px; border-radius: 50%; flex-shrink: 0;
-      background: linear-gradient(135deg, var(--pink-mid), #e07ba8);
-      background-size: cover; background-position: center;
-      color: #fff; font-size: 32px; font-weight: 800;
+
+    /* Sesli arama topbar butonu */
+    .chat-call-btn {
+      width: 38px; height: 38px; border-radius: 50%;
+      background: rgba(255,255,255,.7);
       display: flex; align-items: center; justify-content: center;
-      border: 3px solid rgba(255,255,255,.3); z-index: 1; position: relative;
+      color: var(--pink-dark); flex-shrink: 0; margin-left: auto;
+      border: 1.5px solid rgba(160,60,100,.1);
+      transition: all .15s;
     }
-    .call-avatar-rings { position: absolute; inset: 0; pointer-events: none; }
-    .call-ring {
-      position: absolute; border-radius: 50%;
-      border: 2px solid rgba(255,255,255,.2);
-      top: 50%; left: 50%; transform: translate(-50%,-50%);
-    }
-    .call-ring.r1 { width: 120px; height: 120px; animation: callRing 2s ease-out .0s infinite; }
-    .call-ring.r2 { width: 150px; height: 150px; animation: callRing 2s ease-out .5s infinite; }
-    .call-ring.r3 { width: 180px; height: 180px; animation: callRing 2s ease-out 1s infinite; }
-    @keyframes callRing { 0%{opacity:.6;transform:translate(-50%,-50%) scale(.8)} 100%{opacity:0;transform:translate(-50%,-50%) scale(1.2)} }
-
-    .call-name   { font-size: 22px; font-weight: 800; color: #fff; }
-    .call-status { font-size: 14px; color: rgba(255,255,255,.6); }
-    .call-timer  { font-size: 18px; font-weight: 700; color: rgba(255,255,255,.9); font-variant-numeric: tabular-nums; }
-
-    .call-actions {
-      display: flex; gap: 20px; align-items: center;
-      margin-top: 32px;
-    }
-    .call-action-btn {
-      display: flex; flex-direction: column; align-items: center; gap: 6px;
-      padding: 0;
-    }
-    .call-action-btn svg {
-      width: 56px; height: 56px; padding: 16px; border-radius: 50%;
-      background: rgba(255,255,255,.12); transition: background .15s;
-    }
-    .call-action-btn:active svg { background: rgba(255,255,255,.24); }
-    .call-action-btn span { font-size: 11px; color: rgba(255,255,255,.7); font-weight: 600; }
-    .call-action-btn.call-end svg { background: var(--danger); }
-    .call-action-btn.call-accept svg { background: var(--green); }
-    .call-action-btn.muted svg { background: rgba(255,255,255,.3); }
-
-    /* Gelen arama overlay */
-    .incoming-call-overlay {
-      position: fixed; bottom: 0; left: 0; right: 0; z-index: 6500;
-      background: linear-gradient(170deg, #3a1628 0%, #2a0e1e 100%);
-      border-radius: var(--r-xl) var(--r-xl) 0 0;
-      padding: 28px 24px calc(28px + env(safe-area-inset-bottom, 0px));
-      text-align: center;
-      box-shadow: 0 -8px 40px rgba(0,0,0,.5);
-      animation: sheetUp .3s var(--spring);
-    }
-    .incoming-call-actions {
-      display: flex; gap: 40px; justify-content: center; margin-top: 24px;
-    }
+    .chat-call-btn:active { transform: scale(.88); }
+    .chat-call-btn.in-call { background: var(--green); color: #fff; border-color: var(--green); }
 
     /* ═══════════════════════════════════════════
        SIDE MENU
@@ -2094,7 +2240,32 @@
           </button>
         </div>
         <div id="chatMessages" class="chat-messages"></div>
+        <div id="typingIndicator" class="typing-indicator-bar" style="display:none;">
+          <div class="typing-bubble">
+            <div class="typing-dots">
+              <span></span><span></span><span></span>
+            </div>
+          </div>
+          <span id="typingName" class="typing-name"></span>
+        </div>
+
+        <!-- Reply Preview -->
+        <div id="replyPreview" class="reply-preview" style="display:none;">
+          <div class="reply-preview-bar"></div>
+          <div class="reply-preview-content">
+            <div id="replyPreviewName" class="reply-preview-name"></div>
+            <div id="replyPreviewText" class="reply-preview-text"></div>
+          </div>
+          <button id="replyPreviewClose" class="reply-preview-close" type="button">
+            <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+
         <div class="chat-input-row">
+          <button id="chatPhotoBtn" class="chat-photo-btn" type="button" title="Fotoğraf Gönder">
+            <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+          </button>
+          <input id="chatPhotoInput" type="file" accept="image/*" style="display:none;">
           <textarea id="chatInput" class="chat-input" placeholder="Mesaj yaz…" rows="1" maxlength="1000"></textarea>
           <button id="chatSendBtn" class="chat-send-btn" type="button" disabled>
             <svg viewBox="0 0 24 24" width="18" height="18"><path fill="#fff" d="M2.01 21 23 12 2.01 3 2 10l15 2-15 2z"/></svg>
@@ -2514,15 +2685,21 @@
   <div id="callTimer"  class="call-timer" style="display:none;">00:00</div>
   <div class="call-actions">
     <button id="callMuteBtn" class="call-action-btn" type="button">
-      <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.93V21h2v-3.07A7 7 0 0 0 19 11h-2z"/></svg>
+      <div class="call-btn-circle">
+        <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.93V21h2v-3.07A7 7 0 0 0 19 11h-2z"/></svg>
+      </div>
       <span>Sessiz</span>
     </button>
     <button id="callEndBtn" class="call-action-btn call-end" type="button">
-      <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9a11.25 11.25 0 0 0-2.88 2.31c-.18.21-.44.33-.7.33-.28 0-.54-.11-.73-.3L.31 13.84a.98.98 0 0 1-.28-.7c0-.28.1-.54.29-.73C3.34 9.6 7.46 8 12 8s8.66 1.6 11.68 4.41c.19.19.29.45.29.73 0 .27-.1.52-.28.7l-2.22 2.22c-.19.19-.45.3-.73.3-.26 0-.52-.12-.7-.33a11.3 11.3 0 0 0-2.87-2.31 1.02 1.02 0 0 1-.57-.9v-3.1A13.2 13.2 0 0 0 12 9z"/></svg>
+      <div class="call-btn-circle">
+        <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9a11.25 11.25 0 0 0-2.88 2.31c-.18.21-.44.33-.7.33-.28 0-.54-.11-.73-.3L.31 13.84a.98.98 0 0 1-.28-.7c0-.28.1-.54.29-.73C3.34 9.6 7.46 8 12 8s8.66 1.6 11.68 4.41c.19.19.29.45.29.73 0 .27-.1.52-.28.7l-2.22 2.22c-.19.19-.45.3-.73.3-.26 0-.52-.12-.7-.33a11.3 11.3 0 0 0-2.87-2.31 1.02 1.02 0 0 1-.57-.9v-3.1A13.2 13.2 0 0 0 12 9z"/></svg>
+      </div>
       <span>Kapat</span>
     </button>
     <button id="callSpeakerBtn" class="call-action-btn" type="button">
-      <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77 0-4.28-2.99-7.86-7-8.77z"/></svg>
+      <div class="call-btn-circle">
+        <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77 0-4.28-2.99-7.86-7-8.77z"/></svg>
+      </div>
       <span>Hoparlör</span>
     </button>
   </div>
@@ -2537,11 +2714,15 @@
     <div class="incoming-call-actions">
       <div class="incoming-call-action-wrap">
         <button id="callRejectBtn" class="call-action-btn call-end" type="button">
-          <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9a11.25 11.25 0 0 0-2.88 2.31c-.18.21-.44.33-.7.33-.28 0-.54-.11-.73-.3L.31 13.84a.98.98 0 0 1-.28-.7c0-.28.1-.54.29-.73C3.34 9.6 7.46 8 12 8s8.66 1.6 11.68 4.41c.19.19.29.45.29.73 0 .27-.1.52-.28.7l-2.22 2.22c-.19.19-.45.3-.73.3-.26 0-.52-.12-.7-.33a11.3 11.3 0 0 0-2.87-2.31 1.02 1.02 0 0 1-.57-.9v-3.1A13.2 13.2 0 0 0 12 9z"/></svg>
+          <div class="call-btn-circle">
+            <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9a11.25 11.25 0 0 0-2.88 2.31c-.18.21-.44.33-.7.33-.28 0-.54-.11-.73-.3L.31 13.84a.98.98 0 0 1-.28-.7c0-.28.1-.54.29-.73C3.34 9.6 7.46 8 12 8s8.66 1.6 11.68 4.41c.19.19.29.45.29.73 0 .27-.1.52-.28.7l-2.22 2.22c-.19.19-.45.3-.73.3-.26 0-.52-.12-.7-.33a11.3 11.3 0 0 0-2.87-2.31 1.02 1.02 0 0 1-.57-.9v-3.1A13.2 13.2 0 0 0 12 9z"/></svg>
+          </div>
           <span>Reddet</span>
         </button>
         <button id="callAcceptBtn" class="call-action-btn call-accept" type="button">
-          <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z"/></svg>
+          <div class="call-btn-circle">
+            <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z"/></svg>
+          </div>
           <span>Kabul Et</span>
         </button>
       </div>
@@ -2582,6 +2763,9 @@ import {
   GoogleAuthProvider, signOut, onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
 import {
+  getStorage, ref as storRef, uploadString, getDownloadURL, deleteObject
+} from "https://www.gstatic.com/firebasejs/10.12.4/firebase-storage.js";
+import {
   getMessaging, getToken, onMessage
 } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-messaging.js";
 import {
@@ -2602,6 +2786,7 @@ const FB = initializeApp({
 const db       = getFirestore(FB);
 const rtdb     = getDatabase(FB);
 const auth     = getAuth(FB);
+const storage  = getStorage(FB);
 const provider = new GoogleAuthProvider();
 
 const VAPID_KEY = "BCDu3jOhSy7wU8j48_xpi_EuxdDUNeZwoEVpJ0zVhPqqlNPMBeMunbHgjWuSlL0ztSGfaN0WmmOPbHA31vy2dqw";
@@ -2675,6 +2860,20 @@ const EL = {
   callAcceptBtn:       q("callAcceptBtn"),
   callRejectBtn:       q("callRejectBtn"),
   remoteAudio:         q("remoteAudio"),
+  chatPhotoBtn:        q("chatPhotoBtn"),
+  chatPhotoInput:      q("chatPhotoInput"),
+  typingIndicator:     q("typingIndicator"),
+  typingName:          q("typingName"),
+  replyPreview:        q("replyPreview"),
+  replyPreviewName:    q("replyPreviewName"),
+  replyPreviewText:    q("replyPreviewText"),
+  replyPreviewClose:   q("replyPreviewClose"),
+  replyPreviewName:    q("replyPreviewName"),
+  replyPreviewText:    q("replyPreviewText"),
+  replyPreviewClose:   q("replyPreviewClose"),
+  replyPreviewName:    q("replyPreviewName"),
+  replyPreviewText:    q("replyPreviewText"),
+  replyPreviewClose:   q("replyPreviewClose"),
   chatPage:        q("chatPage"),
   chatPageBack:    q("chatPageBack"),
   chatListView:    q("chatListView"),
@@ -3650,23 +3849,44 @@ async function savePhoto() {
   if (!pm.image || !currentUser) return;
   pm.note = EL.noteInput.value.trim();
   EL.saveBtn.disabled = true;
-  EL.saveBtn.textContent = pm.isVideo ? "Kaydediliyor…" : "Kaydediliyor…";
-  const payload = {
-    image: pm.image,            // fotoğraf: full jpeg | video: thumbnail jpeg
-    note: pm.note,
-    locationLabel: pm.locationLabel, mapsUrl: pm.mapsUrl,
-    favorite: pm.favorite, createdAtClient: pm.created || Date.now(),
-    publishedId: pm.publishedId || null,
-    isVideo: pm.isVideo || false,
-    videoId: pm.videoId || null,  // IndexedDB key — Firestore'da sadece referans
-  };
+  EL.saveBtn.textContent = "Yükleniyor…";
+
   try {
+    let imageUrl = pm.image;
+
+    // Eğer base64 ise Storage'a yükle, URL al
+    if (pm.image.startsWith("data:")) {
+      const ext      = pm.isVideo ? "jpg" : "jpg"; // thumbnail her zaman jpg
+      const path     = `users/${currentUser.uid}/photos/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+      const sRef     = storRef(storage, path);
+      await uploadString(sRef, pm.image, "data_url");
+      imageUrl = await getDownloadURL(sRef);
+    }
+
+    const payload = {
+      image:          imageUrl,       // Storage URL (veya eski base64)
+      note:           pm.note,
+      locationLabel:  pm.locationLabel,
+      mapsUrl:        pm.mapsUrl,
+      favorite:       pm.favorite,
+      createdAtClient: pm.created || Date.now(),
+      publishedId:    pm.publishedId || null,
+      isVideo:        pm.isVideo || false,
+      videoId:        pm.videoId || null,
+    };
+
     if (pm.id) await updateDoc(doc(db, "users", currentUser.uid, "photos", pm.id), payload);
     else       await addDoc(collection(db, "users", currentUser.uid, "photos"), payload);
+
     toast(pm.isVideo ? "🎬 Video kaydedildi" : "✅ Kaydedildi");
     closeModal(EL.photoModal);
-  } catch (err) { toast("❌ Kayıt hatası: " + err.message); }
-  finally { EL.saveBtn.disabled = false; EL.saveBtn.textContent = "💾 Kaydet"; }
+  } catch (err) {
+    console.error("[Storage] savePhoto:", err.message);
+    toast("❌ Kayıt hatası: " + err.message);
+  } finally {
+    EL.saveBtn.disabled = false;
+    EL.saveBtn.textContent = "💾 Kaydet";
+  }
 }
 
 async function deletePhoto() {
@@ -3935,12 +4155,21 @@ async function publishPhoto() {
   const progressEl = _createUploadProgress();
 
   try {
-    const thumbnail  = await compressImage(pm.image);
+    const thumbnailBase64 = await compressImage(pm.image);
     const mimeType   = videoBlob?.type || "video/webm";
     const chunkCount = isVid && videoBlob ? Math.ceil(videoBlob.size / B64_CHUNK) : 0;
 
+    // Thumbnail'ı Storage'a yükle
+    let thumbnailUrl = thumbnailBase64;
+    if (thumbnailBase64.startsWith("data:")) {
+      const tPath = `publishedPhotos/${currentUser.uid}_${Date.now()}_thumb.jpg`;
+      const tRef  = storRef(storage, tPath);
+      await uploadString(tRef, thumbnailBase64, "data_url");
+      thumbnailUrl = await getDownloadURL(tRef);
+    }
+
     const payload = {
-      image:         thumbnail,
+      image:         thumbnailUrl,
       note:          pm.note,
       locationLabel: pm.locationLabel,
       mapsUrl:       pm.mapsUrl,
@@ -5763,6 +5992,9 @@ function _startMsgListener() {
     if (snap.exists()) snap.forEach(c => { const v=c.val(); if(v&&v.ts) msgs.push({id:c.key,...v}); });
     msgs.sort((a,b) => a.ts - b.ts);
 
+    // Mesaj ID → index map (reply scroll için)
+    const msgIdxMap = new Map(msgs.map((m,i) => [m.id, i]));
+
     EL.chatMessages.innerHTML = "";
 
     if (!msgs.length) {
@@ -5770,9 +6002,9 @@ function _startMsgListener() {
       return;
     }
 
-    const frag  = document.createDocumentFragment();
-    let lastDate = "";
-    const GROUP_GAP = 120_000; // 2 dk içindeki aynı kişi mesajları grup
+    const frag    = document.createDocumentFragment();
+    let lastDate  = "";
+    const GROUP_GAP = 120_000;
 
     msgs.forEach((msg, i) => {
       const prev = msgs[i-1];
@@ -5780,7 +6012,7 @@ function _startMsgListener() {
       const mine = msg.from === currentUser.uid;
       const d    = new Date(msg.ts);
 
-      // ── Tarih ayracı ──
+      // Tarih ayracı
       const ds = d.toLocaleDateString("tr-TR", {day:"numeric",month:"long",year:"numeric"});
       if (ds !== lastDate) {
         const sep = document.createElement("div");
@@ -5789,22 +6021,27 @@ function _startMsgListener() {
         frag.appendChild(sep); lastDate = ds;
       }
 
-      // ── Gruplama mantığı ──
-      // Önceki mesajla aynı kişi mi ve 2 dk içinde mi?
+      // Gruplama
       const sameAsPrev = prev && prev.from === msg.from && (msg.ts - prev.ts) < GROUP_GAP;
       const sameAsNext = next && next.from === msg.from && (next.ts - msg.ts) < GROUP_GAP;
+      let groupClass = sameAsPrev && sameAsNext ? "group-mid"
+                     : sameAsPrev               ? "group-end"
+                     : sameAsNext               ? "group-start"
+                     :                            "group-end";
 
-      let groupClass = "";
-      if (sameAsPrev && sameAsNext) groupClass = "group-mid";
-      else if (sameAsPrev)          groupClass = "group-end";
-      else if (sameAsNext)          groupClass = "group-start";
-      else                           groupClass = "group-end"; // tek mesaj
-
-      // ── Satır ──
+      // Satır (position:relative swipe icon için)
       const row = document.createElement("div");
       row.className = `msg-row${mine?" mine":""} ${groupClass}`;
+      row.style.position = "relative";
+      row.dataset.msgId  = msg.id;
 
-      // Karşı taraf avatarı (sadece group-end'de görünür, CSS ile)
+      // Swipe ok ikonu
+      const swipeIcon = document.createElement("div");
+      swipeIcon.className = "msg-swipe-icon";
+      swipeIcon.innerHTML = `<svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M10 9V5l-7 7 7 7v-4.1c5 0 8.5 1.6 11 5.1-1-5-4-10-11-11z"/></svg>`;
+      row.appendChild(swipeIcon);
+
+      // Avatar (karşı taraf)
       if (!mine) {
         const av = document.createElement("div");
         av.className = "msg-avatar-sm";
@@ -5813,13 +6050,12 @@ function _startMsgListener() {
         else av.textContent = initials(u?.displayName||"?");
         row.appendChild(av);
       }
-      // Kendi mesajlarımda avatar yok, placeholder da yok
 
-      // ── Balon wrap (isim + balon + meta) ──
+      // Wrap
       const wrap = document.createElement("div");
       wrap.className = "msg-bubble-wrap";
 
-      // İsim — sadece grup başında ve karşı taraf için
+      // İsim etiketi
       if (!mine && !sameAsPrev) {
         const u = chatKnownUsers.find(u => u.uid === msg.from);
         if (u && chatKnownUsers.length > 1) {
@@ -5833,23 +6069,60 @@ function _startMsgListener() {
       // Balon
       const bubble = document.createElement("div");
       bubble.className = "msg-bubble";
-      bubble.innerHTML = _esc(msg.text||"").replace(/\n/g,"<br>");
+
+      // Alıntı kutusu
+      if (msg.replyTo) {
+        const qt = document.createElement("div");
+        qt.className = "msg-reply-quote";
+        const quotedUser = msg.replyTo.from === currentUser.uid
+          ? "Sen"
+          : (chatKnownUsers.find(u => u.uid === msg.replyTo.from)?.displayName || "Biri");
+        qt.innerHTML = `
+          <div class="msg-reply-quote-name">${_esc(quotedUser)}</div>
+          <div class="msg-reply-quote-text">${_esc(msg.replyTo.text||"").replace(/\n/g," ")}</div>`;
+        qt.style.cursor = "pointer";
+        qt.addEventListener("click", () => _scrollToMsg(msg.replyTo.id));
+        bubble.appendChild(qt);
+      }
+
+      // Fotoğraf veya metin
+      if (msg.type === "photo" && msg.photo) {
+        const img = document.createElement("img");
+        img.className = "msg-photo";
+        img.src = msg.photo;
+        img.loading = "lazy";
+        img.addEventListener("click", () => {
+          // Tam ekran önizleme
+          const overlay = document.createElement("div");
+          overlay.style.cssText = "position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center;";
+          const imgFull = document.createElement("img");
+          imgFull.src = msg.photo;
+          imgFull.style.cssText = "max-width:95%;max-height:90dvh;border-radius:8px;object-fit:contain;";
+          overlay.appendChild(imgFull);
+          overlay.addEventListener("click", () => overlay.remove());
+          document.body.appendChild(overlay);
+        });
+        bubble.appendChild(img);
+      } else {
+        const textNode = document.createElement("div");
+        textNode.innerHTML = _esc(msg.text||"").replace(/\n/g,"<br>");
+        bubble.appendChild(textNode);
+      }
       wrap.appendChild(bubble);
 
-      // Meta (zaman + tick) — sadece grup sonunda
+      // Meta (zaman + tick) — grup sonunda
       const meta = document.createElement("div");
       meta.className = "msg-meta";
       const ts = d.toLocaleTimeString("tr-TR",{hour:"2-digit",minute:"2-digit"});
-      if (mine) {
-        const tick = msg.read ? "✓✓" : "✓";
-        const tickClass = msg.read ? "msg-tick read" : "msg-tick";
-        meta.innerHTML = `<span>${ts}</span><span class="${tickClass}">${tick}</span>`;
-      } else {
-        meta.innerHTML = `<span>${ts}</span>`;
-      }
+      meta.innerHTML = mine
+        ? `<span>${ts}</span><span class="${msg.read?"msg-tick read":"msg-tick"}">${msg.read?"✓✓":"✓"}</span>`
+        : `<span>${ts}</span>`;
       wrap.appendChild(meta);
       row.appendChild(wrap);
       frag.appendChild(row);
+
+      // Swipe-to-reply touch handler
+      _addSwipeReply(row, wrap, swipeIcon, msg);
     });
 
     EL.chatMessages.appendChild(frag);
@@ -5858,26 +6131,293 @@ function _startMsgListener() {
 
   }, err => {
     console.error("[Chat] onValue hata:", err.code, err.message);
-    EL.chatMessages.innerHTML = `<div style="text-align:center;padding:32px;color:var(--danger);font-size:13px;">
-      ❌ Mesajlar yüklenemedi: ${err.message}</div>`;
+    EL.chatMessages.innerHTML = `<div style="text-align:center;padding:32px;color:var(--danger);font-size:13px;">❌ Mesajlar yüklenemedi: ${err.message}</div>`;
   });
 
   _chatMsgListener = unsubscribe;
 }
 
+/* ── Typing indicator ── */
+let _typingTimer    = null;   // kendi typing timeout
+let _typingUnsub    = null;   // karşı taraf listener
+
+function _startTypingListener(partnerUid, chatIdStr) {
+  if (_typingUnsub) { try { _typingUnsub(); } catch {} _typingUnsub = null; }
+
+  const ref = rtRef(rtdb, `typing/${chatIdStr}/${partnerUid}`);
+  const unsub = onValue(ref, snap => {
+    if (!snap.exists() || !snap.val()) {
+      EL.typingIndicator.style.display = "none";
+      return;
+    }
+    // Timestamp varsa 5 saniyeden eskiyse gösterme
+    const ts = snap.val();
+    if (Date.now() - ts > 5000) {
+      EL.typingIndicator.style.display = "none";
+      return;
+    }
+    const u = chatKnownUsers.find(u => u.uid === partnerUid);
+    EL.typingName.textContent  = (u?.displayName || "Karşı taraf") + " yazıyor…";
+    EL.typingIndicator.style.display = "flex";
+    // Scroll et
+    requestAnimationFrame(() => {
+      EL.chatMessages.scrollTop = EL.chatMessages.scrollHeight;
+    });
+  });
+  _typingUnsub = () => off(ref);
+}
+
+function _stopTypingListener() {
+  if (_typingUnsub) { try { _typingUnsub(); } catch {} _typingUnsub = null; }
+  EL.typingIndicator.style.display = "none";
+}
+
+function _sendTypingSignal() {
+  if (!chatActiveChatId || !currentUser) return;
+  const ref = rtRef(rtdb, `typing/${chatActiveChatId}/${currentUser.uid}`);
+  set(ref, Date.now()).catch(() => {});
+
+  clearTimeout(_typingTimer);
+  _typingTimer = setTimeout(() => {
+    set(ref, null).catch(() => {});
+  }, 3000); // 3 saniye sonra "yazmayı bıraktı"
+}
+
+function _clearTypingSignal() {
+  if (!chatActiveChatId || !currentUser) return;
+  clearTimeout(_typingTimer);
+  set(rtRef(rtdb, `typing/${chatActiveChatId}/${currentUser.uid}`), null).catch(() => {});
+}
+let _replyTo = null; // { id, text, from }
+
+function _setReply(msg) {
+  _replyTo = { id: msg.id, text: msg.text, from: msg.from };
+  const name = msg.from === currentUser.uid
+    ? "Sen"
+    : (chatKnownUsers.find(u => u.uid === msg.from)?.displayName || "Biri");
+  EL.replyPreviewName.textContent = name;
+  EL.replyPreviewText.textContent = msg.text?.slice(0, 80) || "";
+  EL.replyPreview.style.display   = "flex";
+  EL.chatInput.focus();
+}
+
+function _clearReply() {
+  _replyTo = null;
+  EL.replyPreview.style.display = "none";
+  EL.replyPreviewName.textContent = "";
+  EL.replyPreviewText.textContent = "";
+}
+
+EL.replyPreviewClose.addEventListener("click", _clearReply);
+
+/* ── Fotoğraf Gönder ── */
+EL.chatPhotoBtn.addEventListener("click", () => EL.chatPhotoInput.click());
+
+EL.chatPhotoInput.addEventListener("change", async () => {
+  const file = EL.chatPhotoInput.files?.[0];
+  if (!file || !chatActiveChatId || !currentUser) return;
+  EL.chatPhotoInput.value = "";
+
+  if (file.size > 10 * 1024 * 1024) { toast("❌ Fotoğraf çok büyük (max 10MB)"); return; }
+
+  const base64 = await _compressPhoto(file, 1200);
+  if (!base64) { toast("❌ Fotoğraf okunamadı"); return; }
+
+  const ts = Date.now();
+  const replyData = _replyTo ? { ..._replyTo } : null;
+  _clearReply();
+
+  try {
+    // Storage'a yükle
+    const path   = `chatPhotos/${chatActiveChatId}/${currentUser.uid}_${ts}.jpg`;
+    const sRef   = storRef(storage, path);
+    await uploadString(sRef, base64, "data_url");
+    const photoUrl = await getDownloadURL(sRef);
+
+    await push(rtRef(rtdb, `chats/${chatActiveChatId}/messages`), {
+      from:    currentUser.uid,
+      ts,
+      read:    false,
+      type:    "photo",
+      photo:   photoUrl,       // Storage URL — küçük, hızlı
+      text:    "📷 Fotoğraf",
+      ...(replyData ? { replyTo: replyData } : {}),
+    });
+
+    const metaRef    = rtRef(rtdb, `chats/${chatActiveChatId}/meta`);
+    const metaSnap   = await get(metaRef).catch(() => null);
+    const prevUnread = (metaSnap?.val() || {})[`unread_${chatActiveUid}`] || 0;
+    await rtUpdate(metaRef, {
+      users:   [currentUser.uid, chatActiveUid],
+      lastMsg: "📷 Fotoğraf",
+      lastTs:  ts,
+      [`unread_${chatActiveUid}`]:   prevUnread + 1,
+      [`unread_${currentUser.uid}`]: 0,
+    });
+    console.log("[Chat] Fotoğraf gönderildi →", photoUrl.slice(0,60));
+  } catch(e) {
+    console.error("[Chat] Fotoğraf gönderme:", e.message);
+    toast("❌ Fotoğraf gönderilemedi: " + e.message);
+  }
+});
+
+async function _compressPhoto(file, maxSize) {
+  return new Promise(resolve => {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        let w = img.width, h = img.height;
+        if (w > maxSize || h > maxSize) {
+          if (w > h) { h = Math.round(h * maxSize / w); w = maxSize; }
+          else       { w = Math.round(w * maxSize / h); h = maxSize; }
+        }
+        canvas.width = w; canvas.height = h;
+        canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL("image/jpeg", 0.75));
+      };
+      img.onerror = () => resolve(null);
+      img.src = ev.target.result;
+    };
+    reader.onerror = () => resolve(null);
+    reader.readAsDataURL(file);
+  });
+}
+
+/* ── Alıntılanan mesaja scroll ── */
+function _scrollToMsg(msgId) {
+  const el = EL.chatMessages.querySelector(`[data-msg-id="${msgId}"]`);
+  if (!el) return;
+  el.scrollIntoView({ behavior: "smooth", block: "center" });
+  // Kısa highlight animasyonu
+  el.classList.add("msg-highlight");
+  setTimeout(() => el.classList.remove("msg-highlight"), 1200);
+}
+
+/* ── Swipe-to-reply touch handler ── */
+function _addSwipeReply(row, wrap, swipeIcon, msg) {
+  const SWIPE_THRESHOLD = 72;  // px — reply tetikleme eşiği
+  const SWIPE_MAX       = 90;  // px — ham max (direnç öncesi)
+  let startX = 0, startY = 0, lastDx = 0;
+  let swiping = false, triggered = false, locked = false;
+
+  row.addEventListener("touchstart", e => {
+    if (e.touches.length !== 1) return;
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    lastDx = 0; swiping = false; triggered = false; locked = false;
+    wrap.style.transition = "none";
+  }, { passive: true });
+
+  row.addEventListener("touchmove", e => {
+    if (e.touches.length !== 1 || locked) return;
+    const dx = e.touches[0].clientX - startX;
+    const dy = Math.abs(e.touches[0].clientY - startY);
+    lastDx = dx;
+
+    // Dikey scroll mu yatay swipe mi?
+    if (!swiping) {
+      if (dy > Math.abs(dx) || Math.abs(dx) < 8) return;
+      swiping = true;
+    }
+
+    // Sadece sağa
+    if (dx <= 0) {
+      wrap.style.transform = "";
+      swipeIcon.classList.remove("visible");
+      triggered = false;
+      return;
+    }
+
+    // Direnç eğrisi: eşiğe kadar 1:1, sonra 1:0.15 (çok sert)
+    const visual = dx < SWIPE_THRESHOLD
+      ? dx
+      : SWIPE_THRESHOLD + (dx - SWIPE_THRESHOLD) * 0.15;
+    const capped = Math.min(visual, SWIPE_THRESHOLD + 12); // görsel max
+
+    wrap.style.transform = `translateX(${capped}px)`;
+    swipeIcon.classList.toggle("visible", dx > 24);
+    swipeIcon.style.opacity = String(Math.min(dx / SWIPE_THRESHOLD, 1));
+
+    // Eşiği geçti → triggered
+    if (dx >= SWIPE_THRESHOLD && !triggered) {
+      triggered = true;
+      if (navigator.vibrate) navigator.vibrate(45);
+      swipeIcon.style.background = "rgba(192,100,138,.3)";
+    }
+
+    // Eşiğin altına geri döndü → iptal
+    if (dx < SWIPE_THRESHOLD * 0.7 && triggered) {
+      triggered = false;
+      swipeIcon.style.background = "";
+    }
+  }, { passive: true });
+
+  row.addEventListener("touchend", () => {
+    if (!swiping) return;
+    swiping = false;
+    locked  = true; // animation biterken yeni swipe başlamasın
+
+    wrap.style.transition = "transform .28s cubic-bezier(.4,0,.2,1)";
+    wrap.style.transform  = "";
+    swipeIcon.classList.remove("visible");
+    swipeIcon.style.opacity    = "";
+    swipeIcon.style.background = "";
+
+    // Sadece triggered VE hâlâ eşik üzerindeyse reply set et
+    if (triggered && lastDx >= SWIPE_THRESHOLD * 0.7) {
+      _setReply(msg);
+    }
+
+    triggered = false; lastDx = 0;
+    setTimeout(() => { locked = false; }, 300);
+  });
+
+  row.addEventListener("touchcancel", () => {
+    swiping = false; triggered = false; locked = false; lastDx = 0;
+    wrap.style.transition = "transform .2s ease";
+    wrap.style.transform  = "";
+    swipeIcon.classList.remove("visible");
+  });
+}
+
+/* ── Highlight CSS ekleme (JS'den) ── */
+(function() {
+  const s = document.createElement("style");
+  s.textContent = `
+    @keyframes msgHighlight {
+      0%   { background: rgba(192,100,138,.18); }
+      100% { background: transparent; }
+    }
+    .msg-highlight { border-radius: 8px; animation: msgHighlight 1.2s ease forwards; }
+  `;
+  document.head.appendChild(s);
+})();
+
 async function sendChatMsg() {
   const text = EL.chatInput.value.trim();
   if (!text || !chatActiveChatId || !currentUser) return;
 
+  const replyData = _replyTo ? { ..._replyTo } : null;
+
   EL.chatInput.value = "";
   EL.chatInput.style.height = "42px";
   EL.chatSendBtn.disabled = true;
+  _clearReply();
+  _clearTypingSignal();
 
   const ts = Date.now();
+  const msgData = {
+    from: currentUser.uid,
+    text,
+    ts,
+    read: false,
+    ...(replyData ? { replyTo: replyData } : {}),
+  };
+
   try {
-    const msgRef = await push(rtRef(rtdb, `chats/${chatActiveChatId}/messages`), {
-      from: currentUser.uid, text, ts, read: false
-    });
+    const msgRef = await push(rtRef(rtdb, `chats/${chatActiveChatId}/messages`), msgData);
     console.log("[Chat] Mesaj gönderildi:", msgRef.key);
 
     const metaRef    = rtRef(rtdb, `chats/${chatActiveChatId}/meta`);
@@ -5892,29 +6432,17 @@ async function sendChatMsg() {
       [`unread_${currentUser.uid}`]: 0,
     });
 
-    // ── Akıllı bildirim gönderimi ──
-    // WhatsApp/Telegram mantığı:
-    //   • Karşı taraf bu konuşmada aktifse → bildirim gönderme (onlar zaten görüyor)
-    //   • Karşı taraf uygulamadaysa ama başka sayfadaysa → bildirim gönder
-    //   • Karşı taraf çevrimdışıysa → bildirim gönder
-    //   • Kısa süre içinde çok mesaj gidiyorsa → sadece 1 bildirim (throttle 30s)
-    const presSnap    = await get(rtRef(rtdb, `presence/${chatActiveUid}`)).catch(() => null);
-    const presData    = presSnap?.val() || {};
-    const theirOnline = !!presData.online;
-    // Karşı tarafın aktif konuşması aynı chat mi?
+    // Akıllı bildirim
+    const presSnap   = await get(rtRef(rtdb, `presence/${chatActiveUid}`)).catch(() => null);
+    const presData   = presSnap?.val() || {};
     const theirActive = (presData.activeChat === chatActiveChatId);
 
-    // Bildirim gönder — karşı taraf bu konuşmada değilse
     if (!theirActive) {
-      // Throttle: aynı konuşmada son 30 saniyede bildirim gittiyse gönderme
-      const throttleKey = `lastNotif_${chatActiveChatId}`;
+      const throttleKey  = `lastNotif_${chatActiveChatId}`;
       const lastNotifTs  = (metaSnap?.val() || {})[throttleKey] || 0;
       const shouldNotify = (ts - lastNotifTs) > 30_000;
-
       if (shouldNotify) {
-        // lastNotif zamanını güncelle
         rtUpdate(metaRef, { [throttleKey]: ts }).catch(() => {});
-        // Firestore appNotifications → sunucu push'u tetikler
         addDoc(collection(db, "users", chatActiveUid, "appNotifications"), {
           type:      "message",
           fromUid:   currentUser.uid,
@@ -5966,8 +6494,9 @@ EL.sideChatBtn.addEventListener("click", () => {
 
 EL.chatConvBack.addEventListener("click", () => {
   if (_chatMsgListener) { try { _chatMsgListener(); } catch {} _chatMsgListener = null; }
-  setActiveChat(null); // Konuşmadan çıktım
-  chatActiveUid = null; chatActiveChatId = null;
+  _stopTypingListener();
+  _clearTypingSignal();
+  setActiveChat(null);
   EL.chatConvView.classList.remove("active");
   EL.chatListView.classList.add("active");
   renderChatList();
@@ -5977,6 +6506,7 @@ EL.chatInput.addEventListener("input", () => {
   EL.chatSendBtn.disabled = EL.chatInput.value.trim().length === 0;
   EL.chatInput.style.height = "42px";
   EL.chatInput.style.height = Math.min(EL.chatInput.scrollHeight, 100) + "px";
+  if (EL.chatInput.value.trim().length > 0) _sendTypingSignal();
 });
 EL.chatInput.addEventListener("keydown", e => {
   if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); if (!EL.chatSendBtn.disabled) sendChatMsg(); }
@@ -6004,6 +6534,7 @@ function openChatConv(user) {
 
   EL.chatMessages.innerHTML = "";
   _startMsgListener();
+  _startTypingListener(user.uid, chatActiveChatId); // karşı tarafı izle
   setActiveChat(chatActiveChatId); // Presence'a "bu konuşmadayım" yaz
 
   // Presence dinle
@@ -6157,11 +6688,12 @@ async function _cleanupCall(reason) {
   _callCleanups.forEach(fn => { try { fn(); } catch {} });
   _callCleanups = [];
 
-  // RTDB'ye "ended" yaz — callId henüz elimizde
+  // RTDB'ye "ended" yaz, 3sn sonra tüm veriyi sil (sonraki arama için temiz başlangıç)
   if (closingCallId && currentUser) {
     rtUpdate(rtRef(rtdb, `calls/${closingCallId}/meta`), {
-      status:  "ended",
-      endedAt: Date.now(),
+      status: "ended", endedAt: Date.now(),
+    }).then(() => {
+      setTimeout(() => set(rtRef(rtdb, `calls/${closingCallId}`), null).catch(() => {}), 3000);
     }).catch(() => {});
   }
 
@@ -6347,12 +6879,14 @@ async function startCall() {
 
   // Answer dinle
   const answerRef = rtRef(rtdb, `calls/${_callId}/answer`);
+  let answered  = false; // timeout iptali için
   let answerSet = false;
   const unsubAnswer = onValue(answerRef, async snap => {
     if (!snap.exists() || answerSet || !_pc || !_callActive) return;
     const answer = snap.val();
     if (answer?.type !== "answer" || !answer.sdp) return;
     answerSet = true;
+    answered  = true; // timeout'u iptal et
     try {
       await _pc.setRemoteDescription(new RTCSessionDescription(answer));
       console.log("[Call] setRemoteDescription(answer) ✅");
@@ -6360,23 +6894,28 @@ async function startCall() {
   });
   _callCleanups.push(() => off(answerRef));
 
-  // Meta dinle
+  // Meta dinle — ilk snapshot'ı atla (eski "ended" değeri olabilir)
   const metaRef = rtRef(rtdb, `calls/${_callId}/meta`);
-  let metaActive = true;
+  let metaActive = true, metaFirst = true;
   const unsubMeta = onValue(metaRef, snap => {
+    if (metaFirst) { metaFirst = false; return; } // ilk değeri atla
     if (!metaActive || !_callActive) return;
     const status = snap.val()?.status;
     if (status === "rejected") { metaActive=false; toast("📞 Arama reddedildi"); _cleanupCall("rejected"); }
-    else if (status === "ended" && _callActive) { metaActive=false; toast("📞 Arama bitti"); _cleanupCall("remote-ended"); }
+    else if (status === "ended") { metaActive=false; toast("📞 Arama bitti"); _cleanupCall("remote-ended"); }
   });
   _callCleanups.push(() => { metaActive=false; off(metaRef); });
 
   _listenCandidates(`calls/${_callId}/calleeCandidates`);
 
+  // Cevap yok timeout — answer alındığında iptal edilir
   const th = setTimeout(() => {
-    if (_callActive && _isCaller) { toast("📞 Cevap yok"); _cleanupCall("timeout"); }
+    if (!answered && _callActive && _isCaller) {
+      toast("📞 Cevap yok");
+      _cleanupCall("timeout");
+    }
   }, 30_000);
-  _callCleanups.push(() => clearTimeout(th));
+  _callCleanups.push(() => { answered = true; clearTimeout(th); });
 }
 
 async function acceptCall() {
@@ -6415,8 +6954,9 @@ async function acceptCall() {
   }
 
   const metaRef = rtRef(rtdb, `calls/${_callId}/meta`);
-  let metaActive = true;
+  let metaActive = true, metaFirst = true;
   onValue(metaRef, snap => {
+    if (metaFirst) { metaFirst = false; return; } // ilk snapshot = "in-call", atla
     if (!metaActive || !_callActive) return;
     if (snap.val()?.status === "ended") {
       metaActive = false; toast("📞 Arama bitti"); _cleanupCall("caller-ended");
