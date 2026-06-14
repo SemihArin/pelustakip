@@ -4352,40 +4352,54 @@ async function _sendComment() {
    Koleksiyon: users/{uid}/appNotifications
    Alanlar: { type, fromUid, fromName, fromPhoto,
               pubId, pubThumb, isVideo, text,
-              createdAt, read }
-   Tipler: "comment" | "like" | "new_publish"
+              chatId, createdAt, read }
+   Tipler: "comment" | "like" | "new_publish" | "message"
 ═══════════════════════════════════════════ */
-let _unsubNotifs = null;
-let _notifCache  = [];
+let _unsubNotifs  = null;
+let _notifCache   = [];
 let _notifToastTimer = null;
 
-// Sekme bilgi nesneleri
 const NOTIF_META = {
-  comment:     { icon: "💬", color: "var(--pink-mid)",  tag: "Yorum",   tagClass: "comment" },
-  like:        { icon: "❤️", color: "var(--danger)",    tag: "Beğeni",  tagClass: "like"    },
-  new_publish: { icon: "🌸", color: "var(--green)",     tag: "Yayın",   tagClass: "publish" },
+  comment:     { icon: "💬", tag: "Yorum",    tagClass: "comment" },
+  like:        { icon: "❤️", tag: "Beğeni",   tagClass: "like"    },
+  new_publish: { icon: "🌸", tag: "Yayın",    tagClass: "publish" },
+  message:     { icon: "💬", tag: "Mesaj",    tagClass: "comment" },
 };
 
 function _startNotifListener(uid) {
   if (_unsubNotifs) { _unsubNotifs(); _unsubNotifs = null; }
-  const nRef = collection(db, "users", uid, "appNotifications");
-  const nQ   = query(nRef, orderBy("createdAt", "desc"));
+
+  const col = collection(db, "users", uid, "appNotifications");
   let firstLoad = true;
 
-  _unsubNotifs = onSnapshot(nQ, snap => {
-    const prev = new Set(_notifCache.map(n => n.id));
-    _notifCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    _updateNotifBadge();
+  // orderBy ile dene, index yoksa sırasız fallback
+  const startListen = (q2) => {
+    _unsubNotifs = onSnapshot(q2, snap => {
+      const prev     = new Set(_notifCache.map(n => n.id));
+      // Zaman sırasına göre sırala (index yoksa RTDB sırasız gelir)
+      _notifCache = snap.docs
+        .map(d => ({ id: d.id, ...d.data() }))
+        .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+      _updateNotifBadge();
 
-    // İlk yüklemede toast gösterme
-    if (!firstLoad) {
-      _notifCache.forEach(n => {
-        if (prev.has(n.id)) return; // zaten vardı
-        if (!n.read) _showNotifToast(n); // yeni, okunmamış → toast
-      });
-    }
-    firstLoad = false;
-  }, () => {});
+      if (!firstLoad) {
+        _notifCache.forEach(n => {
+          if (prev.has(n.id) || n.read) return;
+          _showNotifToast(n);
+        });
+      }
+      firstLoad = false;
+    }, err => {
+      console.warn("[Notif] onSnapshot hata:", err.code, err.message);
+      // index yoksa sırasız dinle
+      if (err.code === "failed-precondition" || err.message?.includes("index")) {
+        console.log("[Notif] Sırasız dinlemeye geçiliyor…");
+        startListen(col);
+      }
+    });
+  };
+
+  startListen(query(col, orderBy("createdAt", "desc")));
 }
 
 function _stopNotifListener() {
@@ -4394,53 +4408,60 @@ function _stopNotifListener() {
 
 function _updateNotifBadge() {
   const unread = _notifCache.filter(n => !n.read).length;
-  // User btn badge
-  if (unread > 0) {
-    EL.userBtnBadge.textContent  = unread > 99 ? "99+" : String(unread);
-    EL.userBtnBadge.style.display = "flex";
-  } else {
-    EL.userBtnBadge.style.display = "none";
+  if (EL.userBtnBadge) {
+    EL.userBtnBadge.textContent   = unread > 99 ? "99+" : String(unread);
+    EL.userBtnBadge.style.display = unread > 0 ? "flex" : "none";
   }
-  // Tab badge
   if (EL.tabNotifsBadge) {
-    EL.tabNotifsBadge.textContent  = unread > 99 ? "99+" : String(unread);
+    EL.tabNotifsBadge.textContent   = unread > 99 ? "99+" : String(unread);
     EL.tabNotifsBadge.style.display = unread > 0 ? "flex" : "none";
   }
 }
 
-/** Canlı bildirim toast kartı — üstten gelir, 4 sn sonra kaybolur */
+function _notifBody(n) {
+  switch (n.type) {
+    case "comment":     return n.text ? `"${n.text.slice(0,70)}"` : "yorum yaptı";
+    case "like":        return "yayınınızı beğendi ❤️";
+    case "new_publish": return n.text ? n.text.slice(0,60) : "yeni bir şey paylaştı 🌸";
+    case "message":     return n.text ? n.text.slice(0,70) : "mesaj gönderdi 💬";
+    default:            return "";
+  }
+}
+
 function _showNotifToast(n) {
   const meta = NOTIF_META[n.type] || NOTIF_META.new_publish;
 
   // Avatar
   if (n.fromPhoto) {
-    EL.notifToastAvatar.style.backgroundImage = `url(${n.fromPhoto})`;
-    EL.notifToastAvatar.textContent = "";
+    EL.notifToastAvatar.style.cssText = `background-image:url(${n.fromPhoto});background-size:cover;background-position:center;`;
+    EL.notifToastAvatar.textContent   = "";
   } else {
-    EL.notifToastAvatar.style.backgroundImage = "";
-    EL.notifToastAvatar.textContent = initials(n.fromName || "?");
+    EL.notifToastAvatar.style.cssText = "";
+    EL.notifToastAvatar.textContent   = initials(n.fromName || "?");
   }
   EL.notifToastBadge.textContent = meta.icon;
-
-  // Başlık + metin
   EL.notifToastTitle.textContent = n.fromName || "Pelus Takip";
   EL.notifToastText.textContent  = _notifBody(n);
 
-  // Thumbnail
-  if (n.pubThumb) {
-    EL.notifToastThumb.src = n.pubThumb;
+  // Thumbnail — sadece pubThumb varsa göster
+  if (n.pubThumb && typeof n.pubThumb === "string" && n.pubThumb.length > 0) {
+    EL.notifToastThumb.src          = n.pubThumb;
     EL.notifToastThumb.style.display = "block";
   } else {
     EL.notifToastThumb.style.display = "none";
   }
 
-  // Tıklama → yayına git
+  // Tıklama
   EL.notifToastCard.onclick = () => {
     _hideNotifToast();
-    _navigateToPub(n);
+    if (n.type === "message" && n.chatId) {
+      // Chat sayfasına git
+      showPage("chat");
+    } else if (n.pubId) {
+      _navigateToPub(n);
+    }
   };
 
-  // Göster
   EL.notifToastCard.classList.add("show");
   clearTimeout(_notifToastTimer);
   _notifToastTimer = setTimeout(_hideNotifToast, 4500);
@@ -4448,45 +4469,27 @@ function _showNotifToast(n) {
 
 function _hideNotifToast() {
   EL.notifToastCard.classList.remove("show");
+  clearTimeout(_notifToastTimer);
 }
 EL.notifToastClose.addEventListener("click", e => { e.stopPropagation(); _hideNotifToast(); });
 
-/** Bildirim metni üreteci */
-function _notifBody(n) {
-  switch (n.type) {
-    case "comment":
-      return n.text ? `"${n.text.slice(0,70)}"` : "yorum yaptı";
-    case "like":
-      return "yayınınızı beğendi ❤️";
-    case "new_publish":
-      return n.text ? `${n.text.slice(0,60)}` : "yeni bir şey paylaştı 🌸";
-    default:
-      return "";
-  }
-}
-
-/** Bildirime tıklayınca ilgili yayına git */
 async function _navigateToPub(n) {
   if (!n.pubId) return;
+  if (EL.settingsModal.classList.contains("open")) closeModal(EL.settingsModal);
+
   const item = pubCache.find(p => p.id === n.pubId);
   if (item) {
-    if (EL.settingsModal.classList.contains("open")) closeModal(EL.settingsModal);
     if (activePage !== "published") showPage("published");
     setTimeout(() => openPubModal(item), activePage !== "published" ? 320 : 50);
   } else {
-    // Yayın henüz pubCache'de yok — yayınlar sayfasına git
-    if (EL.settingsModal.classList.contains("open")) closeModal(EL.settingsModal);
     showPage("published");
   }
-  // Okundu işaretle
+
   if (!n.read && currentUser) {
-    try {
-      await updateDoc(doc(db, "users", currentUser.uid, "appNotifications", n.id), { read: true });
-    } catch {}
+    updateDoc(doc(db, "users", currentUser.uid, "appNotifications", n.id), { read: true }).catch(() => {});
   }
 }
 
-/** Bildirim gönder: hedef kullanıcıya */
 async function _sendNotif(targetUid, payload) {
   if (!targetUid || targetUid === currentUser?.uid) return;
   try {
@@ -4494,23 +4497,20 @@ async function _sendNotif(targetUid, payload) {
       ...payload,
       fromPhoto: currentUser?.photoURL || null,
       createdAt: Date.now(),
-      read: false,
+      read:      false,
     });
-  } catch {}
+  } catch(e) {
+    console.error("[Notif] _sendNotif hatası:", e.message);
+  }
 }
 
-/** Bildirimleri render et — zengin içerik */
 function _renderNotifs() {
   const list   = EL.notifList;
   const unread = _notifCache.filter(n => !n.read).length;
   EL.notifMarkAllRead.style.display = unread > 0 ? "block" : "none";
 
   if (!_notifCache.length) {
-    list.innerHTML = `
-      <div class="notif-empty">
-        <span class="notif-empty-icon">🔔</span>
-        Henüz bildirim yok.<br>Yayınlar beğenilince veya yorum yapılınca burada görünür.
-      </div>`;
+    list.innerHTML = `<div class="notif-empty"><span class="notif-empty-icon">🔔</span>Henüz bildirim yok.</div>`;
     return;
   }
 
@@ -4518,35 +4518,34 @@ function _renderNotifs() {
   _notifCache.slice(0, 50).forEach(n => {
     const meta    = NOTIF_META[n.type] || NOTIF_META.new_publish;
     const isUnread = !n.read;
-
     const card = document.createElement("div");
     card.className = "notif-card" + (isUnread ? " unread" : "");
 
-    // Avatar HTML
-    const avatarStyle = n.fromPhoto ? `background-image:url(${n.fromPhoto});background-size:cover;` : "";
-    const avatarText  = n.fromPhoto ? "" : initials(n.fromName || "?");
+    const avatarStyle = n.fromPhoto
+      ? `background-image:url(${n.fromPhoto});background-size:cover;background-position:center;`
+      : "";
+    const avatarText = n.fromPhoto ? "" : initials(n.fromName || "?");
 
-    // Thumbnail HTML
     let thumbHtml = "";
     if (n.pubThumb) {
-      if (n.isVideo) {
-        thumbHtml = `<div class="notif-thumb-video"><img src="${n.pubThumb}" alt="" loading="lazy"><div class="notif-thumb-video-badge">▶</div></div>`;
-      } else {
-        thumbHtml = `<img class="notif-thumb" src="${n.pubThumb}" alt="" loading="lazy">`;
-      }
+      thumbHtml = n.isVideo
+        ? `<div class="notif-thumb-video"><img src="${n.pubThumb}" alt="" loading="lazy"><div class="notif-thumb-video-badge">▶</div></div>`
+        : `<img class="notif-thumb" src="${n.pubThumb}" alt="" loading="lazy">`;
     }
 
-    // Yorum önizlemesi
-    const commentPreview = n.type === "comment" && n.text
-      ? `<div class="notif-comment-preview">${_escapeHtml(n.text.slice(0,120))}</div>`
-      : "";
-
-    // Ana metin
     const bodyText = n.type === "comment"
-      ? `<strong>${n.fromName || "Biri"}</strong> yayınınıza yorum yaptı`
+      ? `<strong>${_escapeHtml(n.fromName || "Biri")}</strong> yayınınıza yorum yaptı`
       : n.type === "like"
-      ? `<strong>${n.fromName || "Biri"}</strong> yayınınızı beğendi`
-      : `<strong>${n.fromName || "Biri"}</strong> yeni bir şey paylaştı`;
+      ? `<strong>${_escapeHtml(n.fromName || "Biri")}</strong> yayınınızı beğendi`
+      : n.type === "message"
+      ? `<strong>${_escapeHtml(n.fromName || "Biri")}</strong> mesaj gönderdi`
+      : `<strong>${_escapeHtml(n.fromName || "Biri")}</strong> yeni bir şey paylaştı`;
+
+    const commentPreview = n.type === "comment" && n.text
+      ? `<div class="notif-comment-preview">${_escapeHtml(n.text.slice(0, 120))}</div>`
+      : n.type === "message" && n.text
+      ? `<div class="notif-comment-preview">${_escapeHtml(n.text.slice(0, 120))}</div>`
+      : "";
 
     card.innerHTML = `
       <div class="notif-avatar" style="${avatarStyle}">
@@ -4554,7 +4553,7 @@ function _renderNotifs() {
         <span class="notif-avatar-badge">${meta.icon}</span>
       </div>
       <div class="notif-body">
-        <div class="notif-name">${n.fromName || "Pelus Takip"}</div>
+        <div class="notif-name">${_escapeHtml(n.fromName || "Pelus Takip")}</div>
         <div class="notif-text">${bodyText}</div>
         ${commentPreview}
         <div class="notif-meta">
@@ -4568,11 +4567,15 @@ function _renderNotifs() {
       if (isUnread) {
         card.classList.remove("unread");
         n.read = true;
-        try { await updateDoc(doc(db, "users", currentUser.uid, "appNotifications", n.id), { read: true }); } catch {}
+        updateDoc(doc(db, "users", currentUser.uid, "appNotifications", n.id), { read: true }).catch(() => {});
       }
-      _navigateToPub(n);
+      if (EL.settingsModal.classList.contains("open")) closeModal(EL.settingsModal);
+      if (n.type === "message" && n.chatId) {
+        showPage("chat");
+      } else if (n.pubId) {
+        _navigateToPub(n);
+      }
     });
-
     frag.appendChild(card);
   });
 
@@ -4580,39 +4583,30 @@ function _renderNotifs() {
   list.appendChild(frag);
 }
 
-/** Tümünü okundu say */
 EL.notifMarkAllRead.addEventListener("click", async () => {
   if (!currentUser) return;
   const unread = _notifCache.filter(n => !n.read);
   EL.notifMarkAllRead.style.display = "none";
-  try {
-    await Promise.all(unread.map(n =>
-      updateDoc(doc(db, "users", currentUser.uid, "appNotifications", n.id), { read: true })
-    ));
-  } catch {}
+  await Promise.all(
+    unread.map(n =>
+      updateDoc(doc(db, "users", currentUser.uid, "appNotifications", n.id), { read: true }).catch(() => {})
+    )
+  );
 });
 
-/** Settings sekme toggle */
 EL.tabNotifs.addEventListener("click", () => {
-  EL.tabNotifs.classList.add("active");
-  EL.tabSettings.classList.remove("active");
-  EL.panelNotifs.classList.add("active");
-  EL.panelSettings.classList.remove("active");
+  EL.tabNotifs.classList.add("active");   EL.tabSettings.classList.remove("active");
+  EL.panelNotifs.classList.add("active"); EL.panelSettings.classList.remove("active");
   _renderNotifs();
 });
 EL.tabSettings.addEventListener("click", () => {
-  EL.tabSettings.classList.add("active");
-  EL.tabNotifs.classList.remove("active");
-  EL.panelSettings.classList.add("active");
-  EL.panelNotifs.classList.remove("active");
+  EL.tabSettings.classList.add("active"); EL.tabNotifs.classList.remove("active");
+  EL.panelSettings.classList.add("active"); EL.panelNotifs.classList.remove("active");
 });
 
 EL.userBtn.addEventListener("click", () => {
-  // Bildirim sekmesi ile aç ve render et
-  EL.tabNotifs.classList.add("active");
-  EL.tabSettings.classList.remove("active");
-  EL.panelNotifs.classList.add("active");
-  EL.panelSettings.classList.remove("active");
+  EL.tabNotifs.classList.add("active");   EL.tabSettings.classList.remove("active");
+  EL.panelNotifs.classList.add("active"); EL.panelSettings.classList.remove("active");
   _renderNotifs();
   openModal(EL.settingsModal);
   pushModalState("settings");
