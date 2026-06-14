@@ -6218,12 +6218,18 @@ function _listenCandidates(path) {
 
 /* ── RTCPeerConnection oluştur ── */
 function _createPC() {
-  if (_pc) { _pc.close(); _pc = null; }
+  if (_pc) {
+    _pc.onicecandidate = null;
+    _pc.ontrack = null;
+    _pc.onconnectionstatechange = null;
+    _pc.close();
+    _pc = null;
+  }
   _trackAdded = false;
 
   _pc = new RTCPeerConnection(ICE_SERVERS);
 
-  // Kendi ICE candidate'ları gönder
+  // ICE candidate'ları RTDB'ye gönder
   _pc.onicecandidate = e => {
     if (!e.candidate || !_callId) return;
     const path = _isCaller
@@ -6236,37 +6242,51 @@ function _createPC() {
     }).catch(() => {});
   };
 
-  // Karşı tarafın sesi geldi
+  // Karşı tarafın sesi geldi — hem arayan hem cevaplayan için çalışır
   _pc.ontrack = e => {
-    if (_trackAdded) return; // birden fazla track olsa bile bir kez
+    if (_trackAdded) return;
     _trackAdded = true;
+    console.log("[Call] ontrack tetiklendi ✅", e.track.kind);
 
     const stream = e.streams?.[0] || new MediaStream([e.track]);
     EL.remoteAudio.srcObject = stream;
     EL.remoteAudio.play().catch(err => console.warn("[Call] audio play:", err.message));
 
-    EL.callStatus.textContent = "Bağlandı 🟢";
+    // Her iki taraf için de timer ve status güncelle
+    if (EL.callStatus) EL.callStatus.textContent = "Bağlandı 🟢";
     _startCallTimer();
-    console.log("[Call] Ses bağlandı");
   };
 
-  // Bağlantı durumu
+  // Bağlantı durumu — sadece "failed"'de cleanup
+  // "disconnected" geçici olabilir (ağ değişimi vs.), cleanup yapma
+  let disconnectTimer = null;
   _pc.onconnectionstatechange = () => {
     const state = _pc?.connectionState;
     console.log("[WebRTC] connectionState:", state);
     if (!_callActive) return;
 
     if (state === "connected") {
-      EL.callStatus.textContent = "Bağlandı 🟢";
+      clearTimeout(disconnectTimer);
+      if (EL.callStatus) EL.callStatus.textContent = "Bağlandı 🟢";
     } else if (state === "disconnected") {
-      EL.callStatus.textContent = "Bağlantı zayıf…";
+      if (EL.callStatus) EL.callStatus.textContent = "Bağlantı zayıf…";
+      // 8 saniye sonra hâlâ disconnected'sa cleanup
+      disconnectTimer = setTimeout(() => {
+        if (_pc?.connectionState === "disconnected" || _pc?.connectionState === "failed") {
+          toast("📞 Bağlantı kesildi");
+          _cleanupCall("disconnected-timeout");
+        }
+      }, 8000);
+      _callCleanups.push(() => clearTimeout(disconnectTimer));
     } else if (state === "failed") {
+      clearTimeout(disconnectTimer);
       toast("📞 Bağlantı kurulamadı");
       _cleanupCall("connection-failed");
+    } else if (state === "closed") {
+      clearTimeout(disconnectTimer);
     }
   };
 
-  // ICE gathering durumu
   _pc.onicegatheringstatechange = () => {
     console.log("[ICE] gatheringState:", _pc?.iceGatheringState);
   };
@@ -6365,9 +6385,14 @@ async function acceptCall() {
   }
   _hideIncomingOverlay();
 
+  // Arayanın adını ve fotoğrafını al — overlay için
   const callerName  = EL.incomingCallName.textContent || "Arayan";
-  const bgImg = EL.incomingCallAvatar.style.backgroundImage;
-  const callerPhoto = bgImg && bgImg !== "none" ? bgImg.slice(5,-2) : null;
+  const bgImg = EL.incomingCallAvatar.style.backgroundImage || "";
+  const callerPhoto = (bgImg && bgImg !== "none")
+    ? bgImg.replace(/^url\(["']?/, "").replace(/["']?\)$/, "")
+    : null;
+
+  // Cevaplayan taraf da overlay'i görür
   _showCallOverlay(callerName, callerPhoto, "Bağlanıyor…");
 
   let answer;
@@ -6393,12 +6418,14 @@ async function acceptCall() {
   let metaActive = true;
   onValue(metaRef, snap => {
     if (!metaActive || !_callActive) return;
-    if (snap.val()?.status === "ended") { metaActive=false; toast("📞 Arama bitti"); _cleanupCall("caller-ended"); }
+    if (snap.val()?.status === "ended") {
+      metaActive = false; toast("📞 Arama bitti"); _cleanupCall("caller-ended");
+    }
   });
-  _callCleanups.push(() => { metaActive=false; off(metaRef); });
+  _callCleanups.push(() => { metaActive = false; off(metaRef); });
 
   _listenCandidates(`calls/${_callId}/callerCandidates`);
-  console.log("[Call] Kabul edildi ✅");
+  console.log("[Call] Kabul edildi, ICE exchange başlıyor ✅");
 }
 
 async function rejectCall() {
