@@ -1471,7 +1471,7 @@
       display: flex; align-items: center; justify-content: center;
       border: 2px solid rgba(255,255,255,.8);
     }
-    .chat-conv-header-info { flex: 1; min-width: 0; }
+    .chat-conv-header-info { flex: 1; min-width: 0; overflow: hidden; }
     .chat-conv-name { font-size: 15px; font-weight: 800; color: var(--pink-dark); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .chat-conv-status { font-size: 11.5px; color: var(--text-muted); display: flex; align-items: center; gap: 4px; margin-top: 1px; }
 
@@ -1672,14 +1672,16 @@
 
     /* Sesli arama butonu (topbar) */
     .chat-call-btn {
-      width: 36px; height: 36px; border-radius: 50%;
+      width: 38px; height: 38px; border-radius: 50%;
       background: rgba(255,255,255,.7);
       display: flex; align-items: center; justify-content: center;
       color: var(--pink-dark); flex-shrink: 0;
-      transition: all .15s; margin-left: auto;
+      margin-left: auto;
+      transition: all .15s;
+      border: 1.5px solid rgba(160,60,100,.1);
     }
-    .chat-call-btn:active { transform: scale(.88); }
-    .chat-call-btn.in-call { background: var(--green); color: #fff; animation: pulse 1.5s ease-in-out infinite; }
+    .chat-call-btn:active { transform: scale(.88); background: rgba(255,255,255,.95); }
+    .chat-call-btn.in-call { background: var(--green); color: #fff; border-color: var(--green); animation: pulse 1.5s ease-in-out infinite; }
 
     /* Arama overlay */
     .call-overlay {
