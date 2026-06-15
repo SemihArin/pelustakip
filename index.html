@@ -5,6 +5,17 @@
   <meta http-equiv="X-UA-Compatible" content="IE=Edge">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
   <title>Pelus Takip</title>
+  <!-- PWA & iOS -->
+  <meta name="theme-color" content="#f5b8d0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Pelus Takip">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="description" content="Sevimli anların defteri">
+  <!-- Open Graph -->
+  <meta property="og:title" content="Pelus Takip">
+  <meta property="og:description" content="Sevimli anların defteri 🐾">
+  <meta property="og:type" content="website">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
@@ -2770,7 +2781,8 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-messaging.js";
 import {
   getDatabase, ref as rtRef, set, get, push, onValue, off,
-  serverTimestamp as rtServerTs, onDisconnect, update as rtUpdate
+  serverTimestamp as rtServerTs, onDisconnect, update as rtUpdate,
+  query as rtQuery, limitToLast, orderByKey
 } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-database.js";
 
 /* ─── Firebase ─── */
@@ -2865,12 +2877,6 @@ const EL = {
   typingIndicator:     q("typingIndicator"),
   typingName:          q("typingName"),
   replyPreview:        q("replyPreview"),
-  replyPreviewName:    q("replyPreviewName"),
-  replyPreviewText:    q("replyPreviewText"),
-  replyPreviewClose:   q("replyPreviewClose"),
-  replyPreviewName:    q("replyPreviewName"),
-  replyPreviewText:    q("replyPreviewText"),
-  replyPreviewClose:   q("replyPreviewClose"),
   replyPreviewName:    q("replyPreviewName"),
   replyPreviewText:    q("replyPreviewText"),
   replyPreviewClose:   q("replyPreviewClose"),
@@ -3895,9 +3901,19 @@ async function deletePhoto() {
   const ok = await openConfirm({ title:`${label} silinsin mi?`, text:"Bu işlem geri alınamaz.", okLabel:"Sil", icon:"🗑" });
   if (!ok) return;
   try {
+    // Storage'dan sil (URL ise)
+    if (pm.image && pm.image.startsWith("https://firebasestorage")) {
+      try {
+        // Storage URL'den path çıkar: .../o/PATH?... formatında
+        const pathMatch = pm.image.match(/\/o\/([^?]+)/);
+        if (pathMatch) {
+          const path = decodeURIComponent(pathMatch[1]);
+          await deleteObject(storRef(storage, path));
+        }
+      } catch(e) { console.warn("[Storage] deletePhoto:", e.message); }
+    }
     await deleteDoc(doc(db, "users", currentUser.uid, "photos", pm.id));
     if (pm.publishedId) await deleteDoc(doc(db, "publishedPhotos", pm.publishedId)).catch(()=>{});
-    // IndexedDB'den de sil
     if (pm.videoId) {
       const cachedUrl = _videoBlobUrls.get(pm.videoId);
       if (cachedUrl) URL.revokeObjectURL(cachedUrl);
@@ -5821,6 +5837,7 @@ EL.sideLogoutBtn.addEventListener("click", async () => {
   const ok = await openConfirm({ title:"Çıkış Yap", text:"Çıkış yapmak istediğinize emin misiniz?", okLabel:"Çıkış Yap", cancelLabel:"Vazgeç", icon:"👋" });
   if (!ok) return;
   await signOut(auth);
+  chatKnownUsers = []; _chatUsersLoaded = false; // cache sıfırla
   toast("Çıkış yapıldı");
 });
 
@@ -5833,6 +5850,7 @@ document.addEventListener("keydown", e => {
    CHAT SİSTEMİ — Firebase RTDB
 ═══════════════════════════════════════════ */
 let chatKnownUsers = [], chatActiveUid = null, chatActiveChatId = null;
+let _chatUsersLoaded = false; // cache flag — sadece 1 kez yükle
 let _chatMsgListener = null, _chatListListeners = [], _presenceListeners = {}, _totalChatUnread = 0;
 
 function chatId(a,b){ return [a,b].sort().join("_"); }
@@ -5885,6 +5903,7 @@ function setActiveChat(chatIdStr) {
 
 async function loadChatUsers() {
   if (!currentUser) return;
+  if (_chatUsersLoaded && chatKnownUsers.length > 0) return; // cache hit
   const snap = await getDocs(collection(db,"publishedPhotos")).catch(()=>null);
   if (!snap) return;
   const seen = new Set([currentUser.uid]);
@@ -5895,6 +5914,8 @@ async function loadChatUsers() {
     seen.add(uid);
     chatKnownUsers.push({ uid, displayName: d.data().displayName||"Kullanıcı", photoURL: d.data().photoURL||null });
   });
+  _chatUsersLoaded = true;
+  console.log("[Chat] Kullanıcılar yüklendi:", chatKnownUsers.length);
 }
 
 async function renderChatList() {
@@ -5984,10 +6005,11 @@ function _startMsgListener() {
   if (_chatMsgListener) { try { _chatMsgListener(); } catch(e){} _chatMsgListener = null; }
   if (!chatActiveChatId || !currentUser) return;
 
-  const msgsRef = rtRef(rtdb, `chats/${chatActiveChatId}/messages`);
+  const msgsRef    = rtRef(rtdb, `chats/${chatActiveChatId}/messages`);
+  const msgsQuery  = rtQuery(msgsRef, orderByKey(), limitToLast(100));
   EL.chatMessages.innerHTML = '<div style="text-align:center;padding:32px;color:var(--text-muted);font-size:13px;">Yükleniyor…</div>';
 
-  const unsubscribe = onValue(msgsRef, snap => {
+  const unsubscribe = onValue(msgsQuery, snap => {
     const msgs = [];
     if (snap.exists()) snap.forEach(c => { const v=c.val(); if(v&&v.ts) msgs.push({id:c.key,...v}); });
     msgs.sort((a,b) => a.ts - b.ts);
@@ -6086,17 +6108,29 @@ function _startMsgListener() {
       }
 
       // Fotoğraf veya metin
-      if (msg.type === "photo" && msg.photo) {
+      if (msg.type === "photo") {
         const img = document.createElement("img");
         img.className = "msg-photo";
-        img.src = msg.photo;
-        img.loading = "lazy";
+        img.loading   = "lazy";
+
+        if (msg.photo) {
+          // Tek parça — direkt base64 veya URL
+          img.src = msg.photo;
+        } else if (msg.hasChunks && msg.chunkId) {
+          // Çok parça — Firestore'dan chunk'ları yükle
+          img.src = "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs="; // placeholder
+          img.style.minWidth = "120px"; img.style.minHeight = "80px";
+          img.style.background = "rgba(0,0,0,.08)";
+          _loadChatPhotoChunks(chatActiveChatId, msg.chunkId, msg.chunkCount).then(b64 => {
+            if (b64) img.src = "data:image/jpeg;base64," + b64;
+          });
+        }
+
         img.addEventListener("click", () => {
-          // Tam ekran önizleme
           const overlay = document.createElement("div");
           overlay.style.cssText = "position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center;";
           const imgFull = document.createElement("img");
-          imgFull.src = msg.photo;
+          imgFull.src = img.src;
           imgFull.style.cssText = "max-width:95%;max-height:90dvh;border-radius:8px;object-fit:contain;";
           overlay.appendChild(imgFull);
           overlay.addEventListener("click", () => overlay.remove());
@@ -6180,7 +6214,7 @@ function _sendTypingSignal() {
   clearTimeout(_typingTimer);
   _typingTimer = setTimeout(() => {
     set(ref, null).catch(() => {});
-  }, 3000); // 3 saniye sonra "yazmayı bıraktı"
+  }, 3000); // 3 saniye sonra yazmadi sayilir
 }
 
 function _clearTypingSignal() {
@@ -6188,7 +6222,7 @@ function _clearTypingSignal() {
   clearTimeout(_typingTimer);
   set(rtRef(rtdb, `typing/${chatActiveChatId}/${currentUser.uid}`), null).catch(() => {});
 }
-let _replyTo = null; // { id, text, from }
+let _replyTo = null; // id, text, from
 
 function _setReply(msg) {
   _replyTo = { id: msg.id, text: msg.text, from: msg.from };
@@ -6215,49 +6249,108 @@ EL.chatPhotoBtn.addEventListener("click", () => EL.chatPhotoInput.click());
 
 EL.chatPhotoInput.addEventListener("change", async () => {
   const file = EL.chatPhotoInput.files?.[0];
-  if (!file || !chatActiveChatId || !currentUser) return;
+  if (!file) return;
   EL.chatPhotoInput.value = "";
 
-  if (file.size > 10 * 1024 * 1024) { toast("❌ Fotoğraf çok büyük (max 10MB)"); return; }
+  if (!chatActiveChatId || !chatActiveUid || !currentUser) {
+    toast("⚠️ Önce bir sohbet açın"); return;
+  }
+  if (file.size > 8 * 1024 * 1024) { toast("❌ Fotoğraf çok büyük (max 8MB)"); return; }
 
-  const base64 = await _compressPhoto(file, 1200);
-  if (!base64) { toast("❌ Fotoğraf okunamadı"); return; }
-
-  const ts = Date.now();
-  const replyData = _replyTo ? { ..._replyTo } : null;
-  _clearReply();
+  EL.chatPhotoBtn.style.opacity = "0.4";
+  EL.chatPhotoBtn.style.pointerEvents = "none";
 
   try {
-    // Storage'a yükle
-    const path   = `chatPhotos/${chatActiveChatId}/${currentUser.uid}_${ts}.jpg`;
-    const sRef   = storRef(storage, path);
-    await uploadString(sRef, base64, "data_url");
-    const photoUrl = await getDownloadURL(sRef);
+    // Sıkıştır — 900px, JPEG %70 → genellikle 80-200KB
+    const base64 = await _compressPhoto(file, 900);
+    if (!base64) throw new Error("Fotoğraf sıkıştırılamadı");
 
+    const ts        = Date.now();
+    const replyData = _replyTo ? { ..._replyTo } : null;
+    _clearReply();
+
+    // base64 boyutunu hesapla (data:image/jpeg;base64, prefix'i çıkar)
+    const raw      = base64.split(",")[1] || base64;
+    const byteSize = Math.ceil(raw.length * 0.75); // yaklaşık byte
+
+    const CHUNK   = 800_000; // 800KB — Firestore doküman limiti altında
+    const msgRef  = collection(db, "chatMessages", chatActiveChatId, "msgs");
+
+    let photoField, hasChunks = false, chunkCount = 0;
+
+    if (raw.length <= CHUNK) {
+      // Tek parça — doğrudan mesaj içine
+      photoField = base64;
+    } else {
+      // Çok parça — ayrı chunk dokümanları
+      hasChunks  = true;
+      chunkCount = Math.ceil(raw.length / CHUNK);
+
+      // İlerleme göster
+      toast(`📤 Fotoğraf yükleniyor… (${chunkCount} parça)`);
+
+      const chunkColRef = collection(db, "chatMessages", chatActiveChatId, "photoChunks");
+      const chunkDocRef = doc(chunkColRef);
+      const chunkId     = chunkDocRef.id;
+
+      const writes = [];
+      for (let i = 0; i < chunkCount; i++) {
+        const chunkRef = doc(db, "chatMessages", chatActiveChatId, "photoChunks", `${chunkId}_${i}`);
+        writes.push(setDoc(chunkRef, {
+          data:    raw.slice(i * CHUNK, (i + 1) * CHUNK),
+          idx:     i,
+          total:   chunkCount,
+          chunkId,
+        }));
+      }
+      await Promise.all(writes);
+      photoField = null; // mesajda base64 yok, chunkId var
+      // chunkId'yi mesaja koy
+      await push(rtRef(rtdb, `chats/${chatActiveChatId}/messages`), {
+        from: currentUser.uid, ts, read: false,
+        type: "photo", hasChunks: true, chunkId,
+        chunkCount, text: "📷 Fotoğraf",
+        ...(replyData ? { replyTo: replyData } : {}),
+      });
+
+      const metaRef  = rtRef(rtdb, `chats/${chatActiveChatId}/meta`);
+      const metaSnap = await get(metaRef).catch(() => null);
+      const prev     = (metaSnap?.val()||{})[`unread_${chatActiveUid}`]||0;
+      await rtUpdate(metaRef, {
+        users: [currentUser.uid, chatActiveUid],
+        lastMsg: "📷 Fotoğraf", lastTs: ts,
+        [`unread_${chatActiveUid}`]: prev + 1,
+        [`unread_${currentUser.uid}`]: 0,
+      });
+      toast("✅ Fotoğraf gönderildi");
+      return;
+    }
+
+    // Tek parça — direkt RTDB mesajına base64 yaz
     await push(rtRef(rtdb, `chats/${chatActiveChatId}/messages`), {
-      from:    currentUser.uid,
-      ts,
-      read:    false,
-      type:    "photo",
-      photo:   photoUrl,       // Storage URL — küçük, hızlı
-      text:    "📷 Fotoğraf",
+      from: currentUser.uid, ts, read: false,
+      type: "photo", photo: photoField,
+      text: "📷 Fotoğraf",
       ...(replyData ? { replyTo: replyData } : {}),
     });
 
-    const metaRef    = rtRef(rtdb, `chats/${chatActiveChatId}/meta`);
-    const metaSnap   = await get(metaRef).catch(() => null);
-    const prevUnread = (metaSnap?.val() || {})[`unread_${chatActiveUid}`] || 0;
+    const metaRef  = rtRef(rtdb, `chats/${chatActiveChatId}/meta`);
+    const metaSnap = await get(metaRef).catch(() => null);
+    const prev     = (metaSnap?.val()||{})[`unread_${chatActiveUid}`]||0;
     await rtUpdate(metaRef, {
-      users:   [currentUser.uid, chatActiveUid],
-      lastMsg: "📷 Fotoğraf",
-      lastTs:  ts,
-      [`unread_${chatActiveUid}`]:   prevUnread + 1,
+      users: [currentUser.uid, chatActiveUid],
+      lastMsg: "📷 Fotoğraf", lastTs: ts,
+      [`unread_${chatActiveUid}`]: prev + 1,
       [`unread_${currentUser.uid}`]: 0,
     });
-    console.log("[Chat] Fotoğraf gönderildi →", photoUrl.slice(0,60));
+    toast("✅ Fotoğraf gönderildi");
+
   } catch(e) {
-    console.error("[Chat] Fotoğraf gönderme:", e.message);
-    toast("❌ Fotoğraf gönderilemedi: " + e.message);
+    console.error("[Chat] Photo error:", e.code, e.message);
+    toast("❌ Gönderilemedi: " + (e.code || e.message));
+  } finally {
+    EL.chatPhotoBtn.style.opacity = "";
+    EL.chatPhotoBtn.style.pointerEvents = "";
   }
 });
 
@@ -6283,6 +6376,26 @@ async function _compressPhoto(file, maxSize) {
     reader.onerror = () => resolve(null);
     reader.readAsDataURL(file);
   });
+}
+
+// Chat foto chunk'larını Firestore'dan yükle ve birleştir
+const _chatPhotoCache = new Map(); // chunkId → base64
+async function _loadChatPhotoChunks(chatIdStr, chunkId, chunkCount) {
+  if (_chatPhotoCache.has(chunkId)) return _chatPhotoCache.get(chunkId);
+  try {
+    const parts = [];
+    for (let i = 0; i < chunkCount; i++) {
+      const snap = await getDoc(doc(db, "chatMessages", chatIdStr, "photoChunks", `${chunkId}_${i}`));
+      if (!snap.exists()) throw new Error(`Chunk ${i} bulunamadı`);
+      parts.push(snap.data().data);
+    }
+    const full = parts.join("");
+    _chatPhotoCache.set(chunkId, full);
+    return full;
+  } catch(e) {
+    console.error("[Chat] chunk yükleme:", e.message);
+    return null;
+  }
 }
 
 /* ── Alıntılanan mesaja scroll ── */
@@ -6497,6 +6610,11 @@ EL.chatConvBack.addEventListener("click", () => {
   _stopTypingListener();
   _clearTypingSignal();
   setActiveChat(null);
+  chatActiveUid = null; chatActiveChatId = null;
+  // Klavye offset sıfırla
+  EL.chatConvView.style.transform = "";
+  EL.chatConvView.style.height    = "";
+  EL.chatInput.blur(); // klavyeyi kapat
   EL.chatConvView.classList.remove("active");
   EL.chatListView.classList.add("active");
   renderChatList();
@@ -7097,6 +7215,88 @@ EL.callSpeakerBtn.addEventListener("click", () => {
 });
 
 /* ═══════════════════════════════════════════
+   KLAVYE & VIEWPORT — Chat input kaymaması
+═══════════════════════════════════════════ */
+if (window.visualViewport) {
+  const onVpResize = () => {
+    if (activePage !== "chat") return;
+    const convView = q("chatConvView");
+    if (!convView || !convView.classList.contains("active")) return;
+
+    const vp      = window.visualViewport;
+    const vpTop   = vp.offsetTop;
+    const vpH     = vp.height;
+    const winH    = window.innerHeight;
+
+    // Klavye yüksekliği = pencere yüksekliği - viewport yüksekliği - viewport top offset
+    const kbH = Math.max(0, winH - vpH - vpTop);
+
+    if (kbH > 50) {
+      // Klavye açık — chatConvView'ı klavye kadar yukarı kaydır
+      convView.style.transform = `translateY(-${kbH}px)`;
+      convView.style.height    = `${winH - kbH}px`;
+    } else {
+      // Klavye kapalı — sıfırla
+      convView.style.transform = "";
+      convView.style.height    = "";
+    }
+
+    // Mesajları en alta scroll
+    requestAnimationFrame(() => {
+      const msgs = q("chatMessages");
+      if (msgs) msgs.scrollTop = msgs.scrollHeight;
+    });
+  };
+
+  window.visualViewport.addEventListener("resize", onVpResize, { passive: true });
+  window.visualViewport.addEventListener("scroll", onVpResize, { passive: true });
+}
+
+/* ═══════════════════════════════════════════
+   DEEP LINK — ?openPub=xxx
+═══════════════════════════════════════════ */
+function _handleDeepLink() {
+  const params = new URLSearchParams(location.search);
+  const pubId  = params.get("openPub");
+  if (!pubId) return;
+  // pubCache yüklendikten sonra aç
+  const tryOpen = () => {
+    const item = pubCache.find(p => p.id === pubId);
+    if (item) {
+      showPage("published");
+      setTimeout(() => openPubModal(item), 300);
+      // URL'yi temizle
+      history.replaceState(null, "", location.pathname);
+    } else if (pubCache.length === 0) {
+      // Henüz yüklenmedi, 1sn bekle
+      setTimeout(tryOpen, 1000);
+    }
+  };
+  setTimeout(tryOpen, 800);
+}
+
+/* ═══════════════════════════════════════════
+   NETWORK DURUM
+═══════════════════════════════════════════ */
+window.addEventListener("online",  () => toast("✅ Bağlantı kuruldu"));
+window.addEventListener("offline", () => toast("⚠️ Bağlantı kesildi — çevrimdışısın"));
+
+/* ═══════════════════════════════════════════
+   GLOBAL ERROR HANDLER
+═══════════════════════════════════════════ */
+window.onerror = (msg, src, line, col, err) => {
+  console.error("[GlobalError]", msg, src, line, col);
+  // Kritik hatalarda kullanıcıya gösterme — sadece log
+};
+window.addEventListener("unhandledrejection", e => {
+  const reason = e.reason;
+  const msg = reason?.message || reason?.code || String(reason);
+  // Firestore offline hatalarını sustur (beklenen)
+  if (msg.includes("offline") || msg.includes("WebChannel") || msg.includes("transport")) return;
+  console.error("[UnhandledPromise]", msg, reason);
+});
+
+/* ═══════════════════════════════════════════
    AUTH + SPLASH ENTEGRASYONu
    FIX: getRedirectResult sadece bir kez çalışır, onAuthStateChanged içinde
    değil ayrı bir try bloğunda — çift tetiklenme önlendi
@@ -7171,6 +7371,7 @@ function applyUser(user) {
       updateNotifBtn(enabled);
       if (enabled) refreshFcmToken();
     });
+    _handleDeepLink(); // ?openPub=xxx deep link
 
     // Service Worker'dan gelen bildirim tıklama mesajları
     if ("serviceWorker" in navigator) {
