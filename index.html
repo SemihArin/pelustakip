@@ -4144,54 +4144,59 @@ async function saveNotifPref(enabled) {
 async function requestNotificationPermission() {
   if (!messaging) {
     toast("⚠️ Bildirimler bu tarayıcıda desteklenmiyor");
-    console.warn("[FCM] messaging null — HTTPS gerekli veya tarayıcı desteklemiyor");
     return;
   }
   if (!('serviceWorker' in navigator)) {
-    toast("⚠️ Service Worker bu tarayıcıda desteklenmiyor");
+    toast("⚠️ Service Worker desteklenmiyor");
+    return;
+  }
+  // HTTPS kontrolü
+  if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+    toast("⚠️ Bildirimler sadece HTTPS'de çalışır");
     return;
   }
   try {
-    // İzin iste
     const perm = await Notification.requestPermission();
-    console.log("[FCM] Bildirim izni:", perm);
     if (perm !== "granted") { toast("❌ Bildirim izni reddedildi"); return; }
 
-    // Service Worker kaydet — scope "/" olmalı (Firebase Hosting için)
     let swReg;
     try {
       swReg = await navigator.serviceWorker.register("/firebase-messaging-sw.js");
-      console.log("[FCM] SW kayıt başarılı:", swReg.scope);
-    } catch (swErr) {
-      console.error("[FCM] SW kayıt hatası:", swErr.message);
-      // firebase-messaging-sw.js kök dizinde değilse dene
-      swReg = await navigator.serviceWorker.register("./firebase-messaging-sw.js");
-      console.log("[FCM] SW kayıt (./…) başarılı:", swReg.scope);
+    } catch {
+      try { swReg = await navigator.serviceWorker.register("./firebase-messaging-sw.js"); }
+      catch(e2) {
+        toast("❌ Service Worker kaydedilemedi: " + e2.message);
+        return;
+      }
     }
-
     await navigator.serviceWorker.ready;
-    console.log("[FCM] SW hazır:", swReg.active?.state);
 
-    // Token al
-    const token = await getToken(messaging, {
-      vapidKey:                    VAPID_KEY,
-      serviceWorkerRegistration:   swReg,
-    });
-
-    if (!token) {
-      console.error("[FCM] Token alınamadı — VAPID key doğru mu?");
-      toast("❌ Token alınamadı");
+    let token;
+    try {
+      token = await getToken(messaging, {
+        vapidKey:                  VAPID_KEY,
+        serviceWorkerRegistration: swReg,
+      });
+    } catch(tokenErr) {
+      // "push service error" veya "Registration failed" — genellikle localhost'ta
+      console.warn("[FCM] Token alınamadı:", tokenErr.message);
+      if (tokenErr.message?.includes("push service") || tokenErr.message?.includes("Registration")) {
+        toast("⚠️ Bildirimler deploy sonrası aktif olur (HTTPS gerekli)");
+      } else {
+        toast("❌ Token hatası: " + tokenErr.message);
+      }
       return;
     }
 
-    console.log("[FCM] Token alındı:", token.slice(0,20) + "…");
+    if (!token) { toast("❌ Token alınamadı"); return; }
+
     await saveFcmToken(token);
     await saveNotifPref(true);
     updateNotifBtn(true);
     toast("🔔 Bildirimler etkinleştirildi!");
   } catch(e) {
-    console.error("[FCM] requestNotificationPermission hatası:", e.name, e.message);
-    toast("❌ Bildirim hatası: " + e.message);
+    console.error("[FCM] hata:", e.name, e.message);
+    toast("❌ " + e.message);
   }
 }
 
@@ -7513,9 +7518,9 @@ async function openChallengeModal() {
 EL.challengeClose.addEventListener("click", () => {
   EL.challengeModal.style.animation = "chSlideOut .3s ease forwards";
   setTimeout(() => {
-    EL.challengeModal.style.display = "";
-    EL.challengeModal.style.animation = "";
-  }, 300);
+    EL.challengeModal.style.display    = "none";
+    EL.challengeModal.style.animation  = "";
+  }, 320);
 });
 
 function _renderChallengeBody() {
@@ -7871,10 +7876,21 @@ function _renderChallengeActive() {
     slot.className = "ch-slot" + (pic ? " done" : isNow ? " active-now" : isPast ? " missed" : "");
 
     if (pic) {
-      slot.innerHTML = `<img class="ch-slot-img" src="${pic.url}" loading="lazy"><div class="ch-slot-check">✓</div><div class="ch-slot-time" style="position:relative;z-index:1;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.6)">${_slotLabel(h)}</div>`;
+      const imgEl = document.createElement("img");
+      imgEl.className = "ch-slot-img";
+      imgEl.loading = "lazy";
+      _resolvePhotoUrl(pic.url).then(r => { if(r) imgEl.src = r; });
+      slot.appendChild(imgEl);
+      const check = document.createElement("div");
+      check.className = "ch-slot-check"; check.textContent = "✓";
+      slot.appendChild(check);
+      const timeEl = document.createElement("div");
+      timeEl.className = "ch-slot-z ch-slot-time";
+      timeEl.textContent = _slotLabel(h);
+      slot.appendChild(timeEl);
       slot.addEventListener("click", () => _showChallengePhoto(pic));
     } else {
-      slot.innerHTML = `<div class="ch-slot-time">${_slotLabel(h)}</div><div style="font-size:10px;color:var(--text-muted)">${isNow ? "Şimdi!" : isPast ? "Kaçırdın" : "Bekliyor"}</div>`;
+      slot.innerHTML = `<div class="ch-slot-time">${_slotLabel(h)}</div><div class="ch-slot-label">${isNow?"Şimdi!":isPast?"Kaçırdın":"Bekliyor"}</div>`;
       if (isNow || (!isPast && now.getHours() <= h)) {
         slot.addEventListener("click", () => _takeChallengePhoto(h));
       }
@@ -7890,10 +7906,20 @@ function _renderChallengeActive() {
     const slot = document.createElement("div");
     slot.className = "ch-slot" + (pic ? " done" : "");
     if (pic) {
-      slot.innerHTML = `<img class="ch-slot-img" src="${pic.url}" loading="lazy"><div class="ch-slot-check">✓</div><div class="ch-slot-time" style="position:relative;z-index:1;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.6)">${_slotLabel(h)}</div>`;
+      const imgEl = document.createElement("img");
+      imgEl.className = "ch-slot-img"; imgEl.loading = "lazy";
+      _resolvePhotoUrl(pic.url).then(r => { if(r) imgEl.src = r; });
+      slot.appendChild(imgEl);
+      const check = document.createElement("div");
+      check.className = "ch-slot-check"; check.textContent = "✓";
+      slot.appendChild(check);
+      const timeEl = document.createElement("div");
+      timeEl.className = "ch-slot-z ch-slot-time";
+      timeEl.textContent = _slotLabel(h);
+      slot.appendChild(timeEl);
       slot.addEventListener("click", () => _showChallengePhoto(pic));
     } else {
-      slot.innerHTML = `<div class="ch-slot-time">${_slotLabel(h)}</div><div style="font-size:10px;color:var(--text-muted)">Bekleniyor</div>`;
+      slot.innerHTML = `<div class="ch-slot-time">${_slotLabel(h)}</div><div class="ch-slot-label">Bekleniyor</div>`;
     }
     theirGrid.appendChild(slot);
   });
@@ -7931,32 +7957,57 @@ function _takeChallengePhoto(hour) {
   inp.type = "file"; inp.accept = "image/*"; inp.capture = "environment";
   inp.addEventListener("change", async () => {
     const file = inp.files?.[0];
-    if (!file || !_challengeId) return;
-    toast("📤 Yükleniyor…");
+    if (!file || !_challengeId || !currentUser) return;
+
+    const toastEl = toast("📤 Yükleniyor…");
+
     try {
       const base64 = await _compressPhoto(file, 900);
       if (!base64) throw new Error("Sıkıştırılamadı");
 
-      // Storage'a yükle
-      const path  = `challenges/${_challengeId}/${currentUser.uid}_${hour}.jpg`;
-      const sRef  = storRef(storage, path);
-      await uploadString(sRef, base64, "data_url");
-      const url   = await getDownloadURL(sRef);
+      let url;
+
+      // Önce Storage dene, başarısız olursa Firestore chunks
+      try {
+        const path = `challenges/${_challengeId}/${currentUser.uid}_${hour}.jpg`;
+        const sRef = storRef(storage, path);
+        await uploadString(sRef, base64, "data_url");
+        url = await getDownloadURL(sRef);
+        console.log("[Challenge] Storage yüklendi ✅");
+      } catch(storageErr) {
+        console.warn("[Challenge] Storage hatası, Firestore chunk kullanılıyor:", storageErr.message);
+
+        // Firestore chunk sistemi
+        const raw        = base64.split(",")[1] || base64;
+        const CHUNK      = 800_000;
+        const chunkCount = Math.ceil(raw.length / CHUNK);
+        const chunkId    = `ch_${_challengeId}_${currentUser.uid}_${hour}`;
+
+        const writes = [];
+        for (let i = 0; i < chunkCount; i++) {
+          writes.push(setDoc(
+            doc(db, "challengePhotos", `${chunkId}_${i}`),
+            { data: raw.slice(i*CHUNK, (i+1)*CHUNK), idx: i, total: chunkCount, chunkId }
+          ));
+        }
+        await Promise.all(writes);
+        url = `chunk://${chunkId}::${chunkCount}`;  // özel URI
+        console.log("[Challenge] Firestore chunk yüklendi ✅", chunkCount, "parça");
+      }
 
       await updateDoc(doc(db, "challenges", _challengeId), {
         [`photos.${currentUser.uid}.${_slotKey(hour)}`]: {
-          url, ts: Date.now(),
-          note: currentUser.displayName || "",
+          url, ts: Date.now(), note: currentUser.displayName || "",
         }
       });
 
-      // Tüm slotlar tamamlandı mı kontrol et
-      const snap = await getDoc(doc(db,"challenges",_challengeId));
-      const data = snap.data();
-      const uid  = currentUser.uid;
+      // Tamamlandı mı?
+      const snap     = await getDoc(doc(db, "challenges", _challengeId));
+      const data     = snap.data();
+      const uid      = currentUser.uid;
       const theirUid = data.creator === uid ? data.partner : data.creator;
-      const myDone    = (data.slots||[]).every(h => data.photos?.[uid]?.[_slotKey(h)]);
-      const theirDone = (data.slots||[]).every(h => data.photos?.[theirUid]?.[_slotKey(h)]);
+      const myDone   = (data.slots||[]).every(h => data.photos?.[uid]?.[_slotKey(h)]);
+      const theirDone= (data.slots||[]).every(h => data.photos?.[theirUid]?.[_slotKey(h)]);
       if (myDone && theirDone) {
         await updateDoc(doc(db,"challenges",_challengeId), { status: "done" });
         toast("🏆 Meydan okuma tamamlandı!");
@@ -7965,23 +8016,42 @@ function _takeChallengePhoto(hour) {
       }
 
       _renderChallengeBody();
-    } catch(e) { toast("❌ " + e.message); }
+    } catch(e) {
+      console.error("[Challenge] fotoğraf hatası:", e.message);
+      toast("❌ " + e.message);
+    }
   });
   inp.click();
 }
 
-function _showChallengePhoto(pic) {
+async function _showChallengePhoto(pic) {
   const ov = document.createElement("div");
-  ov.style.cssText = "position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;";
+  ov.style.cssText = "position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center;";
   const img = document.createElement("img");
-  img.src = pic.url;
   img.style.cssText = "max-width:95%;max-height:80dvh;border-radius:8px;";
   ov.appendChild(img);
   ov.addEventListener("click", ()=>ov.remove());
   document.body.appendChild(ov);
+  const resolved = await _resolvePhotoUrl(pic.url);
+  if (resolved) img.src = resolved;
 }
 
 /* ── Slideshow ── */
+async function _resolvePhotoUrl(url) {
+  if (!url) return null;
+  if (!url.startsWith("chunk://")) return url;
+  // chunk://chunkId::count
+  const [chunkId, countStr] = url.replace("chunk://","").split("::");
+  const count = parseInt(countStr) || 1;
+  const parts = [];
+  for (let i = 0; i < count; i++) {
+    const snap = await getDoc(doc(db, "challengePhotos", `${chunkId}_${i}`));
+    if (!snap.exists()) return null;
+    parts.push(snap.data().data);
+  }
+  return "data:image/jpeg;base64," + parts.join("");
+}
+
 function _startSlideshow() {
   if (!_challenge) return;
   const uid      = currentUser.uid;
@@ -8007,17 +8077,28 @@ function _startSlideshow() {
     EL.slideshowInner.innerHTML = `<div class="ss-slide"><div class="ss-slide-empty">📷 Henüz fotoğraf yok</div></div>`;
   } else {
     slides.forEach((s, i) => {
-      const rot  = rotations[i % rotations.length];
+      const rot   = rotations[i % rotations.length];
       const slide = document.createElement("div");
       slide.className = "ss-slide";
-      slide.innerHTML = `
-        <div class="ss-polaroid" style="--ss-rotate:${rot}deg">
-          <img src="${s.url}" alt="">
-          <div class="ss-polaroid-caption">
-            <div class="ss-polaroid-time">${_slotLabel(s.hour)}</div>
-            <div class="ss-polaroid-who">${s.who}</div>
-          </div>
+
+      // Placeholder önce göster, sonra resolve et
+      const imgEl = document.createElement("img");
+      imgEl.style.cssText = "width:100%;aspect-ratio:1;object-fit:cover;border-radius:2px;display:block;background:#eee;";
+      _resolvePhotoUrl(s.url).then(resolved => {
+        if (resolved) imgEl.src = resolved;
+      });
+
+      const pol = document.createElement("div");
+      pol.className = "ss-polaroid";
+      pol.style.setProperty("--ss-rotate", rot + "deg");
+      pol.appendChild(imgEl);
+      pol.innerHTML += `
+        <div class="ss-polaroid-caption">
+          <div class="ss-polaroid-time">${_slotLabel(s.hour)}</div>
+          <div class="ss-polaroid-who">${s.who}</div>
         </div>`;
+
+      slide.appendChild(pol);
       EL.slideshowInner.appendChild(slide);
       const dot = document.createElement("div");
       dot.className = "ss-dot" + (i===0?" active":"");
