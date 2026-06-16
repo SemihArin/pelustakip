@@ -4290,11 +4290,8 @@ function resetPM() {
     locationLabel: "", mapsUrl: "", isNew: false,
     isVideo: false, videoId: null, videoMime: null, videoBlobUrl: null,
   });
-  // Bekleyen video blob'unu temizle (kaydetmeden kapatılırsa)
-  if (_pendingVideoBlob) {
-    _pendingVideoBlob = null;
-    _pendingVideoMime = null;
-  }
+  // NOT: _pendingVideoBlob burada temizlenmiyor
+  // closePhotoModal veya kaydet/yayınla tamamlanınca temizlenir
 }
 
 /* Pub like butonu */
@@ -4459,10 +4456,15 @@ EL.photoImgWrap.addEventListener("click", () => {
   if (pm.image) openFullscreen(pm.image, pm.note);
 });
 
-function closePhotoModal() {
-  // Önizleme videosunu durdur
+function closePhotoModal(saved = false) {
+  // Video elementini temizle
   const vidEl = EL.photoImgWrap.querySelector("video.modal-video-preview");
-  if (vidEl) { vidEl.pause(); vidEl.src = ""; }
+  if (vidEl) { vidEl.pause(); vidEl.src = ""; vidEl.remove(); }
+  // Kaydedilmeden kapatıldıysa blob'u temizle
+  if (!saved && _pendingVideoBlob) {
+    _pendingVideoBlob = null;
+    _pendingVideoMime = null;
+  }
   closeModal(EL.photoModal);
 }
 
@@ -4498,45 +4500,72 @@ async function publishPhoto() {
   EL.publishBtn.textContent = "Yayınlanıyor…";
 
   try {
-    // Video ise önce Firebase'e yükle (henüz yüklenmemişse)
-    let videoId = pm.videoId;
+    let videoId   = pm.videoId;
+    let videoMime = pm.videoMime;
+
     if (pm.isVideo && _pendingVideoBlob) {
+      console.log("[Video] Upload başlıyor, blob size:", _pendingVideoBlob.size, "videoId:", pm.videoId);
+      // photoModal'ı kapat, upload modal göster
+      closeModal(EL.photoModal);
+      await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
       showUploadModal("Video yükleniyor", "🎬");
-      setUploadProgress(2, "Firebase'e gönderiliyor…");
+      setUploadProgress(2, "Hazırlanıyor…");
+      await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
       const realId = `vid_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
-      await saveVideoChunks(realId, _pendingVideoBlob, (pct, sub) => setUploadProgress(pct, sub));
+      console.log("[Video] realId:", realId);
+      try {
+        await saveVideoChunks(realId, _pendingVideoBlob, (pct, sub) => setUploadProgress(pct, sub));
+        console.log("[Video] Upload tamamlandı:", realId);
+      } catch(uploadErr) {
+        console.error("[Video] Upload hatası:", uploadErr);
+        hideUploadModal();
+        toast("❌ Video yüklenemedi: " + uploadErr.message);
+        EL.publishBtn.disabled = false;
+        EL.publishBtn.textContent = pm.publishedId ? "Yayını Güncelle" : "Yayınla";
+        return;
+      }
+
       const tempUrl = _videoUrlCache.get(pm.videoId);
       if (tempUrl) { _videoUrlCache.set(realId, tempUrl); _videoUrlCache.delete(pm.videoId); }
-      videoId = realId;
-      pm.videoId = realId;
+      videoId       = realId;
+      videoMime     = _pendingVideoMime || pm.videoMime;
+      pm.videoId    = realId;
       _pendingVideoBlob = null;
       _pendingVideoMime = null;
       hideUploadModal();
+    } else {
+      console.warn("[Video] _pendingVideoBlob yok veya isVideo false:", {isVideo: pm.isVideo, hasBlob: !!_pendingVideoBlob, videoId: pm.videoId});
     }
 
-    const image = pm.image.startsWith("data:")
+    const image = pm.image?.startsWith("data:")
       ? await compressImage(pm.image, 600, 0.7)
-      : pm.image;
+      : (pm.image || "");
 
     const payload = {
       uid:             currentUser.uid,
-      displayName:     currentUser.displayName || "Anonim",
-      photoURL:        currentUser.photoURL    || null,
+      displayName:     currentUser.displayName  || "Anonim",
+      photoURL:        currentUser.photoURL      || null,
       image,
       note:            pm.note,
-      isVideo:         pm.isVideo   || false,
-      videoId:         videoId      || null,
-      videoMime:       pm.videoMime || null,
-      createdAtClient: pm.created   || Date.now(),
+      isVideo:         pm.isVideo  || false,
+      videoId:         videoId     || null,
+      videoMime:       videoMime   || null,
+      createdAtClient: pm.created  || Date.now(),
       likes:           {},
     };
 
     if (pm.publishedId) {
-      await updateDoc(doc(db, "publishedPhotos", pm.publishedId), { note: pm.note, image });
+      await updateDoc(doc(db, "publishedPhotos", pm.publishedId), {
+        note: pm.note, image,
+        videoId:   videoId   || null,
+        videoMime: videoMime || null,
+      });
       toast("✅ Yayın güncellendi!");
     } else {
       const pubRef = await addDoc(collection(db, "publishedPhotos"), payload);
-      if (pm.id) updateDoc(doc(db, "users", currentUser.uid, "photos", pm.id), { publishedId: pubRef.id }).catch(()=>{});
+      if (pm.id) updateDoc(doc(db, "users", currentUser.uid, "photos", pm.id),
+        { publishedId: pubRef.id }).catch(()=>{});
       pm.publishedId = pubRef.id;
       toast("🌸 Yayınlandı!");
     }
@@ -4633,45 +4662,59 @@ async function savePhoto() {
   EL.saveBtn.textContent = "Kaydediliyor…";
 
   try {
-    // Video ise önce Firebase'e yükle
     let videoId = pm.videoId;
+
     if (pm.isVideo && _pendingVideoBlob) {
+      console.log("[Video] Save upload başlıyor, blob size:", _pendingVideoBlob.size);
+      // photoModal'ı kapat, upload modal göster
+      closeModal(EL.photoModal);
+      await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
       showUploadModal("Video yükleniyor", "🎬");
-      setUploadProgress(2, "Firebase'e gönderiliyor…");
+      setUploadProgress(2, "Hazırlanıyor…");
+      await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
       const realId = `vid_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
-      await saveVideoChunks(realId, _pendingVideoBlob, (pct, sub) => setUploadProgress(pct, sub));
-      // Temp blob URL'yi gerçek ID'ye taşı
+      try {
+        await saveVideoChunks(realId, _pendingVideoBlob, (pct, sub) => setUploadProgress(pct, sub));
+      } catch(uploadErr) {
+        hideUploadModal();
+        toast("❌ Video yüklenemedi: " + uploadErr.message);
+        EL.saveBtn.disabled = false;
+        EL.saveBtn.textContent = "💾 Kaydet";
+        return;
+      }
+
       const tempUrl = _videoUrlCache.get(pm.videoId);
       if (tempUrl) { _videoUrlCache.set(realId, tempUrl); _videoUrlCache.delete(pm.videoId); }
-      videoId = realId;
+      videoId    = realId;
       pm.videoId = realId;
       _pendingVideoBlob = null;
       _pendingVideoMime = null;
       hideUploadModal();
     }
 
-    const image = pm.image.startsWith("data:")
+    const image = pm.image?.startsWith("data:")
       ? await compressImage(pm.image, 800, 0.65)
-      : pm.image;
+      : (pm.image || "");
 
     const payload = {
       image,
       note:            pm.note,
-      locationLabel:   pm.locationLabel,
-      mapsUrl:         pm.mapsUrl,
-      favorite:        pm.favorite,
-      createdAtClient: pm.created || Date.now(),
-      publishedId:     pm.publishedId || null,
-      isVideo:         pm.isVideo  || false,
-      videoId:         videoId     || null,
-      videoMime:       pm.videoMime || null,
+      locationLabel:   pm.locationLabel  || "",
+      mapsUrl:         pm.mapsUrl        || "",
+      favorite:        pm.favorite       || false,
+      createdAtClient: pm.created        || Date.now(),
+      publishedId:     pm.publishedId    || null,
+      isVideo:         pm.isVideo        || false,
+      videoId:         videoId           || null,
+      videoMime:       pm.videoMime      || null,
     };
 
     if (pm.id) await updateDoc(doc(db, "users", currentUser.uid, "photos", pm.id), payload);
     else       await addDoc(collection(db, "users", currentUser.uid, "photos"), payload);
 
     toast(pm.isVideo ? "🎬 Video kaydedildi!" : "✅ Kaydedildi!");
-    closeModal(EL.photoModal);
+    closePhotoModal(true);
   } catch(err) {
     hideUploadModal();
     console.error("[savePhoto]", err.message);
@@ -4955,7 +4998,6 @@ function initForegroundMessages() {
   if (!messaging) return;
   onMessage(messaging, payload => {
     // Uygulama ön plandaysa FCM push yerine in-app toast zaten gösterildi
-    console.log("[FCM] Ön plan mesaj (in-app zaten gösterildi):", payload?.notification?.title);
   });
 }
 
@@ -5476,104 +5518,207 @@ function hideUploadModal() {
    Her yerden oynatılır, IndexedDB yok.
 ═══════════════════════════════════════════ */
 
-const VIDEO_CHUNK_SIZE = 750_000; // base64 karakter (~562KB binary)
-const _videoUrlCache   = new Map(); // videoId → blob URL (session cache)
-let   _pendingVideoBlob = null;      // kaydet/yayınla bekleyen ham blob
+/* ═══════════════════════════════════════════════════════
+   EVRENSEL MEDYA CHUNK SİSTEMİ
+   ───────────────────────────────────────────────────────
+   Koleksiyon: mediaChunks
+   Doküman:    {chunkId}_chunk_{i}
+   Format:     { data, idx, total, chunkId, mime?, createdAt }
+
+   Kullanım yerleri:
+     - Video  (saveVideoChunks / loadVideoUrl)
+     - Chat   fotoğrafı (_saveChatPhoto / _loadChatPhotoChunks)
+     - Challenge fotoğrafı (_takeChallengePhoto / _resolvePhotoUrl)
+
+   Eski koleksiyonlar (geriye dönük okuma için):
+     - userVideos       → video chunk'ları (eski)
+     - challengePhotos  → challenge foto (eski)
+     - chatMessages/{id}/photoChunks → chat foto (eski)
+═══════════════════════════════════════════════════════ */
+
+const CHUNK_SIZE    = 750_000;          // base64 karakter (~562KB binary)
+const CHUNK_COL     = "mediaChunks";    // tek koleksiyon
+const _videoUrlCache = new Map();       // chunkId → blob URL (session)
+let   _pendingVideoBlob = null;
 let   _pendingVideoMime = null;
 
-/** Blob → Firestore chunks'a yaz, progress callback ile */
-async function saveVideoChunks(videoId, blob, onProgress) {
-  const dataUrl = await new Promise((res, rej) => {
-    const r = new FileReader();
-    r.onload  = () => res(r.result);
-    r.onerror = () => rej(r.error);
-    r.readAsDataURL(blob);
-  });
+/**
+ * Veriyi chunk'lara bölerek Firestore'a yazar.
+ * @param {string} chunkId  - benzersiz ID (vid_xxx, chat_xxx, ch_xxx)
+ * @param {string} b64      - saf base64 string (data: prefix olmadan)
+ * @param {object} meta     - ekstra alanlar (mime, videoId, ...)
+ * @param {function} onProgress - (pct 0-100, label) callback
+ */
+async function saveChunks(chunkId, b64, meta = {}, onProgress) {
+  const total = Math.ceil(b64.length / CHUNK_SIZE);
+  onProgress?.(3, `Hazırlanıyor… (${total} parça)`);
 
-  const b64Idx = dataUrl.indexOf(",");
-  const b64    = b64Idx >= 0 ? dataUrl.slice(b64Idx + 1) : dataUrl;
-  const mime   = blob.type || "video/webm";
-  const total  = Math.ceil(b64.length / VIDEO_CHUNK_SIZE);
-
-  onProgress?.(5, `Hazırlanıyor… (${total} parça)`);
-
-  // Chunk'ları sırayla yükle — progress göster
-  for (let i = 0; i < total; i++) {
-    await setDoc(
-      doc(db, "userVideos", `${videoId}_chunk_${i}`),
-      {
-        data:      b64.slice(i * VIDEO_CHUNK_SIZE, (i + 1) * VIDEO_CHUNK_SIZE),
-        idx:       i,
-        total,
-        videoId,
-        mime,
-        createdAt: Date.now(),
-      }
-    );
-    const pct = 5 + Math.round(((i + 1) / total) * 90);
-    onProgress?.(pct, `Yükleniyor… ${i + 1}/${total}`);
-  }
-
+  let done = 0;
+  const writes = Array.from({ length: total }, (_, i) =>
+    setDoc(doc(db, CHUNK_COL, `${chunkId}_chunk_${i}`), {
+      data: b64.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE),
+      idx: i, total, chunkId,
+      createdAt: Date.now(),
+      ...meta,
+    }).then(() => {
+      done++;
+      onProgress?.(3 + Math.round((done / total) * 94), `Yükleniyor… ${done}/${total}`);
+    })
+  );
+  await Promise.all(writes);
   onProgress?.(100, "Tamamlandı!");
-  console.log(`[Video] Firestore'a yüklendi: ${total} chunk, ~${(b64.length / 1024).toFixed(0)}KB`);
-  return { total, mime };
+  return total;
 }
 
-/** Firestore chunks'tan blob URL al */
+/**
+ * Firestore'dan chunk'ları okuyup base64 döner.
+ * Eski koleksiyona fallback yapar.
+ */
+async function loadChunks(chunkId, fallbackCol = null) {
+  // Önce yeni koleksiyon
+  try {
+    const snap0 = await getDoc(doc(db, CHUNK_COL, `${chunkId}_chunk_0`));
+    if (snap0.exists()) {
+      const { total } = snap0.data();
+      const parts = [snap0.data().data];
+      if (total > 1) {
+        const rest = await Promise.all(
+          Array.from({ length: total - 1 }, (_, i) =>
+            getDoc(doc(db, CHUNK_COL, `${chunkId}_chunk_${i + 1}`))
+          )
+        );
+        rest.forEach(s => s.exists() && parts.push(s.data().data));
+      }
+      return { b64: parts.join("").replace(/\s/g, ""), mime: snap0.data().mime };
+    }
+  } catch {}
+
+  // Fallback: eski koleksiyon (userVideos, challengePhotos, ...)
+  if (fallbackCol) {
+    try {
+      const snap0 = await getDoc(doc(db, fallbackCol, `${chunkId}_chunk_0`));
+      if (snap0.exists()) {
+        const { total } = snap0.data();
+        const parts = [snap0.data().data];
+        if (total > 1) {
+          const rest = await Promise.all(
+            Array.from({ length: total - 1 }, (_, i) =>
+              getDoc(doc(db, fallbackCol, `${chunkId}_chunk_${i + 1}`))
+            )
+          );
+          rest.forEach(s => s.exists() && parts.push(s.data().data));
+        }
+        return { b64: parts.join("").replace(/\s/g, ""), mime: snap0.data().mime };
+      }
+    } catch {}
+  }
+  return null;
+}
+
+/** Chunk'lardan blob URL üretir (video için) */
 async function loadVideoUrl(videoId, mime) {
   if (_videoUrlCache.has(videoId)) return _videoUrlCache.get(videoId);
 
+  const result = await loadChunks(videoId, "userVideos");
+  if (!result) { console.warn("[Media] chunk bulunamadı:", videoId); return null; }
+
+  const actualMime = result.mime || mime || "video/webm";
+  let blob;
   try {
-    // chunk_0'dan meta al
-    const metaSnap = await getDoc(doc(db, "userVideos", `${videoId}_chunk_0`));
-    if (!metaSnap.exists()) { console.warn("[Video] chunk_0 bulunamadı:", videoId); return null; }
-
-    const meta       = metaSnap.data();
-    const total      = meta.total || 1;
-    const actualMime = meta.mime  || mime || "video/webm";
-    const parts      = [meta.data];
-
-    // Kalan chunk'ları paralel yükle
-    if (total > 1) {
-      const snaps = await Promise.all(
-        Array.from({ length: total - 1 }, (_, i) =>
-          getDoc(doc(db, "userVideos", `${videoId}_chunk_${i + 1}`))
-        )
-      );
-      snaps.forEach(s => { if (s.exists()) parts.push(s.data().data); });
-    }
-
-    // base64 birleştir — padding sorununu önle
-    const raw = parts.join("").replace(/\s/g, "");
-
-    // fetch ile decode (atob'dan güvenli — büyük string'lerde crash yapmaz)
-    const dataUrl  = `data:${actualMime};base64,${raw}`;
-    const response = await fetch(dataUrl);
-    const blob     = await response.blob();
-    const url      = URL.createObjectURL(blob);
-
-    _videoUrlCache.set(videoId, url);
-    console.log(`[Video] Yüklendi: ${videoId} (${total} chunk, ${(raw.length/1024).toFixed(0)}KB b64)`);
-    return url;
-  } catch(e) {
-    console.error("[Video] loadVideoUrl hatası:", e.message);
-    return null;
+    const res = await fetch(`data:${actualMime};base64,${result.b64}`);
+    blob = await res.blob();
+  } catch {
+    const bin = atob(result.b64);
+    const buf = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+    blob = new Blob([buf], { type: actualMime });
   }
+
+  const url = URL.createObjectURL(blob);
+  _videoUrlCache.set(videoId, url);
+  return url;
 }
 
-/** Video chunk'larını sil */
+/** Video blob'unu Firestore'a kaydeder */
+async function saveVideoChunks(videoId, blob, onProgress) {
+  const dataUrl = await new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result);
+    r.onerror = () => rej(r.error);
+    r.readAsDataURL(blob);
+  });
+  const b64idx = dataUrl.indexOf(",");
+  const b64    = b64idx >= 0 ? dataUrl.slice(b64idx + 1) : dataUrl;
+  await saveChunks(videoId, b64, { mime: blob.type || "video/webm", videoId }, onProgress);
+  return { mime: blob.type || "video/webm" };
+}
+
+/** Video chunk'larını siler */
 async function deleteVideoChunks(videoId) {
   if (!videoId) return;
   _videoUrlCache.delete(videoId);
-  // İlk chunk'tan total sayısını öğren
+  for (const col of [CHUNK_COL, "userVideos"]) {
+    try {
+      const snap = await getDoc(doc(db, col, `${videoId}_chunk_0`));
+      if (!snap.exists()) continue;
+      const total = snap.data().total || 1;
+      await Promise.all(
+        Array.from({ length: total }, (_, i) =>
+          deleteDoc(doc(db, col, `${videoId}_chunk_${i}`))
+        )
+      );
+    } catch {}
+  }
+}
+
+/** Chat fotoğrafını chunk olarak Firestore'a yazar */
+async function _saveChatPhoto(file) {
+  const b64Full = await new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result);
+    r.onerror = () => rej(r.error);
+    r.readAsDataURL(file);
+  });
+  // Sıkıştır (800px, %70)
+  const compressed = await compressImage(b64Full, 800, 0.7);
+  const b64 = compressed.slice(compressed.indexOf(",") + 1);
+  const chunkId = `chat_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  const total = await saveChunks(chunkId, b64, { mime: "image/jpeg" });
+  return { chunkId, chunkCount: total };
+}
+
+/** Chat fotoğrafını chunk'lardan yükler */
+async function _loadChatPhotoChunks(chatIdStr, chunkId, chunkCount) {
+  if (_chatPhotoCache.has(chunkId)) return _chatPhotoCache.get(chunkId);
+  // Önce yeni sistem, sonra eski (chatMessages sub-collection)
+  const result = await loadChunks(chunkId, null);
+  if (result) {
+    _chatPhotoCache.set(chunkId, result.b64);
+    return result.b64;
+  }
+  // Eski format fallback
   try {
-    const snap = await getDoc(doc(db, "userVideos", `${videoId}_chunk_0`));
-    if (!snap.exists()) return;
-    const total = snap.data().total || 1;
-    const dels  = [];
-    for (let i = 0; i < total; i++) dels.push(deleteDoc(doc(db, "userVideos", `${videoId}_chunk_${i}`)));
-    await Promise.all(dels);
-  } catch {}
+    const parts = [];
+    await Promise.all(
+      Array.from({ length: chunkCount }, (_, i) =>
+        getDoc(doc(db, "chatMessages", chatIdStr, "photoChunks", `${chunkId}_${i}`))
+          .then(s => { if (s.exists()) parts[i] = s.data().data; })
+      )
+    );
+    const b64 = parts.join("");
+    if (b64) _chatPhotoCache.set(chunkId, b64);
+    return b64 || null;
+  } catch { return null; }
+}
+
+/** Challenge fotoğrafını chunk'lardan yükler */
+async function _resolvePhotoUrl(url) {
+  if (!url) return null;
+  if (!url.startsWith("chunk://")) return url;
+  const [chunkId] = url.replace("chunk://", "").split("::");
+  const result = await loadChunks(chunkId, "challengePhotos");
+  if (!result) return null;
+  return "data:image/jpeg;base64," + result.b64;
 }
 
 /** Video blob'undan thumbnail JPEG data URL çeker */
@@ -5620,20 +5765,31 @@ async function finalizeVideo() {
 
   if (blob.size > 150 * 1024 * 1024) { toast("⚠️ Video çok büyük (maks 150 MB)"); return; }
 
-  // Thumbnail al (hızlı — local)
   toast("⏳ Önizleme hazırlanıyor…");
-  const thumbnail = await extractThumbnail(blob).catch(() => null);
 
-  // Blob URL — sadece bu oturum için (henüz Firebase'e gitmez)
+  // Thumbnail — null olursa placeholder kullan
+  let thumbnail = await extractThumbnail(blob).catch(() => null);
+  if (!thumbnail) {
+    // Basit siyah thumbnail oluştur
+    const c = document.createElement("canvas");
+    c.width = 320; c.height = 240;
+    const ctx = c.getContext("2d");
+    ctx.fillStyle = "#111";
+    ctx.fillRect(0, 0, 320, 240);
+    ctx.fillStyle = "#fff";
+    ctx.font = "48px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("🎬", 160, 140);
+    thumbnail = c.toDataURL("image/jpeg", 0.5);
+  }
+
   const tempId  = `tmp_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
   const blobUrl = URL.createObjectURL(blob);
   _videoUrlCache.set(tempId, blobUrl);
 
-  // pm'ye blob'u da sakla — kaydet/yayınla basınca kullanılır
   _pendingVideoBlob = blob;
   _pendingVideoMime = mimeType;
 
-  // Hemen galeri sayfasına geç ve modalı aç
   showPage("local");
   setTimeout(() => openNewVideoModal(thumbnail, tempId, mimeType), 150);
 }
@@ -5821,16 +5977,7 @@ function startMirrorCanvas() {
   return _mirrorStream;
 }
 
-function stopMirrorCanvas() {
-  if (_mirrorRafId) { cancelAnimationFrame(_mirrorRafId); _mirrorRafId = null; }
-  // Mirror stream track'lerini durdur — yoksa kamera OS'ta açık kalır
-  if (_mirrorStream) {
-    _mirrorStream.getTracks().forEach(t => { try { t.stop(); } catch {} });
-    _mirrorStream = null;
-  }
-  _mirrorCanvas = null;
-  _mirrorCtx    = null;
-}
+/* stopMirrorCanvas → _killCamera() tarafından handle ediliyor */
 
 /* ═══════════════════════════════════════════
    SIDE MENÜ
@@ -6157,10 +6304,7 @@ function _startMsgListener() {
     EL.chatMessages.innerHTML = '<div style="text-align:center;padding:32px;color:var(--text-muted);font-size:13px;">Yükleniyor…</div>';
   }
 
-  console.log("[Chat] Listener başlatıldı:", chatId);
-
   const unsubscribe = onValue(msgsQuery, snap => {
-    console.log("[Chat] onValue tetiklendi, mesaj sayısı:", snap.size || 0);
     const msgs = [];
     if (snap.exists()) {
       snap.forEach(c => {
@@ -6190,7 +6334,6 @@ function _loadMoreMsgs() {
 }
 
 function _renderChatMessages(msgs) {
-  console.log("[Chat] render:", msgs.length, "mesaj");
   const msgIdxMap = new Map(msgs.map((m,i) => [m.id, i]));
 
   EL.chatMessages.innerHTML = "";
@@ -6522,82 +6665,23 @@ EL.chatPhotoInput.addEventListener("change", async () => {
   EL.chatPhotoBtn.style.pointerEvents = "none";
 
   try {
-    // Sıkıştır — 900px, JPEG %70 → genellikle 80-200KB
-    const base64 = await _compressPhoto(file, 900);
-    if (!base64) throw new Error("Fotoğraf sıkıştırılamadı");
-
     const ts        = Date.now();
     const replyData = _replyTo ? { ..._replyTo } : null;
     _clearReply();
 
-    // base64 boyutunu hesapla (data:image/jpeg;base64, prefix'i çıkar)
-    const raw      = base64.split(",")[1] || base64;
-    const byteSize = Math.ceil(raw.length * 0.75); // yaklaşık byte
+    // Evrensel chunk sistemi ile kaydet
+    const { chunkId, chunkCount } = await _saveChatPhoto(file);
 
-    const CHUNK   = 800_000; // 800KB — Firestore doküman limiti altında
-    const msgRef  = collection(db, "chatMessages", chatActiveChatId, "msgs");
-
-    let photoField, hasChunks = false, chunkCount = 0;
-
-    if (raw.length <= CHUNK) {
-      // Tek parça — doğrudan mesaj içine
-      photoField = base64;
-    } else {
-      // Çok parça — ayrı chunk dokümanları
-      hasChunks  = true;
-      chunkCount = Math.ceil(raw.length / CHUNK);
-
-      // İlerleme göster
-      toast(`📤 Fotoğraf yükleniyor… (${chunkCount} parça)`);
-
-      const chunkColRef = collection(db, "chatMessages", chatActiveChatId, "photoChunks");
-      const chunkDocRef = doc(chunkColRef);
-      const chunkId     = chunkDocRef.id;
-
-      const writes = [];
-      for (let i = 0; i < chunkCount; i++) {
-        const chunkRef = doc(db, "chatMessages", chatActiveChatId, "photoChunks", `${chunkId}_${i}`);
-        writes.push(setDoc(chunkRef, {
-          data:    raw.slice(i * CHUNK, (i + 1) * CHUNK),
-          idx:     i,
-          total:   chunkCount,
-          chunkId,
-        }));
-      }
-      await Promise.all(writes);
-      photoField = null; // mesajda base64 yok, chunkId var
-      // chunkId'yi mesaja koy
-      await push(rtRef(rtdb, `chats/${chatActiveChatId}/messages`), {
-        from: currentUser.uid, ts, read: false,
-        type: "photo", hasChunks: true, chunkId,
-        chunkCount, text: "📷 Fotoğraf",
-        ...(replyData ? { replyTo: replyData } : {}),
-      });
-
-      const metaRef  = rtRef(rtdb, `chats/${chatActiveChatId}/meta`);
-      const metaSnap = await get(metaRef).catch(() => null);
-      const prev     = (metaSnap?.val()||{})[`unread_${chatActiveUid}`]||0;
-      await rtUpdate(metaRef, {
-        users: [currentUser.uid, chatActiveUid],
-        lastMsg: "📷 Fotoğraf", lastTs: ts,
-        [`unread_${chatActiveUid}`]: prev + 1,
-        [`unread_${currentUser.uid}`]: 0,
-      });
-      toast("✅ Fotoğraf gönderildi");
-      return;
-    }
-
-    // Tek parça — direkt RTDB mesajına base64 yaz
     await push(rtRef(rtdb, `chats/${chatActiveChatId}/messages`), {
       from: currentUser.uid, ts, read: false,
-      type: "photo", photo: photoField,
-      text: "📷 Fotoğraf",
+      type: "photo", hasChunks: true, chunkId,
+      chunkCount, text: "📷 Fotoğraf",
       ...(replyData ? { replyTo: replyData } : {}),
     });
 
     const metaRef  = rtRef(rtdb, `chats/${chatActiveChatId}/meta`);
     const metaSnap = await get(metaRef).catch(() => null);
-    const prev     = (metaSnap?.val()||{})[`unread_${chatActiveUid}`]||0;
+    const prev     = (metaSnap?.val()||{})[`unread_${chatActiveUid}`] || 0;
     await rtUpdate(metaRef, {
       users: [currentUser.uid, chatActiveUid],
       lastMsg: "📷 Fotoğraf", lastTs: ts,
@@ -6607,8 +6691,8 @@ EL.chatPhotoInput.addEventListener("change", async () => {
     toast("✅ Fotoğraf gönderildi");
 
   } catch(e) {
-    console.error("[Chat] Photo error:", e.code, e.message);
-    toast("❌ Gönderilemedi: " + (e.code || e.message));
+    console.error("[Chat] Photo error:", e.message);
+    toast("❌ Gönderilemedi: " + e.message);
   } finally {
     EL.chatPhotoBtn.style.opacity = "";
     EL.chatPhotoBtn.style.pointerEvents = "";
@@ -6641,23 +6725,7 @@ async function _compressPhoto(file, maxSize) {
 
 // Chat foto chunk'larını Firestore'dan yükle ve birleştir
 const _chatPhotoCache = new Map(); // chunkId → base64
-async function _loadChatPhotoChunks(chatIdStr, chunkId, chunkCount) {
-  if (_chatPhotoCache.has(chunkId)) return _chatPhotoCache.get(chunkId);
-  try {
-    const parts = [];
-    for (let i = 0; i < chunkCount; i++) {
-      const snap = await getDoc(doc(db, "chatMessages", chatIdStr, "photoChunks", `${chunkId}_${i}`));
-      if (!snap.exists()) throw new Error(`Chunk ${i} bulunamadı`);
-      parts.push(snap.data().data);
-    }
-    const full = parts.join("");
-    _chatPhotoCache.set(chunkId, full);
-    return full;
-  } catch(e) {
-    console.error("[Chat] chunk yükleme:", e.message);
-    return null;
-  }
-}
+/* _loadChatPhotoChunks → chunk sistemi içinde tanımlı */
 
 /* ── Alıntılanan mesaja scroll ── */
 function _scrollToMsg(msgId) {
@@ -6792,7 +6860,6 @@ async function sendChatMsg() {
 
   try {
     const msgRef = await push(rtRef(rtdb, `chats/${chatActiveChatId}/messages`), msgData);
-    console.log("[Chat] Mesaj gönderildi:", msgRef.key);
 
     const metaRef    = rtRef(rtdb, `chats/${chatActiveChatId}/meta`);
     const metaSnap   = await get(metaRef).catch(() => null);
@@ -7036,8 +7103,6 @@ async function _cleanupCall(reason) {
   if (!_callActive) return; // re-entry koruması
   _callActive = false;      // hemen false yap, ikinci çağrıyı engelle
 
-  console.log("[Call] cleanup:", reason || "—");
-
   // callId'yi hemen sakla, sonra temizle
   const closingCallId = _callId;
   _callId = null;
@@ -7090,8 +7155,6 @@ async function _cleanupCall(reason) {
   EL.callMuteBtn.classList.remove("muted");
   const spkSpan = EL.callSpeakerBtn.querySelector("span");
   if (spkSpan) spkSpan.textContent = "Hoparlör";
-
-  console.log("[Call] cleanup tamamlandı");
 }
 
 /* ── ICE candidates — onChildAdded ile sadece yenileri al ── */
@@ -7159,7 +7222,6 @@ function _createPC() {
   _pc.ontrack = e => {
     if (_trackAdded) return;
     _trackAdded = true;
-    console.log("[Call] ontrack tetiklendi ✅", e.track.kind);
 
     const stream = e.streams?.[0] || new MediaStream([e.track]);
     EL.remoteAudio.srcObject = stream;
@@ -7252,7 +7314,6 @@ async function startCall() {
       caller:  currentUser.uid,
       ts:      Date.now(),
     });
-    console.log("[Call] Offer yazıldı, incoming bildirim gönderildi");
   } catch(e) {
     console.error("[Call] RTDB yazma:", e.message);
     toast("❌ Bağlantı kurulamadı"); _cleanupCall("rtdb-failed"); return;
@@ -7270,7 +7331,6 @@ async function startCall() {
     answered  = true; // timeout'u iptal et
     try {
       await _pc.setRemoteDescription(new RTCSessionDescription(answer));
-      console.log("[Call] setRemoteDescription(answer) ✅");
     } catch(e) { console.error("[Call] setRemoteDescription(answer):", e.message); }
   });
   _callCleanups.push(() => off(answerRef));
@@ -7319,7 +7379,6 @@ async function acceptCall() {
   try {
     answer = await _pc.createAnswer();
     await _pc.setLocalDescription(answer);
-    console.log("[Call] createAnswer ✅");
   } catch(e) {
     console.error("[Call] createAnswer:", e.message);
     toast("❌ Bağlantı kurulamadı"); _cleanupCall("answer-failed"); return;
@@ -7328,7 +7387,6 @@ async function acceptCall() {
   try {
     await set(rtRef(rtdb, `calls/${_callId}/answer`), { sdp: answer.sdp, type: answer.type });
     await rtUpdate(rtRef(rtdb, `calls/${_callId}/meta`), { status: "in-call" });
-    console.log("[Call] Answer RTDB'ye yazıldı ✅");
   } catch(e) {
     console.error("[Call] answer yazma:", e.message);
     toast("❌ Bağlantı kurulamadı"); _cleanupCall("answer-rtdb-failed"); return;
@@ -7346,7 +7404,6 @@ async function acceptCall() {
   _callCleanups.push(() => { metaActive = false; off(metaRef); });
 
   _listenCandidates(`calls/${_callId}/callerCandidates`);
-  console.log("[Call] Kabul edildi, ICE exchange başlıyor ✅");
 }
 
 async function rejectCall() {
@@ -7357,7 +7414,6 @@ async function rejectCall() {
   if (_pc) { _pc.onicecandidate=null; _pc.ontrack=null; _pc.onconnectionstatechange=null; _pc.close(); _pc=null; }
   _callCleanups.forEach(fn => { try{fn();}catch{} }); _callCleanups = [];
   _hideIncomingOverlay();
-  console.log("[Call] Reddedildi");
 }
 
 function _listenIncomingCalls(uid) {
@@ -7397,8 +7453,6 @@ function _listenIncomingCalls(uid) {
       if (callData.meta?.status !== "calling") { set(rtRef(rtdb,`incoming/${uid}/${latest.key}`),null).catch(()=>{}); return; }
     } catch(e) { console.error("[Call] call data:", e.message); return; }
 
-    console.log("[Call] Gelen arama:", latest.callId, "from:", latest.caller);
-
     _callId=latest.callId; _isCaller=false; _callActive=true;
 
     // Arayanın bilgisi
@@ -7420,7 +7474,6 @@ function _listenIncomingCalls(uid) {
       _localStream.getTracks().forEach(t => _pc.addTrack(t, _localStream));
       if (callData.offer?.sdp) {
         await _pc.setRemoteDescription(new RTCSessionDescription(callData.offer));
-        console.log("[Call] setRemoteDescription(offer) ✅");
       } else { throw new Error("Offer SDP eksik"); }
       set(rtRef(rtdb,`incoming/${uid}/${latest.key}`),null).catch(()=>{});
     } catch(e) {
@@ -7456,7 +7509,6 @@ EL.callMuteBtn.addEventListener("click", () => {
   const span = EL.callMuteBtn.querySelector("span");
   if (span) span.textContent = _isMuted ? "Sesi Aç" : "Sessiz";
   EL.callMuteBtn.classList.toggle("muted", _isMuted);
-  console.log("[Call] Mute:", _isMuted);
 });
 
 EL.callSpeakerBtn.addEventListener("click", () => {
@@ -8056,22 +8108,11 @@ function _takeChallengePhoto(hour) {
       const base64 = await _compressPhoto(file, 900);
       if (!base64) throw new Error("Sıkıştırılamadı");
 
-      // Firestore chunk sistemi (Storage yok)
-      const raw        = base64.split(",")[1] || base64;
-      const CHUNK      = 800_000;
-      const chunkCount = Math.ceil(raw.length / CHUNK);
-      const chunkId    = `ch_${_challengeId}_${currentUser.uid}_${hour}`;
-
-      const writes = [];
-      for (let i = 0; i < chunkCount; i++) {
-        writes.push(setDoc(
-          doc(db, "challengePhotos", `${chunkId}_${i}`),
-          { data: raw.slice(i*CHUNK, (i+1)*CHUNK), idx: i, total: chunkCount, chunkId }
-        ));
-      }
-      await Promise.all(writes);
-      const url = `chunk://${chunkId}::${chunkCount}`;
-      console.log("[Challenge] chunk yüklendi ✅", chunkCount, "parça");
+      // Evrensel chunk sistemi
+      const b64      = base64.includes(",") ? base64.split(",")[1] : base64;
+      const chunkId  = `ch_${_challengeId}_${currentUser.uid}_${hour}`;
+      const total    = await saveChunks(chunkId, b64, { mime: "image/jpeg" });
+      const url      = `chunk://${chunkId}::${total}`;
 
       await updateDoc(doc(db, "challenges", _challengeId), {
         [`photos.${currentUser.uid}.${_slotKey(hour)}`]: {
@@ -8114,20 +8155,7 @@ async function _showChallengePhoto(pic) {
 }
 
 /* ── Slideshow ── */
-async function _resolvePhotoUrl(url) {
-  if (!url) return null;
-  if (!url.startsWith("chunk://")) return url;
-  // chunk://chunkId::count
-  const [chunkId, countStr] = url.replace("chunk://","").split("::");
-  const count = parseInt(countStr) || 1;
-  const parts = [];
-  for (let i = 0; i < count; i++) {
-    const snap = await getDoc(doc(db, "challengePhotos", `${chunkId}_${i}`));
-    if (!snap.exists()) return null;
-    parts.push(snap.data().data);
-  }
-  return "data:image/jpeg;base64," + parts.join("");
-}
+/* _resolvePhotoUrl → chunk sistemi içinde tanımlı */
 
 function _startSlideshow() {
   if (!_challenge) return;
@@ -8465,7 +8493,15 @@ onAuthStateChanged(auth, user => {
 // Güvenlik: Splash 6 saniyeden uzun sürerse her halükarda kapat
 setTimeout(() => hideSplash(), 6000);
 
-window.addEventListener("beforeunload", () => { stopCamera(); unsubPhotos?.(); unsubPublished?.(); });
+window.addEventListener("beforeunload", () => {
+  stopCamera();
+  unsubPhotos?.();
+  unsubPublished?.();
+  // Blob URL'leri temizle (memory leak önle)
+  _videoUrlCache.forEach(url => { try { URL.revokeObjectURL(url); } catch {} });
+  _videoUrlCache.clear();
+  _pendingVideoBlob = null;
+});
 
 showPage("local");
 </script>
