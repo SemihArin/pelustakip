@@ -1322,6 +1322,68 @@
     .comment-item:hover .comment-delete,
     .comment-item:focus-within .comment-delete { opacity: 1; }
     .comment-delete:active { color: var(--danger); }
+    /* pub-comment — basit satır layout */
+    .pub-comment {
+      display: flex; gap: 6px; align-items: baseline;
+      padding: 4px 0; font-size: 13px; line-height: 1.45;
+      animation: fadeIn .2s ease;
+    }
+    .pub-comment-author {
+      font-weight: 800; color: var(--pink-dark); flex-shrink: 0;
+      font-size: 12px;
+    }
+    .pub-comment-text {
+      flex: 1; color: var(--text-primary); word-break: break-word;
+    }
+    .pub-comment-time {
+      font-size: 10px; color: var(--text-muted); flex-shrink: 0;
+      margin-left: 4px;
+    }
+    .comment-del-btn {
+      margin-left: auto; padding: 2px 5px; border-radius: 4px;
+      background: none; color: var(--text-muted); font-size: 11px;
+      opacity: 0; transition: opacity .15s; line-height: 1; flex-shrink: 0;
+    }
+    .comment-item:hover .comment-del-btn  { opacity: .6; }
+    .comment-del-btn:active { opacity: 1; background: rgba(220,53,69,.1); color: var(--danger); }
+
+    /* notif-item */
+    .notif-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 16px;
+      border-bottom: 1px solid rgba(160,60,100,.07);
+      cursor: pointer; transition: background .12s;
+    }
+    .notif-item:active { background: rgba(160,60,100,.05); }
+    .notif-item.unread { background: rgba(192,100,138,.06); }
+    .notif-item-avatar {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--pink-mid), #e07ba8);
+      background-size: cover; background-position: center;
+      color: #fff; font-size: 14px; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; position: relative;
+    }
+    .notif-item-icon {
+      position: absolute; bottom: -2px; right: -2px;
+      font-size: 13px; line-height: 1;
+    }
+    .notif-item-body { flex: 1; min-width: 0; }
+    .notif-item-text {
+      font-size: 13px; color: var(--text-primary); line-height: 1.4;
+      overflow: hidden; text-overflow: ellipsis;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    }
+    .notif-item-time { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .notif-item-thumb {
+      width: 44px; height: 44px; border-radius: var(--r-sm);
+      object-fit: cover; flex-shrink: 0;
+    }
+    .notif-unread-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--pink-mid); flex-shrink: 0;
+    }
+
     /* Yorum yükleniyor skeleton */
     .comment-skeleton {
       display: flex; gap: 8px; align-items: flex-start;
@@ -1542,6 +1604,43 @@
       padding: 14px 10px 8px;
       display: flex; flex-direction: column;
     }
+
+    /* ── Sabitlenmiş mesaj çubuğu ── */
+    .chat-pinned-bar {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 14px; background: rgba(192,100,138,.08);
+      border-bottom: 1.5px solid rgba(192,100,138,.12); cursor: pointer;
+      flex-shrink: 0;
+    }
+    .chat-pinned-icon { font-size: 14px; flex-shrink: 0; }
+    .chat-pinned-text {
+      flex: 1; font-size: 12px; color: var(--text-primary);
+      font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .chat-pinned-close { color: var(--text-muted); font-size: 14px; padding: 2px 4px; }
+
+    /* ── Mesaj context menüsü ── */
+    .msg-context-menu {
+      position: fixed; z-index: 9000; background: #fff; border-radius: 14px;
+      box-shadow: 0 8px 32px rgba(0,0,0,.18); overflow: hidden; min-width: 170px;
+      animation: fadeIn .12s ease;
+    }
+    .msg-ctx-item {
+      display: flex; align-items: center; gap: 10px; padding: 13px 16px;
+      font-size: 14px; font-weight: 600; color: var(--text-primary);
+      cursor: pointer; transition: background .1s;
+    }
+    .msg-ctx-item:active { background: rgba(160,60,100,.08); }
+    .msg-ctx-item.danger { color: var(--danger); }
+
+    /* ── Challenge countdown ── */
+    .ch-countdown {
+      text-align: center; padding: 12px; border-radius: 14px;
+      background: rgba(192,100,138,.12); margin-bottom: 14px;
+      animation: chFadeUp .3s ease both;
+    }
+    .ch-countdown-label { font-size: 11px; color: rgba(255,255,255,.45); margin-bottom: 4px; letter-spacing:.04em; text-transform:uppercase; }
+    .ch-countdown-time  { font-size: 26px; font-weight: 900; color: #fff; font-variant-numeric: tabular-nums; letter-spacing:.05em; }
 
     /* Tarih ayracı */
     .msg-date-sep {
@@ -1920,8 +2019,37 @@
     .chat-call-btn:active { transform: scale(.88); }
     .chat-call-btn.in-call { background: var(--green); color: #fff; border-color: var(--green); }
 
-    /* ═══════════════════════════════════════════
-       CHALLENGE — Tam Ekran Oyunlaştırılmış
+    /* ═══ Upload Modal ═══ */
+    .upload-modal {
+      position: fixed; inset: 0; z-index: 9500;
+      background: rgba(15,5,12,.72);
+      backdrop-filter: blur(8px);
+      display: flex; align-items: center; justify-content: center;
+      animation: fadeIn .2s ease;
+    }
+    .upload-card {
+      background: #fff; border-radius: 24px;
+      padding: 32px 28px; width: min(88vw, 320px);
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0,0,0,.25);
+      animation: scaleIn .25s cubic-bezier(.34,1.56,.64,1);
+    }
+    @keyframes scaleIn { from{transform:scale(.85);opacity:0} to{transform:scale(1);opacity:1} }
+    .upload-icon  { font-size: 44px; margin-bottom: 12px; }
+    .upload-title { font-size: 17px; font-weight: 800; color: var(--pink-dark); margin-bottom: 6px; }
+    .upload-sub   { font-size: 13px; color: var(--text-muted); margin-bottom: 18px; }
+    .upload-progress-track {
+      height: 8px; background: rgba(160,60,100,.12);
+      border-radius: 999px; overflow: hidden; margin-bottom: 8px;
+    }
+    .upload-progress-fill {
+      height: 100%; width: 0%;
+      background: linear-gradient(90deg, var(--pink-mid), #e07ba8);
+      border-radius: 999px;
+      transition: width .3s ease;
+      box-shadow: 0 0 8px rgba(192,100,138,.4);
+    }
+    .upload-pct { font-size: 13px; font-weight: 700; color: var(--text-muted); }
     ═══════════════════════════════════════════ */
     .ch-fullscreen {
       position: fixed; inset: 0; z-index: 6000;
@@ -2389,6 +2517,11 @@
             </svg>
           </button>
         </div>
+        <div id="chatPinnedBar" class="chat-pinned-bar" style="display:none;">
+          <div class="chat-pinned-icon">📌</div>
+          <div class="chat-pinned-text" id="chatPinnedText"></div>
+          <button id="chatPinnedClose" class="chat-pinned-close" type="button">✕</button>
+        </div>
         <div id="chatMessages" class="chat-messages"></div>
         <div id="typingIndicator" class="typing-indicator-bar" style="display:none;">
           <div class="typing-bubble">
@@ -2646,6 +2779,19 @@
   <div id="slideshowDots" class="slideshow-dots"></div>
 </div>
 
+<!-- ═══ UPLOAD MODAL ═══ -->
+<div id="uploadModal" class="upload-modal" style="display:none;" aria-modal="true" role="dialog">
+  <div class="upload-card">
+    <div class="upload-icon" id="uploadIcon">🎬</div>
+    <div class="upload-title" id="uploadTitle">Video yükleniyor</div>
+    <div class="upload-sub"  id="uploadSub">Lütfen bekleyin…</div>
+    <div class="upload-progress-track">
+      <div class="upload-progress-fill" id="uploadProgressFill"></div>
+    </div>
+    <div class="upload-pct" id="uploadPct">0%</div>
+  </div>
+</div>
+
 <!-- ═══ FULLSCREEN VIEWER ═══ -->
 <div id="fullscreenModal" class="modal" role="dialog" aria-modal="true" aria-label="Tam ekran görüntü">
   <div class="fs-inner">
@@ -2771,7 +2917,7 @@
 
       <!-- Sahip aksiyonları -->
       <div id="pubOwnerActions" class="pub-owner-section">
-        <button id="pubDeleteBtn" class="pub-delete-btn" type="button">
+        <button id="pubDeleteBtn" class="pub-delete-btn" type="button" data-pub-action="delete">
           <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M3 6h18v2H3V6zm5-3h8v2H8V3zM5 8h14l-1 13H6L5 8zm5 3v7h2v-7h-2zm4 0v7h2v-7h-2z"/></svg>
           Yayını Sil
         </button>
@@ -2950,9 +3096,6 @@ import {
   GoogleAuthProvider, signOut, onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
 import {
-  getStorage, ref as storRef, uploadString, getDownloadURL, deleteObject
-} from "https://www.gstatic.com/firebasejs/10.12.4/firebase-storage.js";
-import {
   getMessaging, getToken, onMessage
 } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-messaging.js";
 import {
@@ -2974,7 +3117,6 @@ const FB = initializeApp({
 const db       = getFirestore(FB);
 const rtdb     = getDatabase(FB);
 const auth     = getAuth(FB);
-const storage  = getStorage(FB);
 const provider = new GoogleAuthProvider();
 
 const VAPID_KEY = "BCDu3jOhSy7wU8j48_xpi_EuxdDUNeZwoEVpJ0zVhPqqlNPMBeMunbHgjWuSlL0ztSGfaN0WmmOPbHA31vy2dqw";
@@ -3032,8 +3174,15 @@ const EL = {
   sideNotifLabel:  q("sideNotifLabel"),
   sideLogoutBtn:   q("sideLogoutBtn"),
 
+  uploadModal:       q("uploadModal"),
+  uploadIcon:        q("uploadIcon"),
+  uploadTitle:       q("uploadTitle"),
+  uploadSub:         q("uploadSub"),
+  uploadProgressFill:q("uploadProgressFill"),
+  uploadPct:         q("uploadPct"),
+
   // Challenge
-  sideChallengeBtn:    q("sideChallengeBtn"),
+  sideChallengeBtn:  q("sideChallengeBtn"),
   challengeBadge:      q("challengeBadge"),
   challengeModal:      q("challengeModal"),
   challengeClose:      q("challengeClose"),
@@ -3072,6 +3221,9 @@ const EL = {
   chatListView:    q("chatListView"),
   chatConvView:    q("chatConvView"),
   chatUserList:    q("chatUserList"),
+  chatPinnedBar:   q("chatPinnedBar"),
+  chatPinnedText:  q("chatPinnedText"),
+  chatPinnedClose: q("chatPinnedClose"),
   chatMessages:    q("chatMessages"),
   chatInput:       q("chatInput"),
   chatSendBtn:     q("chatSendBtn"),
@@ -3185,7 +3337,6 @@ const EL = {
   splashStep2:     q("splashStep2"),
   splashStep3:     q("splashStep3"),
   splashStep4:     q("splashStep4"),
-  splashStep1:     q("splashStep1"),
   splashStep2:     q("splashStep2"),
   splashStep3:     q("splashStep3"),
   splashStep4:     q("splashStep4"),
@@ -3313,8 +3464,9 @@ const pm = {
   favorite: false, publishedId: null,
   locationLabel: "", mapsUrl: "", isNew: false,
   isVideo: false,
-  videoId: null,       // IndexedDB key (local videos)
-  videoBlobUrl: null,  // Object URL for preview
+  videoId:      null,  // Firestore userVideos chunk key
+  videoMime:    null,  // video/webm veya video/mp4
+  videoBlobUrl: null,  // session blob URL (cache)
 };
 
 // FIX: Auth redirect sadece bir kere işlenir
@@ -3676,10 +3828,14 @@ function renderGallery(photos) {
         thumb.style.cssText = "width:100%;height:100%;object-fit:cover;";
         card.appendChild(thumb);
 
-        // Oynatma overlay'i
+        // Oynatma overlay'i — tıklanınca direkt oynat
         const ov = document.createElement("div");
         ov.className = "card-play-overlay";
         ov.innerHTML = `<div class="card-play-circle"><svg viewBox="0 0 24 24" width="16" height="16"><path fill="#fff" d="M8 5.14v14l11-7-11-7z"/></svg></div>`;
+        ov.addEventListener("click", e => {
+          e.stopPropagation();
+          playGalleryVideo(card, p);
+        });
         card.appendChild(ov);
 
         const vb = document.createElement("div");
@@ -3721,22 +3877,16 @@ function renderGallery(photos) {
 
 /** Galeri kartında videoyu inline oynat */
 async function playGalleryVideo(card, p) {
-  const url = await getVideoBlobUrl(p.videoId);
-  if (!url) { toast("⚠️ Video bulunamadı"); return; }
-  // Mevcut içeriği temizle, video koy
+  const url = await loadVideoUrl(p.videoId, p.videoMime || "video/webm");
+  if (!url) { toast("⚠️ Video yüklenemedi"); return; }
   card.innerHTML = "";
   const vid = document.createElement("video");
   vid.src = url; vid.playsInline = true; vid.controls = false; vid.loop = false;
   vid.style.cssText = "width:100%;height:100%;object-fit:cover;";
   card.appendChild(vid);
   vid.play().catch(() => {});
-  // Bitince thumbnail'a dön
-  vid.addEventListener("ended", () => { renderFilterChips(); applyFilters(); });
-  // Tıklayınca durdur/oynat
-  vid.addEventListener("click", e => {
-    e.stopPropagation();
-    if (vid.paused) vid.play(); else vid.pause();
-  });
+  vid.addEventListener("ended",   () => applyFilters());
+  vid.addEventListener("click",   e  => { e.stopPropagation(); if (vid.paused) vid.play(); else vid.pause(); });
 }
 
 function renderPublished() {
@@ -3894,57 +4044,362 @@ function _bindFeedLike(card, item) {
     else if (newLikes > 0) { const s = document.createElement("span"); s.textContent = newLikes; btn.appendChild(s); }
     try {
       await updateDoc(doc(db, "publishedPhotos", item.id), update);
-      // Bildirim sunucu tarafında gönderilir — istemci yazmaz
     } catch { toast("❌ Hata"); }
   });
 }
 
-/* ═══════════════════════════════════════════
-   PHOTO MODAL
-═══════════════════════════════════════════ */
-function resetPM() {
-  Object.assign(pm, { id:null, image:"", created:null, note:"", favorite:false,
-                      publishedId:null, locationLabel:"", mapsUrl:"", isNew:false,
-                      isVideo:false, videoId:null, videoBlobUrl:null });
+/* ─── Pub Modal ─── */
+// currentPubItem zaten tanımlı
+
+function openPubModal(item) {
+  currentPubItem = item;
+  const isVideo = !!item.isVideo;
+
+  // Medyayı sıfırla
+  EL.pubVideo.pause();
+  EL.pubVideo.src          = "";
+  EL.pubVideo.style.display = "none";
+  EL.pubImg.style.display   = "block";
+  EL.pubImg.src             = item.image || "";
+  EL.pubMediaWrap.classList.remove("playing");
+  if (EL.pubVideoPlayOverlay) EL.pubVideoPlayOverlay.style.display = "none";
+  if (EL.pubMediaBadge)       EL.pubMediaBadge.style.display = isVideo ? "flex" : "none";
+
+  // Avatar
+  if (item.photoURL) {
+    EL.pubAuthorAvatar.style.backgroundImage = `url(${item.photoURL})`;
+    EL.pubAuthorAvatar.textContent = "";
+  } else {
+    EL.pubAuthorAvatar.style.backgroundImage = "";
+    EL.pubAuthorAvatar.textContent = initials(item.displayName || "?");
+  }
+  EL.pubAuthor.textContent = item.displayName || "Anonim";
+  EL.pubDate.textContent   = item.createdAtClient ? timeAgo(item.createdAtClient) : "";
+
+  if (item.note) {
+    EL.pubNote.textContent       = item.note;
+    EL.pubNoteWrap.style.display = "block";
+  } else {
+    EL.pubNoteWrap.style.display = "none";
+  }
+
+  const likes = item.likes ? Object.keys(item.likes).length : 0;
+  const liked = currentUser && !!item.likes?.[currentUser.uid];
+  EL.pubLikeBtn.classList.toggle("liked", liked);
+  EL.pubLikeLabel.textContent = liked ? "Beğenildi" : "Beğen";
+  EL.pubLikeCount.textContent = likes > 0 ? String(likes) : "";
+
+  const hasLoc = !!(item.mapsUrl?.trim());
+  EL.pubLocBtn.classList.toggle("show", hasLoc);
+  if (hasLoc) EL.pubLocText.textContent = item.locationLabel || "Konumu gör";
+
+  const isOwner = currentUser && item.uid === currentUser.uid;
+  EL.pubOwnerActions.classList.toggle("show", isOwner);
+  if (EL.pubFullscreenBtn) EL.pubFullscreenBtn.style.display = isVideo ? "none" : "";
+
+  // Video: thumbnail göster + play overlay
+  if (isVideo) {
+    EL.pubImg.style.display = "block"; // thumbnail olarak göster
+    if (EL.pubVideoPlayOverlay) EL.pubVideoPlayOverlay.style.display = "flex";
+  }
+
+  _loadPubComments(item.id);
+  openModal(EL.pubModal);
+  pushModalState("pubModal");
 }
+
+/* Video oynatma — pub modalda */
+async function _pubPlayVideo(item) {
+  if (!item?.isVideo || !item.videoId) {
+    toast("⚠️ Video bilgisi bulunamadı"); return;
+  }
+  EL.pubVideo.style.display = "block";
+  EL.pubImg.style.display   = "none";
+  if (EL.pubVideoPlayOverlay) EL.pubVideoPlayOverlay.style.display = "none";
+  EL.pubMediaWrap.classList.add("playing");
+
+  try {
+    toast("⏳ Video yükleniyor…");
+    const url = await loadVideoUrl(item.videoId, item.videoMime || "video/webm");
+    if (!url) throw new Error("Video bulunamadı");
+    EL.pubVideo.src = url;
+    await EL.pubVideo.play().catch(() => {});
+  } catch(e) {
+    toast("❌ " + e.message);
+    EL.pubVideo.style.display = "none";
+    EL.pubImg.style.display   = "block";
+    if (EL.pubVideoPlayOverlay) EL.pubVideoPlayOverlay.style.display = "flex";
+    EL.pubMediaWrap.classList.remove("playing");
+  }
+}
+
+// Play overlay tıklanınca oynat
+if (EL.pubVideoPlayOverlay) {
+  EL.pubVideoPlayOverlay.addEventListener("click", () => {
+    if (currentPubItem?.isVideo) _pubPlayVideo(currentPubItem);
+  });
+}
+// Medya wrap tıklanınca (thumbnail üzeri)
+if (EL.pubMediaWrap) {
+  EL.pubMediaWrap.addEventListener("click", e => {
+    if (e.target === EL.pubClose || EL.pubClose?.contains(e.target)) return;
+    if (currentPubItem?.isVideo && !EL.pubMediaWrap.classList.contains("playing")) {
+      _pubPlayVideo(currentPubItem);
+    } else if (!currentPubItem?.isVideo && EL.pubImg?.src) {
+      openFullscreen(EL.pubImg.src, currentPubItem?.note);
+    }
+  });
+}
+// Video durdur/oynat tıklanınca
+EL.pubVideo.addEventListener("click", e => {
+  e.stopPropagation();
+  if (EL.pubVideo.paused) EL.pubVideo.play().catch(() => {});
+  else EL.pubVideo.pause();
+});
+// Modal kapanınca videoyu durdur
+EL.pubClose.addEventListener("click", () => {
+  EL.pubVideo.pause();
+  EL.pubVideo.src = "";
+  closeModal(EL.pubModal);
+});
+
+function _loadPubComments(pubId) {
+  if (!EL.pubCommentsList) return;
+  EL.pubCommentsList.innerHTML = `
+    <div class="comment-skeleton"><div class="comment-skeleton-avatar"></div><div class="comment-skeleton-lines"><div class="comment-skeleton-line" style="width:70%"></div><div class="comment-skeleton-line" style="width:45%"></div></div></div>`;
+
+  getDocs(query(
+    collection(db, "publishedPhotos", pubId, "comments"),
+    orderBy("createdAt", "asc")
+  )).then(snap => {
+    if (!snap.size) {
+      EL.pubCommentsList.innerHTML = `<div style="text-align:center;padding:16px;color:var(--text-muted);font-size:13px;">Henüz yorum yok. İlk sen yaz! 💬</div>`;
+      if (EL.pubCommentsCount) EL.pubCommentsCount.textContent = "";
+      return;
+    }
+    if (EL.pubCommentsCount) EL.pubCommentsCount.textContent = snap.size + " yorum";
+    EL.pubCommentsList.innerHTML = "";
+    snap.forEach(d => {
+      const c   = d.data();
+      const own = currentUser && c.uid === currentUser.uid;
+      const div = document.createElement("div");
+      div.className = "comment-item" + (own ? " comment-own" : "");
+      div.innerHTML = `
+        <div class="comment-avatar">${initials(c.displayName||"?")}</div>
+        <div class="comment-bubble">
+          <div class="comment-meta">
+            <span class="comment-name">${_esc(c.displayName||"Anonim")}</span>
+            <span class="comment-time">${c.createdAt ? timeAgo(c.createdAt) : ""}</span>
+            ${own ? `<button class="comment-del-btn" data-comment-id="${d.id}" aria-label="Sil">🗑</button>` : ""}
+          </div>
+          <div class="comment-text">${_esc(c.text||"")}</div>
+        </div>`;
+      // Silme butonu
+      const delBtn = div.querySelector(".comment-del-btn");
+      if (delBtn) {
+        delBtn.addEventListener("click", async e => {
+          e.stopPropagation();
+          try {
+            await deleteDoc(doc(db, "publishedPhotos", pubId, "comments", d.id));
+            div.remove();
+            if (EL.pubCommentsCount) {
+              const cnt = parseInt(EL.pubCommentsCount.textContent) - 1;
+              EL.pubCommentsCount.textContent = cnt > 0 ? cnt + " yorum" : "";
+            }
+          } catch(err) { toast("❌ " + err.message); }
+        });
+      }
+      EL.pubCommentsList.appendChild(div);
+    });
+    // Scroll en alta
+    EL.pubCommentsList.scrollTop = EL.pubCommentsList.scrollHeight;
+  }).catch(() => {
+    EL.pubCommentsList.innerHTML = "";
+  });
+}
+
+async function _sendComment() {
+  if (!currentPubItem || !currentUser || !EL.pubCommentInput) return;
+  const text = EL.pubCommentInput.value.trim();
+  if (!text) return;
+  EL.pubCommentInput.value = "";
+  try {
+    await addDoc(collection(db, "publishedPhotos", currentPubItem.id, "comments"), {
+      uid:         currentUser.uid,
+      displayName: currentUser.displayName || "Anonim",
+      text,
+      createdAt:   Date.now(),
+    });
+    // Yorum bildirimi — sadece başkasının yayınına
+    if (currentPubItem.uid && currentPubItem.uid !== currentUser.uid) {
+      await addDoc(collection(db, "users", currentPubItem.uid, "appNotifications"), {
+        type:      "comment",
+        fromUid:   currentUser.uid,
+        fromName:  currentUser.displayName || "Biri",
+        fromPhoto: currentUser.photoURL || null,
+        pubId:     currentPubItem.id,
+        text:      text.slice(0, 80),
+        createdAt: Date.now(),
+        read:      false,
+      }).catch(() => {});
+    }
+    _loadPubComments(currentPubItem.id);
+  } catch(e) { toast("❌ Yorum gönderilemedi: " + e.message); }
+}
+
+/* ─── compressImage ─── */
+function compressImage(dataUrl, maxPx = 800, q = 0.65) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      let w = img.width, h = img.height;
+      if (w > maxPx || h > maxPx) {
+        if (w > h) { h = Math.round(h * maxPx / w); w = maxPx; }
+        else       { w = Math.round(w * maxPx / h); h = maxPx; }
+      }
+      const c = document.createElement("canvas");
+      c.width = w; c.height = h;
+      c.getContext("2d").drawImage(img, 0, 0, w, h);
+      resolve(c.toDataURL("image/jpeg", q));
+    };
+    img.onerror = () => resolve(dataUrl);
+    img.src = dataUrl;
+  });
+}
+
+/* ─── Pub Modal Owner Actions ─── */
+EL.pubModal.addEventListener("click", async e => {
+  const btn = e.target.closest("[data-pub-action]");
+  if (!btn || !currentPubItem) return;
+  const action = btn.dataset.pubAction;
+  if (action === "delete") {
+    const ok = await openConfirm({ title:"Yayından kaldır?", text:"Bu yayın silinecek.", okLabel:"Sil", icon:"🗑" });
+    if (!ok) return;
+    try {
+      await deleteDoc(doc(db, "publishedPhotos", currentPubItem.id));
+      closeModal(EL.pubModal);
+      toast("🗑 Yayın silindi");
+    } catch(e) { toast("❌ " + e.message); }
+  }
+});
+
+function resetPM() {
+  Object.assign(pm, {
+    id: null, image: "", created: null, note: "",
+    favorite: false, publishedId: null,
+    locationLabel: "", mapsUrl: "", isNew: false,
+    isVideo: false, videoId: null, videoMime: null, videoBlobUrl: null,
+  });
+  // Bekleyen video blob'unu temizle (kaydetmeden kapatılırsa)
+  if (_pendingVideoBlob) {
+    _pendingVideoBlob = null;
+    _pendingVideoMime = null;
+  }
+}
+
+/* Pub like butonu */
+EL.pubLikeBtn.addEventListener("click", async () => {
+  if (!currentPubItem || !currentUser) { toast("⚠️ Giriş yapın"); return; }
+  const item     = pubCache.find(p => p.id === currentPubItem.id) || currentPubItem;
+  const wasLiked = !!item.likes?.[currentUser.uid];
+
+  // Optimistic UI update
+  if (!item.likes) item.likes = {};
+  if (wasLiked) delete item.likes[currentUser.uid];
+  else          item.likes[currentUser.uid] = true;
+
+  const likes = Object.keys(item.likes).length;
+  const liked  = !wasLiked;
+  EL.pubLikeBtn.classList.toggle("liked", liked);
+  EL.pubLikeLabel.textContent = liked ? "Beğenildi" : "Beğen";
+  EL.pubLikeCount.textContent = likes > 0 ? String(likes) : "";
+
+  const update = {};
+  if (wasLiked) update[`likes.${currentUser.uid}`] = deleteField();
+  else          update[`likes.${currentUser.uid}`] = true;
+
+  try {
+    await updateDoc(doc(db, "publishedPhotos", item.id), update);
+    if (!wasLiked && item.uid && item.uid !== currentUser.uid) {
+      addDoc(collection(db, "users", item.uid, "appNotifications"), {
+        type: "like", fromUid: currentUser.uid,
+        fromName: currentUser.displayName || "Biri",
+        fromPhoto: currentUser.photoURL || null,
+        pubId: item.id, createdAt: Date.now(), read: false,
+      }).catch(() => {});
+    }
+  } catch(e) {
+    // Rollback
+    if (wasLiked) item.likes[currentUser.uid] = true;
+    else          delete item.likes[currentUser.uid];
+    EL.pubLikeBtn.classList.toggle("liked", wasLiked);
+    EL.pubLikeLabel.textContent = wasLiked ? "Beğenildi" : "Beğen";
+    EL.pubLikeCount.textContent = Object.keys(item.likes).length > 0 ? String(Object.keys(item.likes).length) : "";
+    toast("❌ " + e.message);
+  }
+});
+
+if (EL.pubCommentSend)  EL.pubCommentSend.addEventListener("click", _sendComment);
+if (EL.pubCommentInput) {
+  EL.pubCommentInput.addEventListener("input", () => {
+    if (EL.pubCommentSend) EL.pubCommentSend.disabled = !EL.pubCommentInput.value.trim();
+  });
+  EL.pubCommentInput.addEventListener("keydown", e => {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); _sendComment(); }
+  });
+}
+if (EL.pubLocBtn)        EL.pubLocBtn.addEventListener("click", () => { if (currentPubItem?.mapsUrl) window.open(currentPubItem.mapsUrl, "_blank"); });
+if (EL.pubFullscreenBtn) EL.pubFullscreenBtn.addEventListener("click", () => { if (EL.pubImg?.src) openFullscreen(EL.pubImg.src, currentPubItem?.note); });
 
 function applyPMtoUI() {
   const imgEl = EL.modalPreview;
-  let   vidEl = EL.photoImgWrap.querySelector("video.modal-video-preview");
+  // Her seferinde mevcut video elementini bul
+  const existingVid = EL.photoImgWrap.querySelector("video.modal-video-preview");
 
   if (pm.isVideo) {
     imgEl.style.display = "none";
+
+    // Video elementi yoksa oluştur
+    let vidEl = existingVid;
     if (!vidEl) {
       vidEl = document.createElement("video");
       vidEl.className = "modal-video-preview";
       vidEl.style.cssText = "width:100%;height:100%;object-fit:cover;border-radius:inherit;";
-      vidEl.setAttribute("playsinline",""); vidEl.setAttribute("loop",""); vidEl.controls = true;
+      vidEl.setAttribute("playsinline","");
+      vidEl.setAttribute("loop","");
+      vidEl.controls = true;
       EL.photoImgWrap.appendChild(vidEl);
     }
-    // Önizleme için blob URL kullan (varsa), yoksa thumbnail göster
-    if (pm.videoBlobUrl) {
-      vidEl.src = pm.videoBlobUrl;
+
+    // Kaynak set et
+    if (pm.videoBlobUrl || _videoUrlCache.has(pm.videoId || "")) {
+      const url = pm.videoBlobUrl || _videoUrlCache.get(pm.videoId);
+      vidEl.src = url;
       vidEl.style.display = "block";
-      imgEl.style.display = "none";
     } else if (pm.videoId) {
-      // Kaydedilmiş video — IndexedDB'den yükle
       vidEl.style.display = "none";
-      imgEl.src = pm.image; // thumbnail
-      imgEl.style.display = "block";
-      getVideoBlobUrl(pm.videoId).then(url => {
+      imgEl.src = pm.image || ""; imgEl.style.display = "block";
+      loadVideoUrl(pm.videoId, pm.videoMime || "video/webm").then(url => {
         if (!url) return;
+        pm.videoBlobUrl = url;
         vidEl.src = url; vidEl.style.display = "block";
         imgEl.style.display = "none";
-      });
+      }).catch(e => console.warn("[Video]", e.message));
     } else {
-      // Sadece thumbnail var (yayınlanmış video)
+      // Yükleme beklenirken thumbnail göster
       vidEl.style.display = "none";
-      imgEl.src = pm.image; imgEl.style.display = "block";
+      imgEl.src = pm.image || ""; imgEl.style.display = "block";
     }
     EL.photoImgWrap.style.cursor = "default";
   } else {
-    imgEl.src = pm.image; imgEl.style.display = "block";
-    if (vidEl) { vidEl.src = ""; vidEl.style.display = "none"; }
+    // FOTOĞRAF modu — video elementini tamamen kaldır
+    if (existingVid) {
+      existingVid.pause();
+      existingVid.src = "";
+      existingVid.remove(); // DOM'dan çıkar
+    }
+    imgEl.src = pm.image || "";
+    imgEl.style.display = "block";
     EL.photoImgWrap.style.cursor = "zoom-in";
   }
 
@@ -3959,17 +4414,30 @@ function applyPMtoUI() {
 function openPhotoModal(photo) {
   resetPM();
   Object.assign(pm, {
-    id: photo.id, image: photo.image, created: photo.createdAtClient,
-    note: photo.note || "", favorite: !!photo.favorite,
-    publishedId: photo.publishedId || null,
-    locationLabel: photo.locationLabel || "", mapsUrl: photo.mapsUrl || "",
-    isNew: false, isVideo: !!photo.isVideo,
-    videoId: photo.videoId || null,
-    videoBlobUrl: null,
+    id:            photo.id,
+    image:         photo.image,
+    created:       photo.createdAtClient,
+    note:          photo.note          || "",
+    favorite:      !!photo.favorite,
+    publishedId:   photo.publishedId   || null,
+    locationLabel: photo.locationLabel || "",
+    mapsUrl:       photo.mapsUrl       || "",
+    isNew:         false,
+    isVideo:       !!photo.isVideo,
+    videoId:       photo.videoId       || null,
+    videoMime:     photo.videoMime     || "video/webm",
+    videoBlobUrl:  null,
   });
-  // Video ise blob URL'yi önceden yükle
+  // Video ise Firestore chunk'tan yükle
   if (photo.isVideo && photo.videoId) {
-    getVideoBlobUrl(photo.videoId).then(url => { pm.videoBlobUrl = url; applyPMtoUI(); });
+    const cached = _videoUrlCache.get(photo.videoId);
+    if (cached) {
+      pm.videoBlobUrl = cached;
+    } else {
+      loadVideoUrl(photo.videoId, photo.videoMime || "video/webm")
+        .then(url => { if (url) { pm.videoBlobUrl = url; applyPMtoUI(); } })
+        .catch(e => console.warn("[Video] yükleme:", e.message));
+    }
   }
   EL.photoModalTitle.textContent = photo.isVideo ? "Video Detayı" : "Fotoğraf Detayı";
   applyPMtoUI();
@@ -4012,6 +4480,126 @@ EL.deleteBtn.addEventListener("click",  deletePhoto);
 EL.publishBtn.addEventListener("click", publishPhoto);
 EL.shareBtn.addEventListener("click",   sharePhoto);
 
+async function publishPhoto() {
+  if (!pm.image || !currentUser) return;
+
+  const ok = await openConfirm({
+    title:   pm.publishedId ? "Yayını Güncelle?" : "Yayınla?",
+    text:    pm.publishedId
+               ? "Yayını güncellemek istediğinize emin misiniz?"
+               : "Bu içerik herkesle paylaşılacak. Onaylıyor musunuz?",
+    okLabel: pm.publishedId ? "Güncelle" : "Yayınla",
+    icon:    pm.publishedId ? "🔄" : "🌸",
+  });
+  if (!ok) return;
+
+  pm.note = EL.noteInput.value.trim();
+  EL.publishBtn.disabled    = true;
+  EL.publishBtn.textContent = "Yayınlanıyor…";
+
+  try {
+    // Video ise önce Firebase'e yükle (henüz yüklenmemişse)
+    let videoId = pm.videoId;
+    if (pm.isVideo && _pendingVideoBlob) {
+      showUploadModal("Video yükleniyor", "🎬");
+      setUploadProgress(2, "Firebase'e gönderiliyor…");
+      const realId = `vid_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
+      await saveVideoChunks(realId, _pendingVideoBlob, (pct, sub) => setUploadProgress(pct, sub));
+      const tempUrl = _videoUrlCache.get(pm.videoId);
+      if (tempUrl) { _videoUrlCache.set(realId, tempUrl); _videoUrlCache.delete(pm.videoId); }
+      videoId = realId;
+      pm.videoId = realId;
+      _pendingVideoBlob = null;
+      _pendingVideoMime = null;
+      hideUploadModal();
+    }
+
+    const image = pm.image.startsWith("data:")
+      ? await compressImage(pm.image, 600, 0.7)
+      : pm.image;
+
+    const payload = {
+      uid:             currentUser.uid,
+      displayName:     currentUser.displayName || "Anonim",
+      photoURL:        currentUser.photoURL    || null,
+      image,
+      note:            pm.note,
+      isVideo:         pm.isVideo   || false,
+      videoId:         videoId      || null,
+      videoMime:       pm.videoMime || null,
+      createdAtClient: pm.created   || Date.now(),
+      likes:           {},
+    };
+
+    if (pm.publishedId) {
+      await updateDoc(doc(db, "publishedPhotos", pm.publishedId), { note: pm.note, image });
+      toast("✅ Yayın güncellendi!");
+    } else {
+      const pubRef = await addDoc(collection(db, "publishedPhotos"), payload);
+      if (pm.id) updateDoc(doc(db, "users", currentUser.uid, "photos", pm.id), { publishedId: pubRef.id }).catch(()=>{});
+      pm.publishedId = pubRef.id;
+      toast("🌸 Yayınlandı!");
+    }
+
+    closePhotoModal();
+  } catch(e) {
+    hideUploadModal();
+    console.error("[Publish]", e.code, e.message);
+    toast("❌ " + (e.code === "resource-exhausted" ? "Kota doldu, tekrar dene" : e.message));
+  } finally {
+    EL.publishBtn.disabled    = false;
+    EL.publishBtn.textContent = pm.publishedId ? "Yayını Güncelle" : "Yayınla";
+  }
+}
+async function sharePhoto() {
+  if (!pm.image && !pm.videoId) return;
+  try {
+    // Video ise blob al
+    if (pm.isVideo && pm.videoId) {
+      const url = _videoUrlCache.get(pm.videoId) || pm.videoBlobUrl;
+      if (url) {
+        const resp = await fetch(url);
+        const blob = await resp.blob();
+        const file = new File([blob], `video_${Date.now()}.webm`, { type: blob.type || "video/webm" });
+        if (navigator.share && navigator.canShare?.({ files: [file] })) {
+          await navigator.share({ files: [file], title: "Pelus Takip 🐾", text: pm.note || "" });
+          return;
+        }
+      }
+      toast("📋 Video linki kopyalanamadı (henüz desteklenmiyor)");
+      return;
+    }
+
+    // Fotoğraf: data URL → file olarak paylaş
+    if (pm.image?.startsWith("data:")) {
+      const resp = await fetch(pm.image);
+      const blob = await resp.blob();
+      const file = new File([blob], `foto_${Date.now()}.jpg`, { type: "image/jpeg" });
+      if (navigator.share && navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title: "Pelus Takip 🐾", text: pm.note || "" });
+        return;
+      }
+    }
+
+    // URL veya clipboard fallback
+    if (navigator.share) {
+      await navigator.share({ title: "Pelus Takip 🐾", text: pm.note || "", url: location.href });
+    } else if (navigator.clipboard) {
+      await navigator.clipboard.writeText(pm.note || location.href);
+      toast("📋 Kopyalandı!");
+    } else {
+      toast("⚠️ Paylaşım bu cihazda desteklenmiyor");
+    }
+  } catch(e) {
+    if (e.name !== "AbortError") toast("⚠️ " + e.message);
+  }
+}
+
+/* _escapeHtml — HTML entity encode (notif listesi için) */
+function _escapeHtml(str) {
+  return (str || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
 // FIX: Konum mantığı düzeltildi
 // - Mevcut fotoğraf ve mapsUrl varsa: harita açar
 // - Mevcut fotoğraf ve mapsUrl yoksa: yeni konum alır
@@ -4041,43 +4629,55 @@ async function handleLocationTap() {
 async function savePhoto() {
   if (!pm.image || !currentUser) return;
   pm.note = EL.noteInput.value.trim();
-  EL.saveBtn.disabled = true;
-  EL.saveBtn.textContent = "Yükleniyor…";
+  EL.saveBtn.disabled    = true;
+  EL.saveBtn.textContent = "Kaydediliyor…";
 
   try {
-    let imageUrl = pm.image;
-
-    // Eğer base64 ise Storage'a yükle, URL al
-    if (pm.image.startsWith("data:")) {
-      const ext      = pm.isVideo ? "jpg" : "jpg"; // thumbnail her zaman jpg
-      const path     = `users/${currentUser.uid}/photos/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
-      const sRef     = storRef(storage, path);
-      await uploadString(sRef, pm.image, "data_url");
-      imageUrl = await getDownloadURL(sRef);
+    // Video ise önce Firebase'e yükle
+    let videoId = pm.videoId;
+    if (pm.isVideo && _pendingVideoBlob) {
+      showUploadModal("Video yükleniyor", "🎬");
+      setUploadProgress(2, "Firebase'e gönderiliyor…");
+      const realId = `vid_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
+      await saveVideoChunks(realId, _pendingVideoBlob, (pct, sub) => setUploadProgress(pct, sub));
+      // Temp blob URL'yi gerçek ID'ye taşı
+      const tempUrl = _videoUrlCache.get(pm.videoId);
+      if (tempUrl) { _videoUrlCache.set(realId, tempUrl); _videoUrlCache.delete(pm.videoId); }
+      videoId = realId;
+      pm.videoId = realId;
+      _pendingVideoBlob = null;
+      _pendingVideoMime = null;
+      hideUploadModal();
     }
 
+    const image = pm.image.startsWith("data:")
+      ? await compressImage(pm.image, 800, 0.65)
+      : pm.image;
+
     const payload = {
-      image:          imageUrl,       // Storage URL (veya eski base64)
-      note:           pm.note,
-      locationLabel:  pm.locationLabel,
-      mapsUrl:        pm.mapsUrl,
-      favorite:       pm.favorite,
+      image,
+      note:            pm.note,
+      locationLabel:   pm.locationLabel,
+      mapsUrl:         pm.mapsUrl,
+      favorite:        pm.favorite,
       createdAtClient: pm.created || Date.now(),
-      publishedId:    pm.publishedId || null,
-      isVideo:        pm.isVideo || false,
-      videoId:        pm.videoId || null,
+      publishedId:     pm.publishedId || null,
+      isVideo:         pm.isVideo  || false,
+      videoId:         videoId     || null,
+      videoMime:       pm.videoMime || null,
     };
 
     if (pm.id) await updateDoc(doc(db, "users", currentUser.uid, "photos", pm.id), payload);
     else       await addDoc(collection(db, "users", currentUser.uid, "photos"), payload);
 
-    toast(pm.isVideo ? "🎬 Video kaydedildi" : "✅ Kaydedildi");
+    toast(pm.isVideo ? "🎬 Video kaydedildi!" : "✅ Kaydedildi!");
     closeModal(EL.photoModal);
-  } catch (err) {
-    console.error("[Storage] savePhoto:", err.message);
+  } catch(err) {
+    hideUploadModal();
+    console.error("[savePhoto]", err.message);
     toast("❌ Kayıt hatası: " + err.message);
   } finally {
-    EL.saveBtn.disabled = false;
+    EL.saveBtn.disabled    = false;
     EL.saveBtn.textContent = "💾 Kaydet";
   }
 }
@@ -4088,1012 +4688,136 @@ async function deletePhoto() {
   const ok = await openConfirm({ title:`${label} silinsin mi?`, text:"Bu işlem geri alınamaz.", okLabel:"Sil", icon:"🗑" });
   if (!ok) return;
   try {
-    // Storage'dan sil (URL ise)
-    if (pm.image && pm.image.startsWith("https://firebasestorage")) {
-      try {
-        // Storage URL'den path çıkar: .../o/PATH?... formatında
-        const pathMatch = pm.image.match(/\/o\/([^?]+)/);
-        if (pathMatch) {
-          const path = decodeURIComponent(pathMatch[1]);
-          await deleteObject(storRef(storage, path));
-        }
-      } catch(e) { console.warn("[Storage] deletePhoto:", e.message); }
-    }
     await deleteDoc(doc(db, "users", currentUser.uid, "photos", pm.id));
     if (pm.publishedId) await deleteDoc(doc(db, "publishedPhotos", pm.publishedId)).catch(()=>{});
     if (pm.videoId) {
-      const cachedUrl = _videoBlobUrls.get(pm.videoId);
-      if (cachedUrl) URL.revokeObjectURL(cachedUrl);
-      _videoBlobUrls.delete(pm.videoId);
-      await deleteVideoBlob(pm.videoId);
+      const cached = _videoUrlCache.get(pm.videoId);
+      if (cached) URL.revokeObjectURL(cached);
+      _videoUrlCache.delete(pm.videoId);
+      deleteVideoChunks(pm.videoId).catch(() => {});
     }
     toast(`🗑 ${label} silindi`);
     closeModal(EL.photoModal);
-  } catch (err) { toast("❌ Silme hatası: " + err.message); }
-}
-
-/* ═══════════════════════════════════════════
-   FCM
-═══════════════════════════════════════════ */
-async function saveFcmToken(token) {
-  if (!currentUser || !token) return;
-  try {
-    await setDoc(doc(db, "users", currentUser.uid, "fcmTokens", token.slice(-30)),
-      { token, updatedAt: Date.now() }, { merge: true });
-  } catch(e) { console.error("saveFcmToken:", e); }
-}
-
-/** Firestore'dan bildirim tercihini oku */
-async function loadNotifPref() {
-  if (!currentUser) return false;
-  try {
-    const snap = await getDoc(doc(db, "users", currentUser.uid, "settings", "prefs"));
-    return snap.exists() && snap.data().fcmEnabled === true;
-  } catch { return false; }
-}
-
-/** Bildirim tercihini Firestore'a yaz */
-async function saveNotifPref(enabled) {
-  if (!currentUser) return;
-  try {
-    await setDoc(doc(db, "users", currentUser.uid, "settings", "prefs"),
-      { fcmEnabled: enabled }, { merge: true });
-  } catch(e) {}
-}
-
-async function requestNotificationPermission() {
-  if (!messaging) {
-    toast("⚠️ Bildirimler bu tarayıcıda desteklenmiyor");
-    return;
-  }
-  if (!('serviceWorker' in navigator)) {
-    toast("⚠️ Service Worker desteklenmiyor");
-    return;
-  }
-  // HTTPS kontrolü
-  if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
-    toast("⚠️ Bildirimler sadece HTTPS'de çalışır");
-    return;
-  }
-  try {
-    const perm = await Notification.requestPermission();
-    if (perm !== "granted") { toast("❌ Bildirim izni reddedildi"); return; }
-
-    let swReg;
-    try {
-      swReg = await navigator.serviceWorker.register("/firebase-messaging-sw.js");
-    } catch {
-      try { swReg = await navigator.serviceWorker.register("./firebase-messaging-sw.js"); }
-      catch(e2) {
-        toast("❌ Service Worker kaydedilemedi: " + e2.message);
-        return;
-      }
-    }
-    await navigator.serviceWorker.ready;
-
-    let token;
-    try {
-      token = await getToken(messaging, {
-        vapidKey:                  VAPID_KEY,
-        serviceWorkerRegistration: swReg,
-      });
-    } catch(tokenErr) {
-      // "push service error" veya "Registration failed" — genellikle localhost'ta
-      console.warn("[FCM] Token alınamadı:", tokenErr.message);
-      if (tokenErr.message?.includes("push service") || tokenErr.message?.includes("Registration")) {
-        toast("⚠️ Bildirimler deploy sonrası aktif olur (HTTPS gerekli)");
-      } else {
-        toast("❌ Token hatası: " + tokenErr.message);
-      }
-      return;
-    }
-
-    if (!token) { toast("❌ Token alınamadı"); return; }
-
-    await saveFcmToken(token);
-    await saveNotifPref(true);
-    updateNotifBtn(true);
-    toast("🔔 Bildirimler etkinleştirildi!");
-  } catch(e) {
-    console.error("[FCM] hata:", e.name, e.message);
-    toast("❌ " + e.message);
-  }
-}
-
-function initForegroundMessages() {
-  if (!messaging) return;
-  onMessage(messaging, payload => {
-    console.log("[FCM] Ön plan mesaj:", payload);
-    const { title = "Pelus Takip 🐾", body = "" } = payload.notification || {};
-    const data = payload.data || {};
-    // In-app toast göster — tarayıcı bildirimi göstermez (uygulama önplanda)
-    toast(`🔔 ${title}: ${body}`);
-    // Badge güncelle
-    _updateNotifBadge();
-  });
-}
-
-async function refreshFcmToken() {
-  if (!messaging || !currentUser) return;
-  if (Notification.permission !== "granted") return;
-  const enabled = await loadNotifPref();
-  if (!enabled) return;
-  try {
-    let swReg;
-    try { swReg = await navigator.serviceWorker.register("/firebase-messaging-sw.js"); }
-    catch { swReg = await navigator.serviceWorker.register("./firebase-messaging-sw.js"); }
-    await navigator.serviceWorker.ready;
-    const token = await getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: swReg });
-    if (token) {
-      await saveFcmToken(token);
-      console.log("[FCM] Token yenilendi:", token.slice(0,20) + "…");
-    }
-  } catch(e) { console.warn("[FCM] refreshFcmToken:", e.message); }
-}
-
-function updateNotifBtn(forceEnabled) {
-  const enabled = forceEnabled ?? (Notification.permission === "granted");
-  EL.notifBtnLabel.textContent  = enabled ? "Bildirimler Açık ✓" : "Bildirimleri Etkinleştir";
-  EL.notifBtn.style.opacity     = enabled ? ".6" : "1";
-  EL.notifBtn.style.pointerEvents = enabled ? "none" : "auto";
-  // Side menu label da güncelle
-  if (EL.sideNotifLabel) EL.sideNotifLabel.textContent = enabled ? "Bildirimler Açık ✓" : "Bildirimleri Etkinleştir";
-}
-EL.notifBtn.addEventListener("click", requestNotificationPermission);
-
-/* ═══════════════════════════════════════════
-   VIDEO CHUNK UPLOAD — Firestore 900 KB limit
-   Video blob → base64 → 900 KB parçalar → ayrı dokümanlar
-   videoChunks/{publishedId}/chunk_{index}
-═══════════════════════════════════════════ */
-const CHUNK_SIZE_BYTES = 900 * 1024; // 900 KB (base64 ~%33 büyür → ~675 KB ham)
-const B64_CHUNK       = Math.floor(CHUNK_SIZE_BYTES * 0.74); // ham blob bytes per chunk
-
-/** Blob → base64 string (data: prefix yok) */
-function blobToBase64Raw(blob) {
-  return new Promise((res, rej) => {
-    const r = new FileReader();
-    r.onload  = () => res(r.result.split(",")[1]);
-    r.onerror = () => rej(r.error);
-    r.readAsDataURL(blob);
-  });
-}
-
-/** Base64 string → Blob */
-function base64ToBlob(b64, mimeType) {
-  const bin  = atob(b64);
-  const arr  = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
-  return new Blob([arr], { type: mimeType });
-}
-
-/**
- * Video'yu Firestore'a chunk'lar halinde yükle.
- * onProgress(uploaded, total) callback ile ilerleme bildirilir.
- * publishedId: ana dokümanın ID'si (chunk koleksiyon yolu için)
- */
-async function uploadVideoChunks(blob, publishedId, onProgress) {
-  const mimeType   = blob.type || "video/webm";
-  const totalBytes = blob.size;
-  const chunkCount = Math.ceil(totalBytes / B64_CHUNK);
-
-  for (let i = 0; i < chunkCount; i++) {
-    const start     = i * B64_CHUNK;
-    const end       = Math.min(start + B64_CHUNK, totalBytes);
-    const chunkBlob = blob.slice(start, end);
-    const b64       = await blobToBase64Raw(chunkBlob);
-
-    await setDoc(
-      doc(db, "videoChunks", publishedId, "chunks", `chunk_${String(i).padStart(5,"0")}`),
-      { index: i, data: b64, total: chunkCount, mimeType }
-    );
-    onProgress(i + 1, chunkCount);
-  }
-  return chunkCount;
-}
-
-/**
- * Firestore'dan chunk'ları sırayla getirip Blob olarak döndür.
- * onProgress(loaded, total) ile ilerleme bildirilir.
- * Önbellekte varsa (blobUrlCache) direkt döner.
- */
-const _chunkBlobCache = new Map(); // publishedId → objectURL
-
-async function assembleVideoFromChunks(publishedId, mimeType, chunkCount, onProgress) {
-  if (_chunkBlobCache.has(publishedId)) return _chunkBlobCache.get(publishedId);
-
-  const parts = [];
-  for (let i = 0; i < chunkCount; i++) {
-    const snap = await getDoc(
-      doc(db, "videoChunks", publishedId, "chunks", `chunk_${String(i).padStart(5,"0")}`)
-    );
-    if (!snap.exists()) throw new Error(`Chunk ${i} bulunamadı`);
-    parts.push(base64ToBlob(snap.data().data, mimeType));
-    onProgress(i + 1, chunkCount);
-  }
-
-  const fullBlob = new Blob(parts, { type: mimeType });
-  const url      = URL.createObjectURL(fullBlob);
-  _chunkBlobCache.set(publishedId, url);
-  return url;
-}
-
-/** Chunk dokümanlarını sil (yayın silindiğinde) */
-async function deleteVideoChunks(publishedId, chunkCount) {
-  const promises = [];
-  for (let i = 0; i < chunkCount; i++) {
-    promises.push(
-      deleteDoc(doc(db, "videoChunks", publishedId, "chunks", `chunk_${String(i).padStart(5,"0")}`))
-        .catch(() => {})
-    );
-  }
-  await Promise.all(promises);
-}
-
-/* ═══════════════════════════════════════════
-   PUBLISH — Fotoğraf & Video (chunk'lı)
-═══════════════════════════════════════════ */
-async function publishPhoto() {
-  if (!pm.image || !currentUser) return;
-  pm.note = EL.noteInput.value.trim();
-
-  const isVid = pm.isVideo;
-
-  // Video boyutunu kontrol et
-  let videoBlob = null;
-  if (isVid && pm.videoId) {
-    videoBlob = await loadVideoBlob(pm.videoId);
-    if (!videoBlob) { toast("⚠️ Video bulunamadı"); return; }
-  }
-
-  const ok = await openConfirm({
-    title:   pm.publishedId ? "Yayını Güncelle" : (isVid ? "Video Yayınla" : "Yayınla"),
-    text:    isVid
-      ? `Video parçalara bölünerek yayınlanacak.\n(${videoBlob ? (videoBlob.size / 1024 / 1024).toFixed(1) + " MB" : ""})`
-      : "Bu fotoğraf herkese açık olacak.",
-    okLabel: pm.publishedId ? "Güncelle" : "Yayınla",
-    icon:    isVid ? "🎬" : "🌐"
-  });
-  if (!ok) return;
-
-  EL.publishBtn.disabled    = true;
-  EL.publishBtn.textContent = "Hazırlanıyor…";
-
-  // Yayınlanıyor progress overlay
-  const progressEl = _createUploadProgress();
-
-  try {
-    const thumbnailBase64 = await compressImage(pm.image);
-    const mimeType   = videoBlob?.type || "video/webm";
-    const chunkCount = isVid && videoBlob ? Math.ceil(videoBlob.size / B64_CHUNK) : 0;
-
-    // Thumbnail'ı Storage'a yükle
-    let thumbnailUrl = thumbnailBase64;
-    if (thumbnailBase64.startsWith("data:")) {
-      const tPath = `publishedPhotos/${currentUser.uid}_${Date.now()}_thumb.jpg`;
-      const tRef  = storRef(storage, tPath);
-      await uploadString(tRef, thumbnailBase64, "data_url");
-      thumbnailUrl = await getDownloadURL(tRef);
-    }
-
-    const payload = {
-      image:         thumbnailUrl,
-      note:          pm.note,
-      locationLabel: pm.locationLabel,
-      mapsUrl:       pm.mapsUrl,
-      favorite:      pm.favorite,
-      createdAtClient: Date.now(),
-      uid:           currentUser.uid,
-      displayName:   currentUser.displayName || "Anonim",
-      photoURL:      currentUser.photoURL || null,
-      isVideo:       isVid,
-      hasChunks:     isVid && chunkCount > 0,
-      chunkCount:    chunkCount,
-      mimeType:      isVid ? mimeType : null,
-    };
-
-    let pubId = pm.publishedId;
-
-    if (pubId) {
-      // Güncelleme: eski chunk'ları sil
-      const oldSnap = await getDoc(doc(db, "publishedPhotos", pubId)).catch(() => null);
-      if (oldSnap?.data()?.hasChunks) {
-        await deleteVideoChunks(pubId, oldSnap.data().chunkCount || 0);
-      }
-      await updateDoc(doc(db, "publishedPhotos", pubId), payload);
-    } else {
-      const ref = await addDoc(collection(db, "publishedPhotos"), payload);
-      pubId = ref.id;
-      pm.publishedId = pubId;
-      if (pm.id) {
-        await updateDoc(
-          doc(db, "users", currentUser.uid, "photos", pm.id),
-          { publishedId: pubId }
-        ).catch(() => {});
-      }
-    }
-
-    // Video chunk'larını yükle
-    if (isVid && videoBlob && chunkCount > 0) {
-      EL.publishBtn.textContent = `Yükleniyor 0/${chunkCount}`;
-      await uploadVideoChunks(videoBlob, pubId, (done, total) => {
-        const pct = Math.round((done / total) * 100);
-        EL.publishBtn.textContent = `Yükleniyor ${done}/${total}`;
-        _updateUploadProgress(progressEl, pct, `${done}/${total} parça yüklendi`);
-      });
-      // Cache'e al
-      _chunkBlobCache.set(pubId, URL.createObjectURL(videoBlob));
-    }
-
-    // Bildirim gönder (sadece yeni yayın)
-    if (!pm.publishedId || pm.publishedId !== pubId) {
-      addDoc(collection(db, "notifications"), {
-        type: "new_publish", publishedId: pubId,
-        authorName: currentUser.displayName || "Biri",
-        note: pm.note || "", createdAt: Date.now(),
-      }).catch(() => {});
-    }
-
-    _removeUploadProgress(progressEl);
-    toast(isVid ? "🎬 Video yayınlandı!" : "🌐 Yayınlandı");
-    EL.publishBtn.textContent = "Yayını Güncelle";
-
-  } catch (err) {
-    _removeUploadProgress(progressEl);
-    toast("❌ Yayın hatası: " + err.message);
-    console.error(err);
-  } finally {
-    EL.publishBtn.disabled = false;
-  }
-}
-
-/* ─── Upload progress overlay (sheet içinde) ─── */
-function _createUploadProgress() {
-  const el = document.createElement("div");
-  el.style.cssText = `
-    position:fixed; inset:0; z-index:9000;
-    background:rgba(15,5,12,.6); backdrop-filter:blur(4px);
-    display:flex; flex-direction:column;
-    align-items:center; justify-content:center; gap:18px;
-    animation: fadeIn .2s ease both;
-  `;
-  el.innerHTML = `
-    <div style="background:#fff;border-radius:24px;padding:28px 32px;text-align:center;
-                box-shadow:0 24px 64px rgba(60,10,30,.3);min-width:260px;">
-      <div style="font-size:36px;margin-bottom:12px;">🎬</div>
-      <div style="font-size:16px;font-weight:800;color:#4d2438;margin-bottom:6px;" id="_upTitle">Video yükleniyor…</div>
-      <div style="font-size:12px;color:#9a7585;margin-bottom:16px;" id="_upSub">Lütfen bekleyin</div>
-      <div style="height:6px;background:rgba(192,100,138,.15);border-radius:999px;overflow:hidden;">
-        <div id="_upBar" style="height:100%;width:0%;background:linear-gradient(90deg,#c0648a,#e07ba8);
-             border-radius:999px;transition:width .35s ease;"></div>
-      </div>
-      <div style="font-size:11px;color:#9a7585;margin-top:8px;" id="_upPct">0%</div>
-    </div>`;
-  document.body.appendChild(el);
-  return el;
-}
-
-function _updateUploadProgress(el, pct, label) {
-  const bar = el.querySelector("#_upBar");
-  const pctEl = el.querySelector("#_upPct");
-  const sub   = el.querySelector("#_upSub");
-  if (bar)   bar.style.width   = pct + "%";
-  if (pctEl) pctEl.textContent = pct + "%";
-  if (sub)   sub.textContent   = label;
-}
-
-function _removeUploadProgress(el) {
-  if (!el || !el.parentNode) return;
-  el.style.opacity = "0";
-  el.style.transition = "opacity .3s ease";
-  setTimeout(() => el.remove(), 320);
-}
-
-function compressImage(dataUrl, maxPx = 800, q = .65) {
-  // Video için sıkıştırma yapma
-  if (dataUrl.startsWith("data:video")) return Promise.resolve(dataUrl);
-  return new Promise(res => {
-    const img = new Image();
-    img.onload = () => {
-      let w = img.width, h = img.height;
-      if (w <= maxPx && h <= maxPx) { res(dataUrl); return; }
-      if (w >= h) { h = Math.round(h*maxPx/w); w = maxPx; }
-      else        { w = Math.round(w*maxPx/h); h = maxPx; }
-      const c = document.createElement("canvas"); c.width = w; c.height = h;
-      c.getContext("2d").drawImage(img, 0, 0, w, h);
-      res(c.toDataURL("image/jpeg", q));
-    };
-    img.onerror = () => res(dataUrl);
-    img.src = dataUrl;
-  });
-}
-
-function dataURLtoBlob(dataUrl) {
-  const [header, data] = dataUrl.split(",");
-  const mime = header.match(/:(.*?);/)[1];
-  const bytes = atob(data); const arr = new Uint8Array(bytes.length);
-  for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
-  return new Blob([arr], { type: mime });
-}
-
-async function sharePhoto() {
-  if (!pm.image) return;
-  try {
-    if (pm.isVideo && pm.videoId) {
-      // Video: IndexedDB'den blob al ve paylaş
-      const blob = await loadVideoBlob(pm.videoId);
-      if (!blob) { toast("⚠️ Video bulunamadı"); return; }
-      const ext  = blob.type.includes("mp4") ? "mp4" : "webm";
-      const file = new File([blob], `pelus_video.${ext}`, { type: blob.type });
-      if (navigator.share && navigator.canShare?.({ files:[file] })) {
-        await navigator.share({ files:[file], title:"Pelus Takip" }); toast("Paylaşıldı");
-      } else {
-        // Fallback: indirme linki
-        const url = URL.createObjectURL(blob);
-        const a   = document.createElement("a");
-        a.href = url; a.download = file.name; a.click();
-        setTimeout(() => URL.revokeObjectURL(url), 5000);
-        toast("📥 Video indirildi");
-      }
-    } else {
-      // Fotoğraf
-      const blob = pm.image.startsWith("data:") ? dataURLtoBlob(pm.image) : await fetch(pm.image).then(r => r.blob());
-      const file = new File([blob], "pelus.jpg", { type: blob.type });
-      if (navigator.share && navigator.canShare?.({ files:[file] })) {
-        await navigator.share({ files:[file] }); toast("Paylaşıldı");
-      } else if (navigator.share) {
-        await navigator.share({ title:"Pelus Takip", text: EL.noteInput.value }); toast("Paylaşıldı");
-      } else toast("⚠️ Paylaşım desteklenmiyor");
-    }
-  } catch(e) { if (e.name !== "AbortError") toast("❌ Paylaşım hatası"); }
-}
-
-/* ═══════════════════════════════════════════
-   PUBLISHED MODAL
-═══════════════════════════════════════════ */
-function openPubModal(item) {
-  currentPubItem = item;
-  const isVideo = !!item.isVideo;
-
-  // Her açılışta video elementini temiz başlat
-  EL.pubVideo.pause();
-  EL.pubVideo.src = "";
-  EL.pubVideo.style.display        = "none";
-  EL.pubImg.style.display          = "block";
-  EL.pubVideoPlayOverlay.style.display = "none";
-  EL.pubMediaWrap.classList.remove("playing");
-
-  EL.pubMediaBadge.style.display   = isVideo ? "flex" : "none";
-  EL.pubImg.src         = item.image;
-  EL.pubImg.dataset.id  = item.id;
-
-  if (isVideo) {
-    if (item.hasChunks) {
-      EL.pubMediaBadge.innerHTML = `
-        <svg viewBox="0 0 24 24" width="10" height="10">
-          <path fill="#fff" d="M4 6.5A2.5 2.5 0 0 1 6.5 4h7A2.5 2.5 0 0 1 16 6.5v.86l3.36-1.68A1 1 0 0 1 21 6.5v11a1 1 0 0 1-1.64.82L16 16.64V17.5A2.5 2.5 0 0 1 13.5 20h-7A2.5 2.5 0 0 1 4 17.5v-11Z"/>
-        </svg>&nbsp;▶ OYNAT`;
-      // Önbellekte varsa hemen göster, yoksa play overlay göster
-      if (_chunkBlobCache.has(item.id)) {
-        _showPubVideo(_chunkBlobCache.get(item.id));
-      } else {
-        EL.pubVideoPlayOverlay.style.display = "flex";
-      }
-    } else {
-      EL.pubMediaBadge.innerHTML = `
-        <svg viewBox="0 0 24 24" width="10" height="10">
-          <path fill="#fff" d="M4 6.5A2.5 2.5 0 0 1 6.5 4h7A2.5 2.5 0 0 1 16 6.5v.86l3.36-1.68A1 1 0 0 1 21 6.5v11a1 1 0 0 1-1.64.82L16 16.64V17.5A2.5 2.5 0 0 1 13.5 20h-7A2.5 2.5 0 0 1 4 17.5v-11Z"/>
-        </svg>&nbsp;VİDEO`;
-    }
-  }
-
-  // Avatar
-  if (item.photoURL) {
-    EL.pubAuthorAvatar.style.backgroundImage = `url(${item.photoURL})`;
-    EL.pubAuthorAvatar.textContent = "";
-  } else {
-    EL.pubAuthorAvatar.style.backgroundImage = "";
-    EL.pubAuthorAvatar.textContent = initials(item.displayName);
-  }
-
-  EL.pubAuthor.textContent = item.displayName || "Anonim";
-  EL.pubDate.textContent   = item.createdAtClient ? timeAgo(item.createdAtClient) : "";
-
-  if (item.note) {
-    EL.pubNote.textContent      = item.note;
-    EL.pubNoteWrap.style.display = "block";
-  } else {
-    EL.pubNoteWrap.style.display = "none";
-  }
-
-  const likes = item.likes ? Object.keys(item.likes).length : 0;
-  const liked = currentUser && !!item.likes?.[currentUser.uid];
-  EL.pubLikeBtn.classList.toggle("liked", liked);
-  EL.pubLikeLabel.textContent = liked ? "Beğenildi" : "Beğen";
-  EL.pubLikeCount.textContent = likes > 0 ? likes : "";
-
-  const hasLoc = !!(item.mapsUrl?.trim());
-  EL.pubLocBtn.classList.toggle("show", hasLoc);
-  if (hasLoc) EL.pubLocText.textContent = item.locationLabel || "Konumu gör";
-
-  const isOwner = currentUser && item.uid === currentUser.uid;
-  EL.pubOwnerActions.classList.toggle("show", isOwner);
-  EL.pubFullscreenBtn.style.display = isVideo ? "none" : "";
-
-  // Yorum input sıfırla
-  EL.pubCommentInput.value = "";
-  EL.pubCommentInput.style.height = "20px";
-  EL.pubCommentSend.disabled = true;
-  if (!currentUser) {
-    EL.pubCommentInput.placeholder = "Yorum yazmak için giriş yapın";
-    EL.pubCommentInput.disabled = true;
-  } else {
-    EL.pubCommentInput.placeholder = "Yorum yaz…";
-    EL.pubCommentInput.disabled = false;
-  }
-
-  // Yorum dinleyicisini başlat
-  _startCommentsListener(item.id);
-
-  openModal(EL.pubModal);
-  pushModalState("pubModal");
-}
-
-/** Pub modal'da video elementini göster ve oynat */
-function _showPubVideo(blobUrl) {
-  // Önce her şeyi sıfırla
-  EL.pubVideo.removeEventListener("canplay",  _pubVideoOnReady);
-  EL.pubVideo.removeEventListener("canplaythrough", _pubVideoOnReady);
-  EL.pubVideo.pause();
-
-  EL.pubImg.style.display              = "none";
-  EL.pubVideo.src                      = blobUrl;
-  EL.pubVideo.loop                     = true;
-  EL.pubVideo.playsInline              = true;
-  EL.pubVideo.muted                    = false; // sesi aç
-  EL.pubVideo.style.display            = "block";
-  EL.pubVideoPlayOverlay.style.display = "none";
-  EL.pubMediaWrap.classList.remove("playing");
-  EL.pubMediaWrap.classList.add("playing"); // optimistic
-
-  EL.pubVideo.load();
-  EL.pubVideo.addEventListener("canplay", _pubVideoOnReady, { once: true });
-}
-
-function _pubVideoOnReady() {
-  EL.pubVideo.play().then(() => {
-    EL.pubMediaWrap.classList.add("playing");
-    EL.pubVideoPlayOverlay.style.display = "none";
-  }).catch(() => {
-    // Autoplay engeli — play overlay göster, kullanıcı tıklayınca başlatılır
-    EL.pubMediaWrap.classList.remove("playing");
-    EL.pubVideoPlayOverlay.style.display = "flex";
-  });
-}
-
-/** Chunk'ları indirirken overlay içinde progress bar göster */
-function _showChunkLoadProgress(container) {
-  const el = document.createElement("div");
-  el.id = "chunkLoadOverlay";
-  el.style.cssText = `
-    position:absolute; inset:0; z-index:10;
-    background:rgba(0,0,0,.7); backdrop-filter:blur(2px);
-    display:flex; flex-direction:column;
-    align-items:center; justify-content:center; gap:10px;
-  `;
-  el.innerHTML = `
-    <div style="font-size:28px;">🎬</div>
-    <div style="color:#fff;font-size:13px;font-weight:700;" id="_clo_label">Video yükleniyor…</div>
-    <div style="width:160px;height:4px;background:rgba(255,255,255,.2);border-radius:999px;overflow:hidden;">
-      <div id="_clo_bar" style="height:100%;width:0%;background:#c0648a;
-           border-radius:999px;transition:width .3s ease;"></div>
-    </div>
-    <div style="color:rgba(255,255,255,.6);font-size:11px;" id="_clo_pct">0%</div>`;
-  container.style.position = "relative";
-  container.appendChild(el);
-  return el;
-}
-
-function _updateChunkLoadProgress(el, done, total) {
-  const pct = Math.round((done / total) * 100);
-  const bar = el.querySelector("#_clo_bar");
-  const lbl = el.querySelector("#_clo_label");
-  const pctEl = el.querySelector("#_clo_pct");
-  if (bar)   bar.style.width   = pct + "%";
-  if (lbl)   lbl.textContent   = `${done}/${total} parça indirildi`;
-  if (pctEl) pctEl.textContent = pct + "%";
-}
-
-// Pub medya tıklama — video: chunk'ları indir + oynat | fotoğraf: tam ekran
-EL.pubMediaWrap.addEventListener("click", async e => {
-  if (e.target === EL.pubClose || EL.pubClose.contains(e.target)) return;
-
-  const item = currentPubItem;
-  if (!item) return;
-
-  if (!item.isVideo) {
-    if (EL.pubImg.src) openFullscreen(EL.pubImg.src, item.note);
-    return;
-  }
-
-  // Video zaten oynatılıyorsa durdur/devam et
-  if (EL.pubVideo.style.display === "block" && EL.pubVideo.src) {
-    if (EL.pubVideo.paused) {
-      EL.pubVideo.play().then(() => EL.pubMediaWrap.classList.add("playing")).catch(() => {});
-    } else {
-      EL.pubVideo.pause();
-      EL.pubMediaWrap.classList.remove("playing");
-    }
-    return;
-  }
-
-  if (!item.hasChunks) {
-    toast("🎬 Video galerinizden izleyebilirsiniz");
-    return;
-  }
-
-  // Önbellekte var mı?
-  if (_chunkBlobCache.has(item.id)) {
-    _showPubVideo(_chunkBlobCache.get(item.id));
-    return;
-  }
-
-  // Chunk'ları indir
-  const progressEl = _showChunkLoadProgress(EL.pubMediaWrap);
-  try {
-    const url = await assembleVideoFromChunks(
-      item.id,
-      item.mimeType || "video/webm",
-      item.chunkCount || 1,
-      (done, total) => _updateChunkLoadProgress(progressEl, done, total)
-    );
-    progressEl.remove();
-    _showPubVideo(url);
-  } catch(err) {
-    progressEl.remove();
-    toast("❌ Video yüklenemedi: " + err.message);
-  }
-});
-
-EL.pubVideo.addEventListener("ended", () => {
-  // loop=true ile bu tetiklenmemeli ama fallback
-  EL.pubVideo.currentTime = 0;
-  EL.pubVideo.play().catch(() => {});
-});
-
-EL.pubVideo.addEventListener("pause", () => {
-  // Kullanıcı pause ettiyse overlay göster
-  if (EL.pubVideo.style.display === "block") {
-    EL.pubMediaWrap.classList.remove("playing");
-  }
-});
-
-EL.pubVideo.addEventListener("play", () => {
-  EL.pubMediaWrap.classList.add("playing");
-  EL.pubVideoPlayOverlay.style.display = "none";
-});
-
-// Tam ekran butonu
-EL.pubFullscreenBtn.addEventListener("click", () => {
-  if (currentPubItem && !currentPubItem.isVideo) openFullscreen(EL.pubImg.src, currentPubItem.note);
-});
-
-// Like
-EL.pubLikeBtn.addEventListener("click", async () => {
-  if (!currentUser || !currentPubItem) return;
-  const id   = currentPubItem.id;
-  const item = pubCache.find(p => p.id === id);
-  if (!item) return;
-  const liked = !!item.likes?.[currentUser.uid];
-  const update = {};
-  if (liked) {
-    update[`likes.${currentUser.uid}`] = deleteField();
-    if (item.likes) delete item.likes[currentUser.uid];
-  } else {
-    update[`likes.${currentUser.uid}`] = true;
-    if (!item.likes) item.likes = {};
-    item.likes[currentUser.uid] = true;
-  }
-  const likes = item.likes ? Object.keys(item.likes).length : 0;
-  EL.pubLikeBtn.classList.toggle("liked", !liked);
-  EL.pubLikeLabel.textContent = !liked ? "Beğenildi" : "Beğen";
-  EL.pubLikeCount.textContent = likes > 0 ? likes : "";
-  try {
-    await updateDoc(doc(db, "publishedPhotos", id), update);
-    // Bildirim sunucu tarafında gönderilir
-  }
-  catch(e) { toast("❌ Hata"); }
-});
-
-EL.pubClose.addEventListener("click", e => {
-  e.stopPropagation();
-  if (!EL.pubVideo.paused) EL.pubVideo.pause();
-  EL.pubMediaWrap.classList.remove("playing");
-  _stopCommentsListener();
-  closeModal(EL.pubModal);
-});
-
-EL.pubLocBtn.addEventListener("click", () => {
-  if (currentPubItem?.mapsUrl) window.open(currentPubItem.mapsUrl, "_blank", "noopener");
-});
-
-EL.pubDeleteBtn.addEventListener("click", async () => {
-  if (!currentPubItem || !currentUser || currentPubItem.uid !== currentUser.uid) {
-    toast("⚠️ Bu yayını silemezsiniz"); return;
-  }
-  const ok = await openConfirm({
-    title: "Yayın silinsin mi?",
-    text:  currentPubItem.hasChunks
-      ? "Video ve tüm parçaları kalıcı olarak silinir."
-      : "Kalıcı olarak silinir.",
-    okLabel: "Sil", icon: "🗑"
-  });
-  if (!ok) return;
-  try {
-    if (currentPubItem.hasChunks && currentPubItem.chunkCount > 0) {
-      toast("🗑 Video parçaları siliniyor…");
-      await deleteVideoChunks(currentPubItem.id, currentPubItem.chunkCount);
-      const cached = _chunkBlobCache.get(currentPubItem.id);
-      if (cached) { URL.revokeObjectURL(cached); _chunkBlobCache.delete(currentPubItem.id); }
-    }
-    await deleteDoc(doc(db, "publishedPhotos", currentPubItem.id));
-    EL.pubVideo.pause(); EL.pubVideo.src = "";
-    EL.pubMediaWrap.classList.remove("playing");
-    _stopCommentsListener();
-    toast("🗑 Yayın silindi");
-    closeModal(EL.pubModal);
   } catch(err) { toast("❌ Silme hatası: " + err.message); }
-});
-
-/* ═══════════════════════════════════════════
-   YORUM SİSTEMİ
-   Koleksiyon: publishedPhotos/{pubId}/comments
-   Doküman: { uid, displayName, photoURL, text, createdAt }
-═══════════════════════════════════════════ */
-let _unsubComments = null;
-
-function _stopCommentsListener() {
-  if (_unsubComments) { _unsubComments(); _unsubComments = null; }
-}
-
-function _startCommentsListener(pubId) {
-  _stopCommentsListener();
-
-  // Skeleton göster
-  EL.pubCommentsList.innerHTML = `
-    <div class="comment-skeleton">
-      <div class="comment-skeleton-avatar"></div>
-      <div class="comment-skeleton-lines">
-        <div class="comment-skeleton-line" style="width:60%"></div>
-        <div class="comment-skeleton-line" style="width:85%"></div>
-      </div>
-    </div>`;
-
-  const commentsRef = collection(db, "publishedPhotos", pubId, "comments");
-  const commentsQ   = query(commentsRef, orderBy("createdAt", "asc"));
-
-  _unsubComments = onSnapshot(commentsQ, snap => {
-    const comments = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    _renderComments(pubId, comments);
-  }, err => {
-    console.error("comments:", err);
-    EL.pubCommentsList.innerHTML = `<div style="padding:8px 0;font-size:12px;color:var(--text-muted);">Yorumlar yüklenemedi</div>`;
-  });
-}
-
-function _renderComments(pubId, comments) {
-  EL.pubCommentsCount.textContent = comments.length > 0 ? `${comments.length} yorum` : "";
-
-  if (!comments.length) {
-    EL.pubCommentsList.innerHTML = `
-      <div style="padding:8px 0 4px;font-size:12.5px;color:var(--text-muted);text-align:center;">
-        Henüz yorum yok. İlk yorumu sen yaz!
-      </div>`;
-    return;
-  }
-
-  const frag = document.createDocumentFragment();
-  comments.forEach(c => {
-    const isOwn = currentUser && c.uid === currentUser.uid;
-    const item  = document.createElement("div");
-    item.className = "comment-item" + (isOwn ? " comment-own" : "");
-
-    // Avatar
-    const avatarStyle = c.photoURL ? `background-image:url(${c.photoURL}); background-size:cover;` : "";
-    const avatarText  = c.photoURL ? "" : initials(c.displayName || "?");
-
-    item.innerHTML = `
-      <div class="comment-avatar" style="${avatarStyle}">${avatarText}</div>
-      <div class="comment-bubble">
-        <div class="comment-meta">
-          <span class="comment-name">${c.displayName || "Anonim"}</span>
-          <span class="comment-time">${c.createdAt ? timeAgo(c.createdAt) : ""}</span>
-        </div>
-        <div class="comment-text">${_escapeHtml(c.text || "")}</div>
-      </div>
-      ${isOwn ? `<button class="comment-delete" data-cid="${c.id}" type="button" title="Sil">✕</button>` : ""}`;
-
-    // Kendi yorumunu sil
-    const delBtn = item.querySelector(".comment-delete");
-    if (delBtn) {
-      delBtn.addEventListener("click", async e => {
-        e.stopPropagation();
-        try {
-          await deleteDoc(doc(db, "publishedPhotos", pubId, "comments", c.id));
-        } catch { toast("❌ Yorum silinemedi"); }
-      });
-    }
-
-    frag.appendChild(item);
-  });
-
-  EL.pubCommentsList.innerHTML = "";
-  EL.pubCommentsList.appendChild(frag);
-  // En alta kaydır
-  EL.pubCommentsList.scrollTop = EL.pubCommentsList.scrollHeight;
-}
-
-function _escapeHtml(str) {
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
-
-// Yorum input auto-resize
-EL.pubCommentInput.addEventListener("input", () => {
-  const val = EL.pubCommentInput.value;
-  EL.pubCommentSend.disabled = val.trim().length === 0;
-  // Auto-resize
-  EL.pubCommentInput.style.height = "20px";
-  EL.pubCommentInput.style.height = Math.min(EL.pubCommentInput.scrollHeight, 80) + "px";
-});
-
-// Enter → gönder (Shift+Enter → satır sonu)
-EL.pubCommentInput.addEventListener("keydown", e => {
-  if (e.key === "Enter" && !e.shiftKey) {
-    e.preventDefault();
-    if (!EL.pubCommentSend.disabled) _sendComment();
-  }
-});
-
-EL.pubCommentSend.addEventListener("click", _sendComment);
-
-async function _sendComment() {
-  if (!currentUser || !currentPubItem) return;
-  const text = EL.pubCommentInput.value.trim();
-  if (!text) return;
-
-  EL.pubCommentSend.disabled = true;
-  const original = EL.pubCommentInput.value;
-  EL.pubCommentInput.value = "";
-  EL.pubCommentInput.style.height = "20px";
-
-  try {
-    await addDoc(
-      collection(db, "publishedPhotos", currentPubItem.id, "comments"),
-      {
-        uid:         currentUser.uid,
-        displayName: currentUser.displayName || "Anonim",
-        photoURL:    currentUser.photoURL || null,
-        text,
-        createdAt:   Date.now(),
-      }
-    );
-    // Bildirim sunucu tarafında gönderilir (watchPubComments)
-  } catch(err) {
-    toast("❌ Yorum gönderilemedi");
-    EL.pubCommentInput.value = original;
-    EL.pubCommentSend.disabled = false;
-  }
 }
 
 /* ═══════════════════════════════════════════
-   SETTINGS
-   FIX: settings-initials display:flex ile açılıyor
+   BİLDİRİM SİSTEMİ — Yeniden Tasarım
+
+   Katmanlar:
+   1. IN-APP (her zaman çalışır, izin gerektirmez)
+      Firestore: users/{uid}/appNotifications
+      Uygulama açıkken toast + badge
+
+   2. PUSH (opsiyonel, HTTPS + SW gerekir)
+      FCM token alınamadıysa sadece in-app çalışır
+      Hata olursa sessizce devam et
 ═══════════════════════════════════════════ */
-/* ═══════════════════════════════════════════
-   BİLDİRİM SİSTEMİ
-   Koleksiyon: users/{uid}/appNotifications
-   Alanlar: { type, fromUid, fromName, fromPhoto,
-              pubId, pubThumb, isVideo, text,
-              chatId, createdAt, read }
-   Tipler: "comment" | "like" | "new_publish" | "message"
-═══════════════════════════════════════════ */
-let _unsubNotifs  = null;
-let _notifCache   = [];
+
+let _unsubNotifs     = null;
+let _notifCache      = [];
 let _notifToastTimer = null;
+let _notifSeenIds    = new Set(); // gösterilen toast'lar
 
 const NOTIF_META = {
-  comment:           { icon: "💬", tag: "Yorum",       tagClass: "comment" },
-  like:              { icon: "❤️", tag: "Beğeni",      tagClass: "like"    },
-  new_publish:       { icon: "🌸", tag: "Yayın",       tagClass: "publish" },
-  message:           { icon: "💬", tag: "Mesaj",       tagClass: "comment" },
-  challenge_invite:  { icon: "📅", tag: "Davet",       tagClass: "publish" },
-  challenge_accepted:{ icon: "🎉", tag: "Kabul",       tagClass: "publish" },
+  comment:            { icon:"💬", tag:"Yorum",   tagClass:"comment" },
+  like:               { icon:"❤️", tag:"Beğeni",  tagClass:"like"    },
+  new_publish:        { icon:"🌸", tag:"Yayın",   tagClass:"publish" },
+  message:            { icon:"💬", tag:"Mesaj",   tagClass:"comment" },
+  challenge_invite:   { icon:"📅", tag:"Davet",   tagClass:"publish" },
+  challenge_accepted: { icon:"🎉", tag:"Kabul",   tagClass:"publish" },
 };
 
+/* ── In-app listener — izin gerektirmez ── */
 function _startNotifListener(uid) {
   if (_unsubNotifs) { _unsubNotifs(); _unsubNotifs = null; }
 
   const col = collection(db, "users", uid, "appNotifications");
   let firstLoad = true;
 
-  // orderBy ile dene, index yoksa sırasız fallback
-  const startListen = (q2) => {
+  const listen = (q2) => {
     _unsubNotifs = onSnapshot(q2, snap => {
-      const prev     = new Set(_notifCache.map(n => n.id));
-      // Zaman sırasına göre sırala (index yoksa RTDB sırasız gelir)
-      _notifCache = snap.docs
-        .map(d => ({ id: d.id, ...d.data() }))
-        .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-      _updateNotifBadge();
+      const incoming = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+        .sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
 
-      if (!firstLoad) {
-        _notifCache.forEach(n => {
-          if (prev.has(n.id) || n.read) return;
-          _showNotifToast(n);
-        });
-      }
+      const isFirst = firstLoad;
       firstLoad = false;
+
+      // Yeni bildirimler — ilk yükleme hariç toast göster
+      if (!isFirst) {
+        incoming.forEach(n => {
+          if (n.read || _notifSeenIds.has(n.id)) return;
+          const prevIds = new Set(_notifCache.map(c=>c.id));
+          if (!prevIds.has(n.id)) {
+            _notifSeenIds.add(n.id);
+            _showNotifToast(n);
+          }
+        });
+      } else {
+        // İlk yükleme: mevcut bildirimleri görüldü say
+        incoming.forEach(n => _notifSeenIds.add(n.id));
+      }
+
+      _notifCache = incoming;
+      _updateNotifBadge();
     }, err => {
-      console.warn("[Notif] onSnapshot hata:", err.code, err.message);
-      // index yoksa sırasız dinle
+      console.warn("[Notif] listener:", err.code);
       if (err.code === "failed-precondition" || err.message?.includes("index")) {
-        console.log("[Notif] Sırasız dinlemeye geçiliyor…");
-        startListen(col);
+        listen(col); // orderBy olmadan tekrar dene
       }
     });
   };
 
-  startListen(query(col, orderBy("createdAt", "desc")));
+  listen(query(col, orderBy("createdAt","desc")));
 }
 
 function _stopNotifListener() {
   if (_unsubNotifs) { _unsubNotifs(); _unsubNotifs = null; }
 }
 
+/* ── Badge güncelle ── */
 function _updateNotifBadge() {
   const unread = _notifCache.filter(n => !n.read).length;
-  if (EL.userBtnBadge) {
-    EL.userBtnBadge.textContent   = unread > 99 ? "99+" : String(unread);
-    EL.userBtnBadge.style.display = unread > 0 ? "flex" : "none";
-  }
-  if (EL.tabNotifsBadge) {
-    EL.tabNotifsBadge.textContent   = unread > 99 ? "99+" : String(unread);
-    EL.tabNotifsBadge.style.display = unread > 0 ? "flex" : "none";
-  }
+  [EL.userBtnBadge, EL.tabNotifsBadge].forEach(el => {
+    if (!el) return;
+    el.textContent   = unread > 99 ? "99+" : String(unread);
+    el.style.display = unread > 0  ? "flex" : "none";
+  });
 }
 
+/* ── Toast metni ── */
 function _notifBody(n) {
   switch (n.type) {
-    case "comment":     return n.text ? `"${n.text.slice(0,70)}"` : "yorum yaptı";
-    case "like":        return "yayınınızı beğendi ❤️";
-    case "new_publish": return n.text ? n.text.slice(0,60) : "yeni bir şey paylaştı 🌸";
-    case "message":     return n.text ? n.text.slice(0,70) : "mesaj gönderdi 💬";
-    default:            return "";
+    case "comment":            return n.text ? `"${n.text.slice(0,70)}"` : "yorum yaptı";
+    case "like":               return "yayınınızı beğendi ❤️";
+    case "new_publish":        return n.text ? n.text.slice(0,60) : "yeni bir şey paylaştı 🌸";
+    case "message":            return n.text ? n.text.slice(0,70) : "mesaj gönderdi 💬";
+    case "challenge_invite":   return "seni günlük meydan okumaya davet etti 📅";
+    case "challenge_accepted": return "meydan okumayı kabul etti 🎉";
+    default:                   return n.text?.slice(0,70) || "";
   }
 }
 
+/* ── In-app toast ── */
 function _showNotifToast(n) {
-  const meta = NOTIF_META[n.type] || NOTIF_META.new_publish;
+  const meta = NOTIF_META[n.type] || { icon:"🔔", tag:"Bildirim", tagClass:"publish" };
 
   // Avatar
   if (n.fromPhoto) {
-    EL.notifToastAvatar.style.cssText = `background-image:url(${n.fromPhoto});background-size:cover;background-position:center;`;
-    EL.notifToastAvatar.textContent   = "";
+    EL.notifToastAvatar.style.cssText =
+      `background-image:url(${n.fromPhoto});background-size:cover;background-position:center;`;
+    EL.notifToastAvatar.firstChild && (EL.notifToastAvatar.firstChild.textContent = "");
   } else {
     EL.notifToastAvatar.style.cssText = "";
-    EL.notifToastAvatar.textContent   = initials(n.fromName || "?");
+    EL.notifToastAvatar.firstChild && (EL.notifToastAvatar.firstChild.textContent = initials(n.fromName||"?"));
   }
+
   EL.notifToastBadge.textContent = meta.icon;
-  EL.notifToastTitle.textContent = n.fromName || "Pelus Takip";
+  EL.notifToastTitle.textContent = n.fromName || "Pelus Takip 🐾";
   EL.notifToastText.textContent  = _notifBody(n);
 
-  // Thumbnail — sadece pubThumb varsa göster
-  if (n.pubThumb && typeof n.pubThumb === "string" && n.pubThumb.length > 0) {
-    EL.notifToastThumb.src          = n.pubThumb;
+  if (n.pubThumb && typeof n.pubThumb === "string") {
+    EL.notifToastThumb.src           = n.pubThumb;
     EL.notifToastThumb.style.display = "block";
   } else {
     EL.notifToastThumb.style.display = "none";
@@ -5103,23 +4827,149 @@ function _showNotifToast(n) {
   EL.notifToastCard.onclick = () => {
     _hideNotifToast();
     if (n.type === "message" && n.chatId) {
-      // Chat sayfasına git
       showPage("chat");
+    } else if (n.type === "challenge_invite" || n.type === "challenge_accepted") {
+      openChallengeModal();
     } else if (n.pubId) {
       _navigateToPub(n);
     }
+    // Okundu işaretle
+    updateDoc(doc(db,"users",currentUser.uid,"appNotifications",n.id),{read:true}).catch(()=>{});
   };
 
-  EL.notifToastCard.classList.add("show");
+  // Göster
   clearTimeout(_notifToastTimer);
-  _notifToastTimer = setTimeout(_hideNotifToast, 4500);
+  EL.notifToastCard.classList.add("visible");
+  _notifToastTimer = setTimeout(_hideNotifToast, 5000);
 }
 
 function _hideNotifToast() {
-  EL.notifToastCard.classList.remove("show");
   clearTimeout(_notifToastTimer);
+  EL.notifToastCard.classList.remove("visible");
 }
+
 EL.notifToastClose.addEventListener("click", e => { e.stopPropagation(); _hideNotifToast(); });
+
+/* ═══════════════════════════════════════════
+   FCM PUSH — Tamamen opsiyonel
+   Başarısız olsa bile in-app çalışmaya devam eder
+═══════════════════════════════════════════ */
+
+async function saveFcmToken(token) {
+  if (!currentUser || !token) return;
+  await setDoc(doc(db,"users",currentUser.uid,"fcmTokens",token.slice(-30)),
+    { token, updatedAt: Date.now() }, { merge: true }
+  ).catch(()=>{});
+}
+
+async function loadNotifPref() {
+  if (!currentUser) return false;
+  try {
+    const snap = await getDoc(doc(db,"users",currentUser.uid,"settings","prefs"));
+    return snap.exists() && snap.data().fcmEnabled === true;
+  } catch { return false; }
+}
+
+async function saveNotifPref(enabled) {
+  if (!currentUser) return;
+  await setDoc(doc(db,"users",currentUser.uid,"settings","prefs"),
+    { fcmEnabled: enabled }, { merge: true }
+  ).catch(()=>{});
+}
+
+/* Push bildirim izni + FCM token (opsiyonel) */
+async function requestNotificationPermission() {
+  // Önce in-app bildirimlerin her zaman çalıştığını belirt
+  if (!('Notification' in window)) {
+    toast("ℹ️ In-app bildirimler aktif, push bu cihazda desteklenmiyor");
+    return;
+  }
+
+  // Zaten push izni verilmiş
+  if (Notification.permission === "granted") {
+    await _tryGetFcmToken();
+    return;
+  }
+
+  // Reddedilmişse push gerekmez, in-app zaten çalışıyor
+  if (Notification.permission === "denied") {
+    toast("ℹ️ In-app bildirimler aktif. Push için tarayıcı ayarlarından izin ver.");
+    await saveNotifPref(true);
+    updateNotifBtn(true);
+    return;
+  }
+
+  // İzin iste
+  const perm = await Notification.requestPermission().catch(() => "denied");
+  if (perm !== "granted") {
+    // İzin verilmedi ama in-app yine de çalışır
+    toast("ℹ️ In-app bildirimler aktif (push için izin ver)");
+    await saveNotifPref(true);
+    updateNotifBtn(true);
+    return;
+  }
+
+  // İzin alındı — FCM token almayı dene (opsiyonel)
+  await _tryGetFcmToken();
+  await saveNotifPref(true);
+  updateNotifBtn(true);
+}
+
+async function _tryGetFcmToken(showSuccess = false) {
+  if (!messaging) return null;
+  if (!('serviceWorker' in navigator)) return null;
+  if (location.protocol !== 'https:' && location.hostname !== 'localhost') return null;
+  if (Notification.permission !== 'granted') return null;
+  try {
+    let swReg;
+    try   { swReg = await navigator.serviceWorker.register("/firebase-messaging-sw.js"); }
+    catch { swReg = await navigator.serviceWorker.register("./firebase-messaging-sw.js").catch(()=>null); }
+    if (!swReg) return null;
+    await Promise.race([
+      navigator.serviceWorker.ready,
+      new Promise(r => setTimeout(r, 5000)),
+    ]);
+    const token = await getToken(messaging, {
+      vapidKey: VAPID_KEY,
+      serviceWorkerRegistration: swReg,
+    }).catch(e => { console.warn("[FCM] Token:", e.message); return null; });
+    if (token) {
+      await saveFcmToken(token);
+      if (showSuccess) toast("🔔 Push bildirimler aktif!");
+      console.log("[FCM] Token kaydedildi:", token.slice(0,20)+"\u2026");
+    }
+    return token;
+  } catch(e) {
+    console.warn("[FCM] _tryGetFcmToken:", e.message);
+    return null;
+  }
+}
+
+async function refreshFcmToken() {
+  if (!messaging || !currentUser) return;
+  const enabled = await loadNotifPref();
+  if (!enabled) return;
+  await _tryGetFcmToken(false);
+}
+function initForegroundMessages() {
+  if (!messaging) return;
+  onMessage(messaging, payload => {
+    // Uygulama ön plandaysa FCM push yerine in-app toast zaten gösterildi
+    console.log("[FCM] Ön plan mesaj (in-app zaten gösterildi):", payload?.notification?.title);
+  });
+}
+
+function updateNotifBtn(forceEnabled) {
+  const enabled = forceEnabled ?? (Notification.permission === "granted");
+  if (EL.notifBtnLabel) EL.notifBtnLabel.textContent = enabled ? "Bildirimler Açık ✓" : "Bildirimleri Etkinleştir";
+  if (EL.notifBtn) {
+    EL.notifBtn.style.opacity      = enabled ? ".6" : "1";
+    EL.notifBtn.style.pointerEvents= enabled ? "none" : "auto";
+  }
+  if (EL.sideNotifLabel) EL.sideNotifLabel.textContent = enabled ? "Bildirimler Açık ✓" : "Bildirimleri Etkinleştir";
+}
+
+/* ── Bildirim listesi render ── */
 
 async function _navigateToPub(n) {
   if (!n.pubId) return;
@@ -5308,122 +5158,160 @@ function setCamMode(mode) {
   EL.captureBtn.setAttribute("aria-label", mode === "photo" ? "Fotoğraf Çek" : "Video Kaydet");
 }
 
+/* ═══════════════════════════════════════════
+   KAMERA SİSTEMİ
+   
+   Geçiş akışı:
+   1. Cihazın tüm kamera listesini al
+   2. Geçiş = mevcut kamerayı TAMAMEN kapat (tüm track.stop())
+   3. srcObject = null ile video elementini temizle
+   4. Android için 300ms bekle
+   5. Listeden sıradaki kamerayı aç
+   6. Yeni stream'i video elementine bağla
+═══════════════════════════════════════════ */
+
+let _cameraDevices  = [];   // enumerate edilmiş kameralar
+let _cameraIndex    = 0;    // aktif kamera indeksi
+
+/** Cihazdaki tüm kameraları listele */
+async function _enumerateCameras() {
+  try {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    _cameraDevices = devices.filter(d => d.kind === "videoinput");
+    console.log("[CAM] Kameralar:", _cameraDevices.map(d => d.label || d.deviceId.slice(0,8)));
+  } catch(e) {
+    _cameraDevices = [];
+    console.warn("[CAM] enumerate hatası:", e.message);
+  }
+}
+
+/** Mevcut stream'i TAMAMEN kapat — tüm track'leri durdur */
+function _killCamera() {
+  // 1. MediaRecorder durdur
+  if (mediaRecorder && mediaRecorder.state !== "inactive") {
+    try { mediaRecorder.stop(); } catch {}
+  }
+  mediaRecorder = null;
+  recChunks = [];
+
+  // 2. Mirror canvas ve track'leri durdur
+  if (_mirrorRafId) { cancelAnimationFrame(_mirrorRafId); _mirrorRafId = null; }
+  if (_mirrorStream) {
+    _mirrorStream.getTracks().forEach(t => { try { t.stop(); } catch {} });
+    _mirrorStream = null;
+  }
+  _mirrorCanvas = null; _mirrorCtx = null;
+
+  // 3. Video elementini kes (önce — tarayıcıya "bitti" sinyal)
+  EL.cameraVideo.pause();
+  EL.cameraVideo.srcObject = null;
+
+  // 4. camStream'in TÜM track'lerini durdur
+  if (camStream) {
+    camStream.getTracks().forEach(t => {
+      try { t.stop(); } catch {}
+    });
+    camStream = null;
+    camTrack  = null;
+  }
+}
+
 async function openCamera(mode) {
   const gen = ++camGen;
 
-  // Debug: başlatılıyor
-  EL.camDebug.style.display = "flex";
-  EL.camDebugTitle.textContent = "Kamera başlatılıyor…";
-  EL.camDebugMsg.textContent = "";
+  EL.camDebug.style.display      = "flex";
+  EL.camDebugTitle.textContent   = "Kamera başlatılıyor…";
+  EL.camDebugMsg.textContent     = "";
   EL.camDebugRetry.style.display = "none";
 
-  // Önceki stream kapat
-  if (camStream) {
-    camStream.getTracks().forEach(t => { try { t.stop(); } catch(e){} });
-    camStream = null; camTrack = null;
-  }
+  // Her şeyi kapat
+  _killCamera();
 
-  // srcObject = null (play interrupt'u önlemek için load() ÇAĞIRMA)
-  EL.cameraVideo.srcObject = null;
-
-  // Zoom sıfırla
-  EL.camZoomBar.dataset.zoomAvailable = "0";
-  EL.camZoomBar.classList.remove("pinch-visible");
-
-  // Cihaz serbest bırakma
-  await new Promise(r => setTimeout(r, 200));
+  // Kameranın OS seviyesinde kapanmasını bekle
+  await new Promise(r => setTimeout(r, 600));
   if (gen !== camGen) return;
 
-  // API kontrolü
-  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    EL.camDebugTitle.textContent = "Desteklenmiyor";
-    EL.camDebugMsg.textContent = "Bu tarayıcı kamerayı desteklemiyor.";
-    EL.camDebugRetry.style.display = "block";
-    return;
-  }
+  // Aç
+  const constraints = mode === "user"
+    ? [{ video: { facingMode: { exact: "user" } } }, { video: { facingMode: "user" } }, { video: true }]
+    : [{ video: { facingMode: { exact: "environment" } } }, { video: { facingMode: "environment" } }, { video: true }];
 
-  // En basit kısıt: sadece video: true ile başla
-  let stream = null;
-  let lastErr = null;
-
-  // Deneme sırası: basıtten karmaşığa
-  const attempts = [
-    { video: { facingMode: mode === "user" ? "user" : "environment" } },
-    { video: { facingMode: { ideal: mode === "user" ? "user" : "environment" } } },
-    { video: true },
-  ];
-
-  for (const c of attempts) {
+  let stream = null, lastErr = null;
+  for (const c of constraints) {
     if (gen !== camGen) return;
     try {
       stream = await navigator.mediaDevices.getUserMedia(c);
+      console.log("[CAM] ✅", JSON.stringify(c.video));
       break;
     } catch(e) {
       lastErr = e;
-      await new Promise(r => setTimeout(r, 100));
+      console.warn("[CAM] ❌", e.name, JSON.stringify(c.video));
+      if (e.name === "NotAllowedError") break;
+      await new Promise(r => setTimeout(r, 300));
     }
   }
 
-  if (gen !== camGen) { if(stream) stream.getTracks().forEach(t=>t.stop()); return; }
+  if (gen !== camGen) { stream?.getTracks().forEach(t => t.stop()); return; }
 
   if (!stream) {
-    const n = lastErr ? lastErr.name : "";
-    const m = n === "NotAllowedError"  ? "Kamera izni verilmedi. Tarayıcı ayarlarından izin verin." :
-              n === "NotFoundError"    ? "Kamera bulunamadı." :
-              n === "NotReadableError" ? "Kamera başka bir uygulama tarafından kullanılıyor." :
-              n === "OverconstrainedError" ? "Kamera kısıtları uyumsuz." :
-              "Hata: " + (lastErr ? lastErr.message : "bilinmiyor");
-    EL.camDebugTitle.textContent = "Kamera Açılamadı";
-    EL.camDebugMsg.textContent = m;
+    EL.camDebugTitle.textContent   = "Kamera Açılamadı";
+    EL.camDebugMsg.textContent     =
+      lastErr?.name === "NotAllowedError"  ? "Kamera izni yok." :
+      lastErr?.name === "NotFoundError"    ? "Kamera bulunamadı." :
+      lastErr?.name === "NotReadableError" ? "Kamera hâlâ meşgul — sayfayı yenileyin." :
+      lastErr?.message || "Bilinmeyen hata";
     EL.camDebugRetry.style.display = "block";
-    console.error("[CAM]", n, lastErr && lastErr.message);
     return;
   }
 
-  // Başarılı
-  camStream = stream;
-  camTrack  = stream.getVideoTracks()[0];
+  camStream  = stream;
+  camTrack   = stream.getVideoTracks()[0];
   facingMode = mode;
 
-  EL.cameraVideo.muted = true;
+  EL.cameraVideo.muted       = true;
   EL.cameraVideo.playsInline = true;
-  EL.cameraVideo.srcObject = stream;
+  EL.cameraVideo.srcObject   = stream;
+  try { await EL.cameraVideo.play(); } catch {}
 
-  // play() — hata yakala ama devam et
-  try { await EL.cameraVideo.play(); } catch(e) {
-    console.warn("[CAM] play():", e.name);
-  }
+  if (gen !== camGen) return;
 
   EL.camDebug.style.display = "none";
-  EL.camBadge.textContent = mode === "user" ? "Ön Kamera" : "Arka Kamera";
+  EL.camBadge.textContent   = mode === "user" ? "Ön Kamera" : "Arka Kamera";
   EL.cameraVideo.classList.toggle("front-cam", mode === "user");
 
-  // Zoom
+  EL.camZoomBar.dataset.zoomAvailable = "0";
+  EL.camZoomBar.classList.remove("pinch-visible");
   try {
-    if (camTrack && typeof camTrack.getCapabilities === "function") {
-      const caps = camTrack.getCapabilities();
-      if (caps && caps.zoom && caps.zoom.max > caps.zoom.min) {
-        zoomMin = caps.zoom.min; zoomMax = caps.zoom.max; currentZoom = zoomMin;
-        EL.zoomRange.min = zoomMin; EL.zoomRange.max = zoomMax;
-        EL.zoomRange.step = caps.zoom.step || 0.1; EL.zoomRange.value = currentZoom;
-        EL.zoomLabel.textContent = currentZoom.toFixed(1) + "x";
-        EL.camZoomBar.dataset.zoomAvailable = "1";
-      }
+    const caps = camTrack.getCapabilities?.();
+    if (caps?.zoom?.max > caps.zoom.min) {
+      zoomMin = caps.zoom.min; zoomMax = caps.zoom.max; currentZoom = zoomMin;
+      EL.zoomRange.min = zoomMin; EL.zoomRange.max = zoomMax;
+      EL.zoomRange.step = caps.zoom.step || 0.1;
+      EL.zoomRange.value = currentZoom;
+      EL.zoomLabel.textContent = currentZoom.toFixed(1) + "x";
+      EL.camZoomBar.dataset.zoomAvailable = "1";
     }
-  } catch(e) {}
+  } catch {}
+}
+function switchCamera() {
+  openCamera(facingMode === "user" ? "environment" : "user");
 }
 
+function _setupZoom() {
+  try {
+    const caps = camTrack?.getCapabilities?.();
+    if (!caps?.zoom || caps.zoom.max <= caps.zoom.min) return;
+    zoomMin = caps.zoom.min; zoomMax = caps.zoom.max; currentZoom = zoomMin;
+    EL.zoomRange.min = zoomMin; EL.zoomRange.max = zoomMax;
+    EL.zoomRange.step = caps.zoom.step || 0.1;
+    EL.zoomRange.value = currentZoom;
+    EL.zoomLabel.textContent = currentZoom.toFixed(1) + "x";
+    EL.camZoomBar.dataset.zoomAvailable = "1";
+  } catch {}
+}
 function stopCamera() {
   camGen++;
-  stopRecording(true);
-  stopMirrorCanvas();
-  if (camStream) {
-    camStream.getTracks().forEach(t => { try { t.stop(); } catch(e){} });
-    camStream = null; camTrack = null;
-  }
-  // srcObject = null — load() ÇAĞIRMA (pending play abort hatası)
-  EL.cameraVideo.srcObject = null;
-  // Debug overlay gizle
+  _killCamera();
   EL.camDebug.style.display = "none";
 }
 
@@ -5496,18 +5384,18 @@ async function startRecording() {
       mimeType ? { mimeType, videoBitsPerSecond: 2_500_000 } : {}
     );
   } catch(e) {
-    stopMirrorCanvas();
+    
     toast("⚠️ Video kaydı bu cihazda desteklenmiyor"); return;
   }
 
   mediaRecorder.ondataavailable = e => { if (e.data?.size > 0) recChunks.push(e.data); };
   mediaRecorder.onstop = () => {
-    stopMirrorCanvas();
+    
     finalizeVideo();
   };
   mediaRecorder.onerror = e => {
     console.error("MediaRecorder hata:", e);
-    stopMirrorCanvas();
+    
     toast("❌ Video kaydı kesildi");
   };
   mediaRecorder.start(200);
@@ -5545,72 +5433,147 @@ function stopRecording(cancel = false) {
   EL.recTimerText.textContent = "00:00";
   EL.recRingCircle.style.animation = "none";
 
-  if (!mediaRecorder) { stopMirrorCanvas(); return; }
+  if (!mediaRecorder) { return; }
   const mr = mediaRecorder; mediaRecorder = null;
   if (mr.state !== "inactive") {
     if (cancel) {
       mr.ondataavailable = null;
-      mr.onstop = () => { stopMirrorCanvas(); };
+      mr.onstop = () => {};
       mr.stop();
       recChunks = [];
     } else {
-      mr.stop(); // onstop → stopMirrorCanvas + finalizeVideo
+      mr.stop(); // onstop → finalizeVideo
     }
-  } else {
-    stopMirrorCanvas();
   }
 }
 
 // ─── Video tamamlandı → modal aç ───
 /* ═══════════════════════════════════════════
-   VIDEO STORAGE — IndexedDB
-   Firebase Firestore doküman limiti 1 MB olduğundan
-   video verileri cihazda IndexedDB'de tutulur.
-   Firestore'a sadece meta + thumbnail (JPEG) yazılır.
+   UPLOAD MODAL — Video yükleme göstergesi
 ═══════════════════════════════════════════ */
-const VDB_NAME    = "pelus_videos";
-const VDB_STORE   = "clips";
-const VDB_VERSION = 1;
-let   _vdb        = null;
-
-function openVDB() {
-  if (_vdb) return Promise.resolve(_vdb);
-  return new Promise((res, rej) => {
-    const req = indexedDB.open(VDB_NAME, VDB_VERSION);
-    req.onupgradeneeded = e => e.target.result.createObjectStore(VDB_STORE, { keyPath: "id" });
-    req.onsuccess = e => { _vdb = e.target.result; res(_vdb); };
-    req.onerror   = ()  => rej(new Error("IndexedDB açılamadı"));
-  });
+function showUploadModal(title = "Video yükleniyor", icon = "🎬") {
+  EL.uploadIcon.textContent  = icon;
+  EL.uploadTitle.textContent = title;
+  EL.uploadSub.textContent   = "Lütfen bekleyin…";
+  EL.uploadProgressFill.style.width = "0%";
+  EL.uploadPct.textContent   = "0%";
+  EL.uploadModal.style.display = "flex";
+}
+function setUploadProgress(pct, sub) {
+  const p = Math.round(Math.max(0, Math.min(100, pct)));
+  EL.uploadProgressFill.style.width = p + "%";
+  EL.uploadPct.textContent = p + "%";
+  if (sub) EL.uploadSub.textContent = sub;
+}
+function hideUploadModal() {
+  EL.uploadModal.style.display = "none";
 }
 
-async function saveVideoBlob(id, blob) {
-  const db = await openVDB();
-  return new Promise((res, rej) => {
-    const tx = db.transaction(VDB_STORE, "readwrite");
-    tx.objectStore(VDB_STORE).put({ id, blob, savedAt: Date.now() });
-    tx.oncomplete = () => res();
-    tx.onerror    = () => rej(tx.error);
+/* ═══════════════════════════════════════════
+   VİDEO — Firestore Chunk Sistemi
+   Video blob → base64 → 800KB parçalar → Firestore
+   Koleksiyon: userVideos/{videoId}_chunk_{i}
+   Her yerden oynatılır, IndexedDB yok.
+═══════════════════════════════════════════ */
+
+const VIDEO_CHUNK_SIZE = 750_000; // base64 karakter (~562KB binary)
+const _videoUrlCache   = new Map(); // videoId → blob URL (session cache)
+let   _pendingVideoBlob = null;      // kaydet/yayınla bekleyen ham blob
+let   _pendingVideoMime = null;
+
+/** Blob → Firestore chunks'a yaz, progress callback ile */
+async function saveVideoChunks(videoId, blob, onProgress) {
+  const dataUrl = await new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload  = () => res(r.result);
+    r.onerror = () => rej(r.error);
+    r.readAsDataURL(blob);
   });
+
+  const b64Idx = dataUrl.indexOf(",");
+  const b64    = b64Idx >= 0 ? dataUrl.slice(b64Idx + 1) : dataUrl;
+  const mime   = blob.type || "video/webm";
+  const total  = Math.ceil(b64.length / VIDEO_CHUNK_SIZE);
+
+  onProgress?.(5, `Hazırlanıyor… (${total} parça)`);
+
+  // Chunk'ları sırayla yükle — progress göster
+  for (let i = 0; i < total; i++) {
+    await setDoc(
+      doc(db, "userVideos", `${videoId}_chunk_${i}`),
+      {
+        data:      b64.slice(i * VIDEO_CHUNK_SIZE, (i + 1) * VIDEO_CHUNK_SIZE),
+        idx:       i,
+        total,
+        videoId,
+        mime,
+        createdAt: Date.now(),
+      }
+    );
+    const pct = 5 + Math.round(((i + 1) / total) * 90);
+    onProgress?.(pct, `Yükleniyor… ${i + 1}/${total}`);
+  }
+
+  onProgress?.(100, "Tamamlandı!");
+  console.log(`[Video] Firestore'a yüklendi: ${total} chunk, ~${(b64.length / 1024).toFixed(0)}KB`);
+  return { total, mime };
 }
 
-async function loadVideoBlob(id) {
-  const db = await openVDB();
-  return new Promise((res, rej) => {
-    const tx  = db.transaction(VDB_STORE, "readonly");
-    const req = tx.objectStore(VDB_STORE).get(id);
-    req.onsuccess = () => res(req.result?.blob || null);
-    req.onerror   = () => rej(req.error);
-  });
+/** Firestore chunks'tan blob URL al */
+async function loadVideoUrl(videoId, mime) {
+  if (_videoUrlCache.has(videoId)) return _videoUrlCache.get(videoId);
+
+  try {
+    // chunk_0'dan meta al
+    const metaSnap = await getDoc(doc(db, "userVideos", `${videoId}_chunk_0`));
+    if (!metaSnap.exists()) { console.warn("[Video] chunk_0 bulunamadı:", videoId); return null; }
+
+    const meta       = metaSnap.data();
+    const total      = meta.total || 1;
+    const actualMime = meta.mime  || mime || "video/webm";
+    const parts      = [meta.data];
+
+    // Kalan chunk'ları paralel yükle
+    if (total > 1) {
+      const snaps = await Promise.all(
+        Array.from({ length: total - 1 }, (_, i) =>
+          getDoc(doc(db, "userVideos", `${videoId}_chunk_${i + 1}`))
+        )
+      );
+      snaps.forEach(s => { if (s.exists()) parts.push(s.data().data); });
+    }
+
+    // base64 birleştir — padding sorununu önle
+    const raw = parts.join("").replace(/\s/g, "");
+
+    // fetch ile decode (atob'dan güvenli — büyük string'lerde crash yapmaz)
+    const dataUrl  = `data:${actualMime};base64,${raw}`;
+    const response = await fetch(dataUrl);
+    const blob     = await response.blob();
+    const url      = URL.createObjectURL(blob);
+
+    _videoUrlCache.set(videoId, url);
+    console.log(`[Video] Yüklendi: ${videoId} (${total} chunk, ${(raw.length/1024).toFixed(0)}KB b64)`);
+    return url;
+  } catch(e) {
+    console.error("[Video] loadVideoUrl hatası:", e.message);
+    return null;
+  }
 }
 
-async function deleteVideoBlob(id) {
-  const db = await openVDB();
-  return new Promise((res) => {
-    const tx = db.transaction(VDB_STORE, "readwrite");
-    tx.objectStore(VDB_STORE).delete(id);
-    tx.oncomplete = () => res();
-    tx.onerror    = () => res(); // hata olsa da devam
-  });
+/** Video chunk'larını sil */
+async function deleteVideoChunks(videoId) {
+  if (!videoId) return;
+  _videoUrlCache.delete(videoId);
+  // İlk chunk'tan total sayısını öğren
+  try {
+    const snap = await getDoc(doc(db, "userVideos", `${videoId}_chunk_0`));
+    if (!snap.exists()) return;
+    const total = snap.data().total || 1;
+    const dels  = [];
+    for (let i = 0; i < total; i++) dels.push(deleteDoc(doc(db, "userVideos", `${videoId}_chunk_${i}`)));
+    await Promise.all(dels);
+  } catch {}
 }
 
 /** Video blob'undan thumbnail JPEG data URL çeker */
@@ -5622,94 +5585,67 @@ function extractThumbnail(blob, maxPx = 540, quality = 0.75) {
     let settled = false;
 
     function grabFrame() {
-      if (settled) return;
-      settled = true;
+      if (settled) return; settled = true;
       try {
         const c = document.createElement("canvas");
-        let w = vid.videoWidth  || 480;
-        let h = vid.videoHeight || 480;
+        let w = vid.videoWidth || 480, h = vid.videoHeight || 480;
         if (w > maxPx || h > maxPx) {
           if (w >= h) { h = Math.round(h * maxPx / w); w = maxPx; }
           else        { w = Math.round(w * maxPx / h); h = maxPx; }
         }
         c.width = w; c.height = h;
         c.getContext("2d").drawImage(vid, 0, 0, w, h);
-        URL.revokeObjectURL(url);
-        vid.src = "";
+        URL.revokeObjectURL(url); vid.src = "";
         res(c.toDataURL("image/jpeg", quality));
-      } catch(e) {
-        URL.revokeObjectURL(url);
-        res(null);
-      }
+      } catch { URL.revokeObjectURL(url); res(null); }
     }
-
     vid.onloadedmetadata = () => { vid.currentTime = 0.5; };
     vid.onseeked         = grabFrame;
     vid.onloadeddata     = () => { if (vid.readyState >= 2) setTimeout(grabFrame, 80); };
     vid.onerror          = () => { URL.revokeObjectURL(url); res(null); };
-    // Fallback timeout
     setTimeout(() => { if (!settled) grabFrame(); }, 3000);
     vid.src = url;
   });
 }
 
-/** IndexedDB'deki video için object URL üretir ve önbellekler */
-const _videoBlobUrls = new Map();
-async function getVideoBlobUrl(videoId) {
-  if (_videoBlobUrls.has(videoId)) return _videoBlobUrls.get(videoId);
-  const blob = await loadVideoBlob(videoId);
-  if (!blob) return null;
-  const url = URL.createObjectURL(blob);
-  _videoBlobUrls.set(videoId, url);
-  return url;
-}
-
-/* ─── Video kaydı tamamlandı ─── */
+/* ─── Video kaydı tamamlandı — önce önizle, sonra yükle ─── */
 async function finalizeVideo() {
   if (!recChunks.length) { toast("⚠️ Video kaydedilemedi"); return; }
-
   const dur = Date.now() - recStartTime;
   if (dur < 800) { toast("⚠️ Video çok kısa"); recChunks = []; return; }
 
-  const mimeType = recChunks[0].type || "video/webm";
+  const mimeType = recChunks[0]?.type || "video/webm";
   const blob     = new Blob(recChunks, { type: mimeType });
   recChunks = [];
 
-  if (blob.size > 200 * 1024 * 1024) {
-    toast("⚠️ Video çok büyük (maks 200 MB)"); return;
-  }
+  if (blob.size > 150 * 1024 * 1024) { toast("⚠️ Video çok büyük (maks 150 MB)"); return; }
 
-  toast("🎬 Video işleniyor…");
+  // Thumbnail al (hızlı — local)
+  toast("⏳ Önizleme hazırlanıyor…");
+  const thumbnail = await extractThumbnail(blob).catch(() => null);
 
-  // 1) Thumbnail çek
-  const thumbnail = await extractThumbnail(blob);
-
-  // 2) Video'yu IndexedDB'ye kaydet
-  const videoId = `vid_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
-  try {
-    await saveVideoBlob(videoId, blob);
-  } catch(e) {
-    toast("❌ Video kaydedilemedi: " + e.message); return;
-  }
-
-  // 3) Object URL üret (önizleme için)
+  // Blob URL — sadece bu oturum için (henüz Firebase'e gitmez)
+  const tempId  = `tmp_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
   const blobUrl = URL.createObjectURL(blob);
-  _videoBlobUrls.set(videoId, blobUrl);
+  _videoUrlCache.set(tempId, blobUrl);
 
-  // stopCamera burada çağrılmamalı — zaten stopCamera() → stopRecording(true) zinciri var
-  // Sadece sayfayı değiştir ve modal aç
+  // pm'ye blob'u da sakla — kaydet/yayınla basınca kullanılır
+  _pendingVideoBlob = blob;
+  _pendingVideoMime = mimeType;
+
+  // Hemen galeri sayfasına geç ve modalı aç
   showPage("local");
-  setTimeout(() => openNewVideoModal(thumbnail, videoId, blobUrl), 220);
+  setTimeout(() => openNewVideoModal(thumbnail, tempId, mimeType), 150);
 }
 
-function openNewVideoModal(thumbnail, videoId, blobUrl) {
+function openNewVideoModal(thumbnail, videoId, mime) {
   resetPM();
-  pm.image       = thumbnail;   // Firestore'a kaydedilecek thumbnail
-  pm.videoId     = videoId;     // IndexedDB key
-  pm.videoBlobUrl= blobUrl;     // Önizleme için blob URL
-  pm.created     = Date.now();
-  pm.isNew       = true;
-  pm.isVideo     = true;
+  pm.image    = thumbnail;
+  pm.videoId  = videoId;
+  pm.videoMime= mime || "video/webm";
+  pm.created  = Date.now();
+  pm.isNew    = true;
+  pm.isVideo  = true;
   EL.photoModalTitle.textContent = "Yeni Video";
   applyPMtoUI();
   openModal(EL.photoModal);
@@ -5763,14 +5699,13 @@ EL.captureBtn.addEventListener("mouseleave", e => {
   if (camMode === "video" && mediaRecorder?.state === "recording") stopRecording(false);
 });
 
-EL.switchCamBtn.addEventListener("click", () => openCamera(facingMode === "user" ? "environment" : "user"));
+EL.switchCamBtn.addEventListener("click", switchCamera);
 EL.camDebugRetry.addEventListener("click", () => openCamera(facingMode || "environment"));
 
-/* ─── Pinch-to-zoom ───
+/* ─── Zoom fonksiyonları ─── */
 let _zoomHideTimer = null;
 
 function showZoomBar() {
-  // Zoom desteklenmeyen cihazlarda gösterme
   if (EL.camZoomBar.dataset.zoomAvailable !== "1") return;
   EL.camZoomBar.classList.add("pinch-visible");
   clearTimeout(_zoomHideTimer);
@@ -5787,8 +5722,6 @@ function applyZoom(z) {
   EL.zoomLabel.textContent = z.toFixed(1) + "x";
   camTrack.applyConstraints({ advanced: [{ zoom: z }] }).catch(() => {});
 }
-
-/* Slider ile manuel zoom (zoom bar görünüyorsa slider ile de ayarlayabilir) */
 EL.zoomRange.addEventListener("input", () => {
   showZoomBar();
   applyZoom(+EL.zoomRange.value);
@@ -5828,26 +5761,13 @@ EL.cameraPage.addEventListener("touchmove", e => {
 }, { passive: true });
 
 EL.cameraPage.addEventListener("touchend", e => {
+  // Pinch reset
   if (e.touches.length < 2) _pinchStartDist = 0;
-}, { passive: true });
-
-/* ─── Odak halkası — yalnızca tek parmak dokunuşunda ─── */
-EL.cameraVideo.addEventListener("pointerdown", e => {
-  if (e.pointerType === "touch") return; // touch için touchstart yeterli
-  const r = EL.cameraVideo.getBoundingClientRect();
-  EL.focusRing.style.left = ((e.clientX - r.left) / r.width  * 100) + "%";
-  EL.focusRing.style.top  = ((e.clientY - r.top)  / r.height * 100) + "%";
-  EL.focusRing.classList.remove("pop");
-  void EL.focusRing.offsetWidth;
-  EL.focusRing.classList.add("pop");
-});
-
-EL.cameraPage.addEventListener("touchend", e => {
-  if (e.changedTouches.length !== 1) return;  // çift parmaktan sonra tek parmak bırakma sayılmasın
+  // Focus halkası — tek parmak bırakma
+  if (e.changedTouches.length !== 1) return;
   if (_pinchStartDist > 0) return;
   const t = e.changedTouches[0];
   const r = EL.cameraVideo.getBoundingClientRect();
-  // Capture butonuna isabet ediyorsa fokus halkası gösterme
   const cbRect = EL.captureBtn.getBoundingClientRect();
   if (t.clientX >= cbRect.left && t.clientX <= cbRect.right &&
       t.clientY >= cbRect.top  && t.clientY <= cbRect.bottom) return;
@@ -5871,7 +5791,7 @@ let _mirrorStream  = null;
 let _mirrorRafId   = null;
 
 function startMirrorCanvas() {
-  stopMirrorCanvas();
+  
   const w = EL.cameraVideo.videoWidth  || 640;
   const h = EL.cameraVideo.videoHeight || 480;
   _mirrorCanvas = document.createElement("canvas");
@@ -5903,7 +5823,13 @@ function startMirrorCanvas() {
 
 function stopMirrorCanvas() {
   if (_mirrorRafId) { cancelAnimationFrame(_mirrorRafId); _mirrorRafId = null; }
-  _mirrorCanvas = null; _mirrorCtx = null; _mirrorStream = null;
+  // Mirror stream track'lerini durdur — yoksa kamera OS'ta açık kalır
+  if (_mirrorStream) {
+    _mirrorStream.getTracks().forEach(t => { try { t.stop(); } catch {} });
+    _mirrorStream = null;
+  }
+  _mirrorCanvas = null;
+  _mirrorCtx    = null;
 }
 
 /* ═══════════════════════════════════════════
@@ -6211,28 +6137,68 @@ function _updateConvStatus(d) {
     : `<span class="offline-dot"></span> ${d.lastSeen ? "Son görülme: "+_chatTimeAgo(d.lastSeen) : "Çevrimdışı"}`;
 }
 
+const MSGS_PER_PAGE  = 50;
+const _msgCache      = new Map(); // chatId → [{id, ...msg}]
+let   _msgCacheLimit = MSGS_PER_PAGE;
+
 function _startMsgListener() {
   if (_chatMsgListener) { try { _chatMsgListener(); } catch(e){} _chatMsgListener = null; }
   if (!chatActiveChatId || !currentUser) return;
 
-  const msgsRef    = rtRef(rtdb, `chats/${chatActiveChatId}/messages`);
-  const msgsQuery  = rtQuery(msgsRef, orderByKey(), limitToLast(100));
-  EL.chatMessages.innerHTML = '<div style="text-align:center;padding:32px;color:var(--text-muted);font-size:13px;">Yükleniyor…</div>';
+  const chatId = chatActiveChatId; // closure için kopyala
+  const msgsRef   = rtRef(rtdb, `chats/${chatId}/messages`);
+  const msgsQuery = rtQuery(msgsRef, orderByKey(), limitToLast(_msgCacheLimit));
+
+  // Cache'den anında render
+  const cached = _msgCache.get(chatId);
+  if (cached?.length) {
+    _renderChatMessages(cached);
+  } else {
+    EL.chatMessages.innerHTML = '<div style="text-align:center;padding:32px;color:var(--text-muted);font-size:13px;">Yükleniyor…</div>';
+  }
+
+  console.log("[Chat] Listener başlatıldı:", chatId);
 
   const unsubscribe = onValue(msgsQuery, snap => {
+    console.log("[Chat] onValue tetiklendi, mesaj sayısı:", snap.size || 0);
     const msgs = [];
-    if (snap.exists()) snap.forEach(c => { const v=c.val(); if(v&&v.ts) msgs.push({id:c.key,...v}); });
-    msgs.sort((a,b) => a.ts - b.ts);
-
-    // Mesaj ID → index map (reply scroll için)
-    const msgIdxMap = new Map(msgs.map((m,i) => [m.id, i]));
-
-    EL.chatMessages.innerHTML = "";
-
-    if (!msgs.length) {
-      EL.chatMessages.innerHTML = '<div style="text-align:center;padding:48px 20px;color:var(--text-muted);font-size:13px;">Henüz mesaj yok 👋</div>';
-      return;
+    if (snap.exists()) {
+      snap.forEach(c => {
+        const v = c.val();
+        if (v && v.ts) msgs.push({ id: c.key, ...v });
+      });
     }
+    msgs.sort((a,b) => a.ts - b.ts);
+    _msgCache.set(chatId, msgs);
+    _renderChatMessages(msgs);
+  }, e => {
+    console.error("[Chat] msg listener hata:", e.code, e.message);
+    EL.chatMessages.innerHTML = `<div style="text-align:center;padding:32px;color:var(--danger);font-size:13px;">❌ ${e.message}</div>`;
+  });
+
+  _chatMsgListener = unsubscribe;
+
+  EL.chatMessages.onscroll = () => {
+    if (EL.chatMessages.scrollTop < 60) _loadMoreMsgs();
+  };
+}
+
+function _loadMoreMsgs() {
+  if (!chatActiveChatId) return;
+  _msgCacheLimit += MSGS_PER_PAGE;
+  _startMsgListener();
+}
+
+function _renderChatMessages(msgs) {
+  console.log("[Chat] render:", msgs.length, "mesaj");
+  const msgIdxMap = new Map(msgs.map((m,i) => [m.id, i]));
+
+  EL.chatMessages.innerHTML = "";
+
+  if (!msgs.length) {
+    EL.chatMessages.innerHTML = '<div style="text-align:center;padding:48px 20px;color:var(--text-muted);font-size:13px;">Henüz mesaj yok 👋</div>';
+    return;
+  }
 
     const frag    = document.createDocumentFragment();
     let lastDate  = "";
@@ -6354,6 +6320,15 @@ function _startMsgListener() {
       }
       wrap.appendChild(bubble);
 
+      // Long press → context menü
+      let _lpTimer = null;
+      bubble.addEventListener("pointerdown", e => {
+        _lpTimer = setTimeout(() => { e.preventDefault(); _showMsgCtxMenu(e, msg, row); }, 500);
+      });
+      bubble.addEventListener("pointerup",     () => clearTimeout(_lpTimer));
+      bubble.addEventListener("pointercancel", () => clearTimeout(_lpTimer));
+      bubble.addEventListener("contextmenu",   e  => { e.preventDefault(); _showMsgCtxMenu(e, msg, row); });
+
       // Meta (zaman + tick) — grup sonunda
       const meta = document.createElement("div");
       meta.className = "msg-meta";
@@ -6372,13 +6347,89 @@ function _startMsgListener() {
     EL.chatMessages.appendChild(frag);
     requestAnimationFrame(() => { EL.chatMessages.scrollTop = EL.chatMessages.scrollHeight; });
     _markChatRead();
+}
 
-  }, err => {
-    console.error("[Chat] onValue hata:", err.code, err.message);
-    EL.chatMessages.innerHTML = `<div style="text-align:center;padding:32px;color:var(--danger);font-size:13px;">❌ Mesajlar yüklenemedi: ${err.message}</div>`;
+/* Okundu işaretle */
+
+/* ── Mesaj context menüsü ── */
+let _ctxMenu = null;
+function _showMsgCtxMenu(e, msg, row) {
+  _hideCtxMenu();
+  const mine = msg.from === currentUser?.uid;
+  const menu = document.createElement("div");
+  menu.className = "msg-context-menu";
+
+  const items = [
+    { icon:"📌", label:"Sabitle",    action: () => _pinMessage(msg) },
+    { icon:"↩️", label:"Yanıtla",   action: () => { _setReply(msg); _hideCtxMenu(); } },
+    { icon:"📋", label:"Kopyala",   action: () => { navigator.clipboard?.writeText(msg.text||""); toast("📋 Kopyalandı"); _hideCtxMenu(); } },
+    ...(mine ? [{ icon:"🗑", label:"Sil", danger: true, action: () => _deleteChatMsg(msg) }] : []),
+  ];
+
+  items.forEach(item => {
+    const btn = document.createElement("div");
+    btn.className = "msg-ctx-item" + (item.danger ? " danger" : "");
+    btn.innerHTML = `<span>${item.icon}</span><span>${item.label}</span>`;
+    btn.addEventListener("click", e => { e.stopPropagation(); item.action(); });
+    menu.appendChild(btn);
   });
 
-  _chatMsgListener = unsubscribe;
+  // Konumlandır
+  const rect = row.getBoundingClientRect();
+  const top  = Math.min(rect.bottom + 4, window.innerHeight - 180);
+  const left = Math.min(rect.left, window.innerWidth - 180);
+  menu.style.cssText = `top:${top}px;left:${left}px`;
+  document.body.appendChild(menu);
+  _ctxMenu = menu;
+
+  setTimeout(() => document.addEventListener("click", _hideCtxMenu, { once: true }), 50);
+}
+function _hideCtxMenu() { _ctxMenu?.remove(); _ctxMenu = null; }
+
+async function _pinMessage(msg) {
+  if (!chatActiveChatId) return;
+  _hideCtxMenu();
+  try {
+    await set(rtRef(rtdb, `chats/${chatActiveChatId}/pinned`), {
+      id: msg.id, text: msg.text || "📷 Fotoğraf", from: msg.from, ts: msg.ts
+    });
+    toast("📌 Mesaj sabitlendi");
+  } catch(e) { toast("❌ " + e.message); }
+}
+
+async function _deleteChatMsg(msg) {
+  _hideCtxMenu();
+  const ok = await openConfirm({ title:"Mesajı sil?", text:"Bu mesaj silinecek.", okLabel:"Sil", icon:"🗑" });
+  if (!ok) return;
+  try {
+    await set(rtRef(rtdb, `chats/${chatActiveChatId}/messages/${msg.id}`), null);
+    toast("🗑 Silindi");
+  } catch(e) { toast("❌ " + e.message); }
+}
+
+/* Sabitlenmiş mesaj dinleyicisi */
+function _listenPinnedMsg(chatIdStr) {
+  const ref = rtRef(rtdb, `chats/${chatIdStr}/pinned`);
+  onValue(ref, snap => {
+    if (!EL.chatPinnedBar) return;
+    if (snap.exists()) {
+      const p = snap.val();
+      EL.chatPinnedText.textContent = p.text || "📷 Fotoğraf";
+      EL.chatPinnedBar.style.display = "flex";
+      EL.chatPinnedBar.onclick = () => { if (p.id) _scrollToMsg(p.id); };
+    } else {
+      EL.chatPinnedBar.style.display = "none";
+    }
+  });
+}
+
+if (EL.chatPinnedClose) {
+  EL.chatPinnedClose.addEventListener("click", async e => {
+    e.stopPropagation();
+    if (chatActiveChatId) {
+      await set(rtRef(rtdb, `chats/${chatActiveChatId}/pinned`), null).catch(() => {});
+    }
+  });
 }
 
 /* ── Typing indicator ── */
@@ -6861,9 +6912,11 @@ function openChatConv(user) {
   EL.chatConvView.classList.add("active");
 
   EL.chatMessages.innerHTML = "";
+  _msgCacheLimit = MSGS_PER_PAGE;
   _startMsgListener();
-  _startTypingListener(user.uid, chatActiveChatId); // karşı tarafı izle
-  setActiveChat(chatActiveChatId); // Presence'a "bu konuşmadayım" yaz
+  _startTypingListener(user.uid, chatActiveChatId);
+  _listenPinnedMsg(chatActiveChatId);
+  setActiveChat(chatActiveChatId);
 
   // Presence dinle
   const pr = rtRef(rtdb, `presence/${user.uid}`);
@@ -7843,7 +7896,18 @@ function _renderChallengeActive() {
   const allDone = slots.every(h => myPics[_slotKey(h)] && theirPics[_slotKey(h)]);
   const myAllDone = slots.every(h => myPics[_slotKey(h)]);
 
+  // Sonraki slot geri sayımı
+  const now2       = new Date();
+  const currentH   = now2.getHours();
+  const nextSlot   = slots.find(h => h > currentH);
+  const countdownHtml = nextSlot !== undefined ? `
+    <div class="ch-countdown" id="chCountdownWrap">
+      <div class="ch-countdown-label">Sonraki fotoğrafa kalan süre</div>
+      <div class="ch-countdown-time" id="chCountdownTime">--:--:--</div>
+    </div>` : "";
+
   EL.challengeBody.innerHTML = `
+    ${countdownHtml}
     <div class="ch-progress-wrap">
       <div class="ch-progress-label">
         <span>İlerleme</span>
@@ -7928,7 +7992,35 @@ function _renderChallengeActive() {
     await updateDoc(doc(db,"challenges",_challengeId),{status:"cancelled"});
     _challenge=null; _challengeId=null; _renderChallengeBody();
   });
-  q("chSlideshowBtn")?.addEventListener("click", () => { closeModal(EL.challengeModal); _startSlideshow(); });
+  q("chSlideshowBtn")?.addEventListener("click", () => { EL.challengeModal.style.display="none"; _startSlideshow(); });
+
+  // Countdown başlat
+  _startChallengeCountdown(slots);
+}
+
+let _chCountdownInterval = null;
+function _startChallengeCountdown(slots) {
+  if (_chCountdownInterval) clearInterval(_chCountdownInterval);
+  const el = q("chCountdownTime");
+  if (!el) return;
+
+  function tick() {
+    const now = new Date();
+    const h   = now.getHours();
+    const nextSlot = slots.find(s => s > h);
+    if (nextSlot === undefined) { el.textContent = "Tüm slotlar bitti!"; clearInterval(_chCountdownInterval); return; }
+
+    const targetMs = new Date(now.getFullYear(), now.getMonth(), now.getDate(), nextSlot, 0, 0).getTime();
+    const diff = targetMs - now.getTime();
+    if (diff <= 0) { el.textContent = "🎯 Şimdi!"; return; }
+
+    const hh = String(Math.floor(diff / 3600000)).padStart(2,"0");
+    const mm = String(Math.floor((diff % 3600000) / 60000)).padStart(2,"0");
+    const ss = String(Math.floor((diff % 60000) / 1000)).padStart(2,"0");
+    el.textContent = `${hh}:${mm}:${ss}`;
+  }
+  tick();
+  _chCountdownInterval = setInterval(tick, 1000);
 }
 
 /* ── Challenge tamamlandı ── */
@@ -7958,42 +8050,28 @@ function _takeChallengePhoto(hour) {
   inp.addEventListener("change", async () => {
     const file = inp.files?.[0];
     if (!file || !_challengeId || !currentUser) return;
-
-    const toastEl = toast("📤 Yükleniyor…");
+    toast("📤 Yükleniyor…");
 
     try {
       const base64 = await _compressPhoto(file, 900);
       if (!base64) throw new Error("Sıkıştırılamadı");
 
-      let url;
+      // Firestore chunk sistemi (Storage yok)
+      const raw        = base64.split(",")[1] || base64;
+      const CHUNK      = 800_000;
+      const chunkCount = Math.ceil(raw.length / CHUNK);
+      const chunkId    = `ch_${_challengeId}_${currentUser.uid}_${hour}`;
 
-      // Önce Storage dene, başarısız olursa Firestore chunks
-      try {
-        const path = `challenges/${_challengeId}/${currentUser.uid}_${hour}.jpg`;
-        const sRef = storRef(storage, path);
-        await uploadString(sRef, base64, "data_url");
-        url = await getDownloadURL(sRef);
-        console.log("[Challenge] Storage yüklendi ✅");
-      } catch(storageErr) {
-        console.warn("[Challenge] Storage hatası, Firestore chunk kullanılıyor:", storageErr.message);
-
-        // Firestore chunk sistemi
-        const raw        = base64.split(",")[1] || base64;
-        const CHUNK      = 800_000;
-        const chunkCount = Math.ceil(raw.length / CHUNK);
-        const chunkId    = `ch_${_challengeId}_${currentUser.uid}_${hour}`;
-
-        const writes = [];
-        for (let i = 0; i < chunkCount; i++) {
-          writes.push(setDoc(
-            doc(db, "challengePhotos", `${chunkId}_${i}`),
-            { data: raw.slice(i*CHUNK, (i+1)*CHUNK), idx: i, total: chunkCount, chunkId }
-          ));
-        }
-        await Promise.all(writes);
-        url = `chunk://${chunkId}::${chunkCount}`;  // özel URI
-        console.log("[Challenge] Firestore chunk yüklendi ✅", chunkCount, "parça");
+      const writes = [];
+      for (let i = 0; i < chunkCount; i++) {
+        writes.push(setDoc(
+          doc(db, "challengePhotos", `${chunkId}_${i}`),
+          { data: raw.slice(i*CHUNK, (i+1)*CHUNK), idx: i, total: chunkCount, chunkId }
+        ));
       }
+      await Promise.all(writes);
+      const url = `chunk://${chunkId}::${chunkCount}`;
+      console.log("[Challenge] chunk yüklendi ✅", chunkCount, "parça");
 
       await updateDoc(doc(db, "challenges", _challengeId), {
         [`photos.${currentUser.uid}.${_slotKey(hour)}`]: {
@@ -8014,10 +8092,9 @@ function _takeChallengePhoto(hour) {
       } else {
         toast("✅ Fotoğraf kaydedildi!");
       }
-
       _renderChallengeBody();
     } catch(e) {
-      console.error("[Challenge] fotoğraf hatası:", e.message);
+      console.error("[Challenge] foto:", e.message);
       toast("❌ " + e.message);
     }
   });
@@ -8286,12 +8363,17 @@ function applyUser(user) {
       navigator.serviceWorker.addEventListener("message", event => {
         const { type, data } = event.data || {};
         if (type === "SW_NOTIF_CLICK") {
+          const t = data?.type || "";
           if (data?.pubId) {
             const item = pubCache.find(p => p.id === data.pubId);
-            if (item) { showPage("published"); setTimeout(() => openPubModal(item), 300); }
-            else        showPage("published");
-          } else if (data?.chatId) {
+            showPage("published");
+            if (item) setTimeout(() => openPubModal(item), 300);
+          } else if (data?.chatId || t === "message") {
             showPage("chat");
+          } else if (t === "challenge_invite" || t === "challenge_accepted") {
+            openChallengeModal();
+          } else {
+            showPage("published");
           }
         }
       });
@@ -8319,23 +8401,44 @@ async function login() {
   EL.loginWarning.style.display = "none";
   EL.loginLoader.style.display  = "block";
   try {
-    if (window.self !== window.top) { await signInWithRedirect(auth, provider); return; }
-    await signInWithPopup(auth, provider);
-  } catch (err) {
-    if (err.code === "auth/popup-blocked" || err.code === "auth/cancelled-popup-request") {
-      try { await signInWithRedirect(auth, provider); }
-      catch(e2) {
-        EL.loginWarning.textContent   = "Giriş başarısız: " + e2.message;
-        EL.loginWarning.style.display = "block";
-        EL.loginLoader.style.display  = "none";
-        EL.googleLoginBtn.disabled    = false;
-      }
-    } else {
-      EL.loginWarning.textContent   = err.message;
-      EL.loginWarning.style.display = "block";
-      EL.loginLoader.style.display  = "none";
-      EL.googleLoginBtn.disabled    = false;
+    // iframe içinde veya popup engelliyse redirect kullan
+    const useRedirect = window.self !== window.top
+      || /iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+    if (useRedirect) {
+      await signInWithRedirect(auth, provider);
+      return; // redirect — sayfa yeniden yüklenir
     }
+
+    try {
+      await signInWithPopup(auth, provider);
+    } catch (popupErr) {
+      const blocked = popupErr.code === "auth/popup-blocked"
+        || popupErr.code === "auth/cancelled-popup-request"
+        || popupErr.code === "auth/popup-closed-by-user";
+      if (blocked) {
+        // Popup engellendi — redirect dene
+        EL.loginWarning.textContent   = "Popup engellendi, yönlendiriliyorsunuz…";
+        EL.loginWarning.style.display = "block";
+        setTimeout(() => signInWithRedirect(auth, provider), 800);
+        return;
+      }
+      throw popupErr;
+    }
+  } catch (err) {
+    console.error("[Auth]", err.code, err.message);
+    let msg = err.message;
+    if (err.code === "auth/network-request-failed") {
+      msg = "Ağ hatası. Firebase Console'da Authentication → Settings → Authorized domains listesine bu alan adını ekleyin.";
+    } else if (err.code === "auth/internal-error") {
+      msg = "Firebase yapılandırma hatası. Firebase Console kontrol edin.";
+    } else if (err.code === "auth/unauthorized-domain") {
+      msg = `Bu domain yetkili değil: ${location.hostname}. Firebase Console → Auth → Authorized domains.`;
+    }
+    EL.loginWarning.textContent   = msg;
+    EL.loginWarning.style.display = "block";
+    EL.loginLoader.style.display  = "none";
+    EL.googleLoginBtn.disabled    = false;
   }
 }
 
