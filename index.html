@@ -524,6 +524,15 @@
       background:rgba(0,0,0,.55); backdrop-filter:blur(4px);
       display:flex; align-items:center; justify-content:center; color:#fff;
     }
+    .card-play-circle.loading svg { display: none; }
+    .card-play-circle.loading::after {
+      content: "";
+      width: 16px; height: 16px;
+      border: 2.5px solid rgba(255,255,255,.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
 
     .empty-state {
       display:flex; flex-direction:column; align-items:center;
@@ -853,6 +862,30 @@
     .pub-media-wrap video { cursor:pointer; }
     .pub-video-play-overlay { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none; transition:opacity .2s; }
     .pub-video-play-overlay .play-circle { width:56px; height:56px; border-radius:50%; background:rgba(0,0,0,.55); backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; color:#fff; }
+    .pub-video-play-overlay .play-circle.loading svg { display: none; }
+    .pub-video-play-overlay .play-circle.loading::after {
+      content: "";
+      width: 24px; height: 24px;
+      border: 3px solid rgba(255,255,255,.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+    .pub-media-wrap.loading .pub-video-play-overlay { opacity: 1 !important; pointer-events: none; }
+
+    /* Genel video yükleniyor overlay'i — fotoğraf detay modalında kullanılır */
+    .video-loading-overlay {
+      position: absolute; inset: 0; z-index: 5;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(0,0,0,.35);
+      border-radius: inherit;
+    }
+    .video-loading-spinner {
+      width: 34px; height: 34px; border-radius: 50%;
+      border: 3px solid rgba(255,255,255,.3);
+      border-top-color: #fff;
+      animation: spin .7s linear infinite;
+    }
     .pub-media-wrap.playing .pub-video-play-overlay { opacity:0; }
     .pub-media-topbar { position:absolute; top:0; left:0; right:0; display:flex; align-items:center; justify-content:space-between; padding:10px; pointer-events:none; }
     .pub-media-badge { background:rgba(0,0,0,.55); color:#fff; font-size:10px; font-weight:700; letter-spacing:.05em; padding:4px 10px; border-radius:999px; backdrop-filter:blur(6px); display:flex; align-items:center; gap:4px; }
@@ -3089,7 +3122,8 @@
 import { initializeApp }       from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
 import {
   getFirestore, collection, addDoc, query, orderBy,
-  onSnapshot, deleteDoc, doc, updateDoc, setDoc, getDoc, getDocs, deleteField
+  onSnapshot, deleteDoc, doc, updateDoc, setDoc, getDoc, getDocs, deleteField,
+  getDocFromServer
 } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
 import {
   getAuth, signInWithPopup, signInWithRedirect, getRedirectResult,
@@ -3100,7 +3134,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-messaging.js";
 import {
   getDatabase, ref as rtRef, set, get, push, onValue, off,
-  serverTimestamp as rtServerTs, onDisconnect, update as rtUpdate,
+  onDisconnect, update as rtUpdate,
   query as rtQuery, limitToLast, orderByKey
 } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-database.js";
 
@@ -3337,9 +3371,6 @@ const EL = {
   splashStep2:     q("splashStep2"),
   splashStep3:     q("splashStep3"),
   splashStep4:     q("splashStep4"),
-  splashStep2:     q("splashStep2"),
-  splashStep3:     q("splashStep3"),
-  splashStep4:     q("splashStep4"),
 };
 
 /* ═══════════════════════════════════════════
@@ -3464,7 +3495,7 @@ const pm = {
   favorite: false, publishedId: null,
   locationLabel: "", mapsUrl: "", isNew: false,
   isVideo: false,
-  videoId:      null,  // Firestore userVideos chunk key
+  videoId:      null,  // video_meta / video_chunks flat koleksiyon key
   videoMime:    null,  // video/webm veya video/mp4
   videoBlobUrl: null,  // session blob URL (cache)
 };
@@ -3881,8 +3912,22 @@ function renderGallery(photos) {
 
 /** Galeri kartında videoyu inline oynat */
 async function playGalleryVideo(card, p) {
-  const url = await loadVideoUrl(p.videoId, p.videoMime || "video/webm");
-  if (!url) { toast("⚠️ Video yüklenemedi"); return; }
+  // Yükleme sırasında oynat ikonunu spinner'a çevir — kullanıcı bekliyor olduğunu görsün
+  const playCircle = card.querySelector(".card-play-circle");
+  playCircle?.classList.add("loading");
+
+  let url;
+  try {
+    url = await loadVideoUrl(p.videoId, p.videoMime || "video/webm");
+  } catch(e) {
+    console.error("[Video] playGalleryVideo:", e.message);
+  }
+
+  if (!url) {
+    playCircle?.classList.remove("loading");
+    toast("⚠️ Video yüklenemedi");
+    return;
+  }
   card.innerHTML = "";
   const vid = document.createElement("video");
   vid.src = url; vid.playsInline = true; vid.controls = false; vid.loop = false;
@@ -4117,23 +4162,51 @@ async function _pubPlayVideo(item) {
   if (!item?.isVideo || !item.videoId) {
     toast("⚠️ Video bilgisi bulunamadı"); return;
   }
-  EL.pubVideo.style.display = "block";
-  EL.pubImg.style.display   = "none";
-  if (EL.pubVideoPlayOverlay) EL.pubVideoPlayOverlay.style.display = "none";
-  EL.pubMediaWrap.classList.add("playing");
+
+  // Yükleme durumu: overlay'i göster + spinner'a çevir (henüz "playing" yapma —
+  // o class overlay'i tamamen şeffaf yapıyor, kullanıcı boş ekran görür)
+  EL.pubMediaWrap.classList.add("loading");
+  const playCircle = EL.pubVideoPlayOverlay?.querySelector(".play-circle");
+  playCircle?.classList.add("loading");
+  if (EL.pubVideoPlayOverlay) EL.pubVideoPlayOverlay.style.display = "flex";
 
   try {
-    toast("⏳ Video yükleniyor…");
     const url = await loadVideoUrl(item.videoId, item.videoMime || "video/webm");
     if (!url) throw new Error("Video bulunamadı");
+
     EL.pubVideo.src = url;
-    await EL.pubVideo.play().catch(() => {});
+    EL.pubVideo.style.display = "block";
+    EL.pubImg.style.display   = "none";
+
+    // Codec/format desteklenmiyorsa video.error set edilir ama play() bazen
+    // sessizce başarısız olur — ikisini de kontrol et, kullanıcıya gerçek sebebi göster
+    let playErr = null;
+    await EL.pubVideo.play().catch(e => { playErr = e; });
+
+    // Tarayıcı codec'i decode edemiyorsa kısa sürede "error" event'i veya
+    // videoWidth=0 durumu oluşur — bunu yakalamak için kısa bir bekleme
+    await new Promise(r => setTimeout(r, 300));
+    if (EL.pubVideo.error || (playErr && EL.pubVideo.videoWidth === 0)) {
+      const code = EL.pubVideo.error?.code;
+      throw new Error(
+        code === 4 || !code
+          ? "Bu video formatı cihazınızda oynatılamıyor (codec uyumsuzluğu olabilir)"
+          : "Video oynatılamadı"
+      );
+    }
+
+    // Artık gerçekten oynuyor — overlay'i şeffaflaştır
+    EL.pubMediaWrap.classList.remove("loading");
+    EL.pubMediaWrap.classList.add("playing");
+    if (EL.pubVideoPlayOverlay) EL.pubVideoPlayOverlay.style.display = "none";
   } catch(e) {
     toast("❌ " + e.message);
     EL.pubVideo.style.display = "none";
     EL.pubImg.style.display   = "block";
+    EL.pubMediaWrap.classList.remove("loading", "playing");
     if (EL.pubVideoPlayOverlay) EL.pubVideoPlayOverlay.style.display = "flex";
-    EL.pubMediaWrap.classList.remove("playing");
+  } finally {
+    playCircle?.classList.remove("loading");
   }
 }
 
@@ -4224,30 +4297,34 @@ function _loadPubComments(pubId) {
 
 async function _sendComment() {
   if (!currentPubItem || !currentUser || !EL.pubCommentInput) return;
+  const pubItem = currentPubItem; // closure'da sabitle — await sırasında modal değişirse yanlış yayına yazmasın
   const text = EL.pubCommentInput.value.trim();
   if (!text) return;
   EL.pubCommentInput.value = "";
   try {
-    await addDoc(collection(db, "publishedPhotos", currentPubItem.id, "comments"), {
+    await addDoc(collection(db, "publishedPhotos", pubItem.id, "comments"), {
       uid:         currentUser.uid,
       displayName: currentUser.displayName || "Anonim",
       text,
       createdAt:   Date.now(),
     });
     // Yorum bildirimi — sadece başkasının yayınına
-    if (currentPubItem.uid && currentPubItem.uid !== currentUser.uid) {
-      await addDoc(collection(db, "users", currentPubItem.uid, "appNotifications"), {
+    if (pubItem.uid && pubItem.uid !== currentUser.uid) {
+      await addDoc(collection(db, "users", pubItem.uid, "appNotifications"), {
         type:      "comment",
         fromUid:   currentUser.uid,
         fromName:  currentUser.displayName || "Biri",
         fromPhoto: currentUser.photoURL || null,
-        pubId:     currentPubItem.id,
+        pubId:     pubItem.id,
+        pubThumb:  pubItem.image || null,
+        isVideo:   !!pubItem.isVideo,
         text:      text.slice(0, 80),
         createdAt: Date.now(),
         read:      false,
       }).catch(() => {});
     }
-    _loadPubComments(currentPubItem.id);
+    // Yorum listesini sadece hâlâ aynı yayın açıksa yeniden yükle
+    if (currentPubItem?.id === pubItem.id) _loadPubComments(pubItem.id);
   } catch(e) { toast("❌ Yorum gönderilemedi: " + e.message); }
 }
 
@@ -4271,6 +4348,16 @@ function compressImage(dataUrl, maxPx = 800, q = 0.65) {
   });
 }
 
+/** Bir yayının tüm yorumlarını siler (sub-collection — ana doküman silinince otomatik silinmez) */
+async function _deleteAllComments(pubId) {
+  try {
+    const snap = await getDocs(collection(db, "publishedPhotos", pubId, "comments"));
+    await Promise.all(snap.docs.map(d => deleteDoc(d.ref)));
+  } catch(e) {
+    console.warn("[Comments] toplu silme hatası:", e.message);
+  }
+}
+
 /* ─── Pub Modal Owner Actions ─── */
 EL.pubModal.addEventListener("click", async e => {
   const btn = e.target.closest("[data-pub-action]");
@@ -4280,7 +4367,16 @@ EL.pubModal.addEventListener("click", async e => {
     const ok = await openConfirm({ title:"Yayından kaldır?", text:"Bu yayın silinecek.", okLabel:"Sil", icon:"🗑" });
     if (!ok) return;
     try {
+      await _deleteAllComments(currentPubItem.id); // önce yorumlar — sub-collection otomatik silinmez
       await deleteDoc(doc(db, "publishedPhotos", currentPubItem.id));
+      // Galeri kaydındaki publishedId referansını da temizle — aksi halde
+      // tekrar yayınlamaya çalışınca var olmayan dokümanı güncellemeye çalışıp hata verir
+      if (currentUser && currentPubItem.uid === currentUser.uid) {
+        const galleryPhoto = allPhotos.find(p => p.publishedId === currentPubItem.id);
+        if (galleryPhoto) {
+          updateDoc(doc(db, "users", currentUser.uid, "photos", galleryPhoto.id), { publishedId: null }).catch(() => {});
+        }
+      }
       closeModal(EL.pubModal);
       toast("🗑 Yayın silindi");
     } catch(e) { toast("❌ " + e.message); }
@@ -4326,16 +4422,19 @@ EL.pubLikeBtn.addEventListener("click", async () => {
         type: "like", fromUid: currentUser.uid,
         fromName: currentUser.displayName || "Biri",
         fromPhoto: currentUser.photoURL || null,
-        pubId: item.id, createdAt: Date.now(), read: false,
+        pubId: item.id, pubThumb: item.image || null, isVideo: !!item.isVideo,
+        createdAt: Date.now(), read: false,
       }).catch(() => {});
     }
   } catch(e) {
-    // Rollback
+    // Rollback — sadece hâlâ aynı yayın açıksa DOM'u güncelle
     if (wasLiked) item.likes[currentUser.uid] = true;
     else          delete item.likes[currentUser.uid];
-    EL.pubLikeBtn.classList.toggle("liked", wasLiked);
-    EL.pubLikeLabel.textContent = wasLiked ? "Beğenildi" : "Beğen";
-    EL.pubLikeCount.textContent = Object.keys(item.likes).length > 0 ? String(Object.keys(item.likes).length) : "";
+    if (currentPubItem?.id === item.id) {
+      EL.pubLikeBtn.classList.toggle("liked", wasLiked);
+      EL.pubLikeLabel.textContent = wasLiked ? "Beğenildi" : "Beğen";
+      EL.pubLikeCount.textContent = Object.keys(item.likes).length > 0 ? String(Object.keys(item.likes).length) : "";
+    }
     toast("❌ " + e.message);
   }
 });
@@ -4380,12 +4479,26 @@ function applyPMtoUI() {
     } else if (pm.videoId) {
       vidEl.style.display = "none";
       imgEl.src = pm.image || ""; imgEl.style.display = "block";
+
+      // Yükleniyor spinner'ı ekle — kullanıcı boş bekleme görmesin
+      EL.photoImgWrap.querySelector(".video-loading-overlay")?.remove();
+      const loadingOv = document.createElement("div");
+      loadingOv.className = "video-loading-overlay";
+      loadingOv.innerHTML = '<div class="video-loading-spinner"></div>';
+      EL.photoImgWrap.appendChild(loadingOv);
+
+      const requestedVideoId = pm.videoId; // race condition koruması
       loadVideoUrl(pm.videoId, pm.videoMime || "video/webm").then(url => {
-        if (!url) return;
+        EL.photoImgWrap.querySelector(".video-loading-overlay")?.remove();
+        // Modal kapatılıp başka bir foto/video açılmışsa bu sonucu uygulama
+        if (!url || pm.videoId !== requestedVideoId) return;
         pm.videoBlobUrl = url;
         vidEl.src = url; vidEl.style.display = "block";
         imgEl.style.display = "none";
-      }).catch(e => console.warn("[Video]", e.message));
+      }).catch(e => {
+        EL.photoImgWrap.querySelector(".video-loading-overlay")?.remove();
+        console.warn("[Video]", e.message);
+      });
     } else {
       // Yükleme beklenirken thumbnail göster
       vidEl.style.display = "none";
@@ -4550,12 +4663,23 @@ async function publishPhoto() {
     };
 
     if (pm.publishedId) {
-      await updateDoc(doc(db, "publishedPhotos", pm.publishedId), {
-        note: pm.note, image,
-        videoId:   finalVideoId   || null,
-        videoMime: finalVideoMime || null,
-      });
-      toast("✅ Yayın güncellendi!");
+      try {
+        await updateDoc(doc(db, "publishedPhotos", pm.publishedId), {
+          note: pm.note, image,
+          videoId:   finalVideoId   || null,
+          videoMime: finalVideoMime || null,
+        });
+        toast("✅ Yayın güncellendi!");
+      } catch(updateErr) {
+        // Doküman daha önce silinmiş olabilir (yayından kaldırılmış) — yeni yayın oluştur
+        if (updateErr.code === "not-found") {
+          const pubRef = await addDoc(collection(db, "publishedPhotos"), payload);
+          if (pm.id) updateDoc(doc(db, "users", currentUser.uid, "photos", pm.id),
+            { publishedId: pubRef.id }).catch(() => {});
+          pm.publishedId = pubRef.id;
+          toast("🌸 Yeniden yayınlandı!");
+        } else throw updateErr;
+      }
     } else {
       const pubRef = await addDoc(collection(db, "publishedPhotos"), payload);
       if (pm.id) {
@@ -4729,7 +4853,10 @@ async function deletePhoto() {
   if (!ok) return;
   try {
     await deleteDoc(doc(db, "users", currentUser.uid, "photos", pm.id));
-    if (pm.publishedId) await deleteDoc(doc(db, "publishedPhotos", pm.publishedId)).catch(()=>{});
+    if (pm.publishedId) {
+      await _deleteAllComments(pm.publishedId).catch(() => {});
+      await deleteDoc(doc(db, "publishedPhotos", pm.publishedId)).catch(()=>{});
+    }
     if (pm.videoId) {
       const cached = _videoUrlCache.get(pm.videoId);
       if (cached) URL.revokeObjectURL(cached);
@@ -4928,6 +5055,8 @@ async function requestNotificationPermission() {
   // Zaten push izni verilmiş
   if (Notification.permission === "granted") {
     await _tryGetFcmToken();
+    await saveNotifPref(true);
+    updateNotifBtn(true);
     return;
   }
 
@@ -4991,11 +5120,13 @@ async function refreshFcmToken() {
   if (!enabled) return;
   await _tryGetFcmToken(false);
 }
+let _fgMsgListenerSet = false;
 function initForegroundMessages() {
-  if (!messaging) return;
+  if (!messaging || _fgMsgListenerSet) return;
   onMessage(messaging, payload => {
     // Uygulama ön plandaysa FCM push yerine in-app toast zaten gösterildi
   });
+  _fgMsgListenerSet = true;
 }
 
 function updateNotifBtn(forceEnabled) {
@@ -5109,6 +5240,8 @@ function _renderNotifs() {
       if (EL.settingsModal.classList.contains("open")) closeModal(EL.settingsModal);
       if (n.type === "message" && n.chatId) {
         showPage("chat");
+      } else if (n.type === "challenge_invite" || n.type === "challenge_accepted") {
+        openChallengeModal();
       } else if (n.pubId) {
         _navigateToPub(n);
       }
@@ -5199,30 +5332,13 @@ function setCamMode(mode) {
 
 /* ═══════════════════════════════════════════
    KAMERA SİSTEMİ
-   
-   Geçiş akışı:
-   1. Cihazın tüm kamera listesini al
-   2. Geçiş = mevcut kamerayı TAMAMEN kapat (tüm track.stop())
-   3. srcObject = null ile video elementini temizle
-   4. Android için 300ms bekle
-   5. Listeden sıradaki kamerayı aç
-   6. Yeni stream'i video elementine bağla
+
+   openCamera(mode) akışı:
+   1. _killCamera() — mevcut stream'i TAMAMEN kapat (tüm track.stop())
+   2. 600ms bekle — Android'de OS'un kamerayı serbest bırakması için
+   3. getUserMedia ile yeni kamerayı aç (facingMode sırayla dene)
+   4. Yeni stream'i video elementine bağla
 ═══════════════════════════════════════════ */
-
-let _cameraDevices  = [];   // enumerate edilmiş kameralar
-let _cameraIndex    = 0;    // aktif kamera indeksi
-
-/** Cihazdaki tüm kameraları listele */
-async function _enumerateCameras() {
-  try {
-    const devices = await navigator.mediaDevices.enumerateDevices();
-    _cameraDevices = devices.filter(d => d.kind === "videoinput");
-    console.log("[CAM] Kameralar:", _cameraDevices.map(d => d.label || d.deviceId.slice(0,8)));
-  } catch(e) {
-    _cameraDevices = [];
-    console.warn("[CAM] enumerate hatası:", e.message);
-  }
-}
 
 /** Mevcut stream'i TAMAMEN kapat — tüm track'leri durdur */
 function _killCamera() {
@@ -5409,12 +5525,17 @@ async function startRecording() {
     recordStream = mirrorStream;
   }
 
+  // ÖNEMLİ: H.264 önceliklendirilir — bu codec hem Android hem iOS'ta
+  // donanım hızlandırmalı (GPU/CPU) decode desteğine sahiptir, evrensel uyumluluk sağlar.
+  // VP9/VP8 ise Safari'de HİÇ decode edilemez — Android'de kaydedilen bir VP9 videosu
+  // iPhone'da "siyah ekran" olarak görünür çünkü tarayıcı kareyi hiç çözemez.
   const mimeType = [
-    "video/webm;codecs=vp9,opus",
-    "video/webm;codecs=vp8,opus",
+    "video/mp4;codecs=h264,aac",
     "video/webm;codecs=h264,opus",
-    "video/webm",
     "video/mp4",
+    "video/webm;codecs=vp8,opus",
+    "video/webm;codecs=vp9,opus",
+    "video/webm",
   ].find(t => MediaRecorder.isTypeSupported(t)) || "";
 
   try {
@@ -5423,18 +5544,15 @@ async function startRecording() {
       mimeType ? { mimeType, videoBitsPerSecond: 2_500_000 } : {}
     );
   } catch(e) {
-    
     toast("⚠️ Video kaydı bu cihazda desteklenmiyor"); return;
   }
 
   mediaRecorder.ondataavailable = e => { if (e.data?.size > 0) recChunks.push(e.data); };
   mediaRecorder.onstop = () => {
-    
     finalizeVideo();
   };
   mediaRecorder.onerror = e => {
     console.error("MediaRecorder hata:", e);
-    
     toast("❌ Video kaydı kesildi");
   };
   mediaRecorder.start(200);
@@ -5472,6 +5590,14 @@ function stopRecording(cancel = false) {
   EL.recTimerText.textContent = "00:00";
   EL.recRingCircle.style.animation = "none";
 
+  // Mirror canvas RAF döngüsünü durdur (kamera açık kalsa da gereksiz çizim sürmesin)
+  if (_mirrorRafId) { cancelAnimationFrame(_mirrorRafId); _mirrorRafId = null; }
+  if (_mirrorStream) {
+    _mirrorStream.getTracks().forEach(t => { try { t.stop(); } catch {} });
+    _mirrorStream = null;
+  }
+  _mirrorCanvas = null; _mirrorCtx = null;
+
   if (!mediaRecorder) { return; }
   const mr = mediaRecorder; mediaRecorder = null;
   if (mr.state !== "inactive") {
@@ -5508,229 +5634,256 @@ function hideUploadModal() {
   EL.uploadModal.style.display = "none";
 }
 
-/* ═══════════════════════════════════════════
-   MEDYA CHUNK SİSTEMİ
-   Yapı: {col}/{id}               → { total, mime, createdAt }
-         {col}/{id}/chunks/000000 → { data, idx, total, mime }
-   Koleksiyonlar: videos / chatPhotos / challengePhotos
-═══════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════
+   MEDYA CHUNK SİSTEMİ — FLAT KOLEKSIYON
+   ─────────────────────────────────────────────────────
+   video_meta/{videoId}          → { total, mime, owner, createdAt }
+   video_chunks/{videoId}_000000 → { data, videoId, idx, total }
+   video_chunks/{videoId}_000001 → ...
+   
+   chat_meta/{chunkId}           → { total, mime, createdAt }
+   chat_chunks/{chunkId}_000000  → { data, chunkId, idx, total }
+   
+   challenge_meta/{chunkId}      → { total, mime }
+   challenge_chunks/{chunkId}_000000 → { data, chunkId, idx }
+   
+   Rules: /{document=**} hepsini kapsar, sub-collection yok.
+   Güçlü yön: Her chunk bağımsız doküman, retry kolay,
+               Firebase Console'da görünür, rules basit.
+═══════════════════════════════════════════════════════ */
 
-const CHUNK_SIZE    = 100_000; // ~75KB binary — güvenli, küçük, hızlı
-const _videoUrlCache = new Map();
+const CHUNK_SIZE     = 200_000;   // ~150KB binary per chunk
+const _videoUrlCache = new Map(); // videoId → objectURL (session)
 let   _pendingVideoBlob = null;
 let   _pendingVideoMime = null;
 
-/** Sayıyı 6 haneli sıralı string'e çevirir: 0 → "000000" */
-function _chunkIdx(i) { return String(i).padStart(6, "0"); }
+/** idx → "000000" formatı */
+const _ci = i => String(i).padStart(6, "0");
+
+/* ─── YAZMA ─────────────────────────────────────────── */
 
 /**
- * Veriyi sub-collection olarak Firestore'a SIRAYLA yazar.
- * col/{id}               → { total, mime, createdAt, ... }
- * col/{id}/chunks/000000 → { data, idx, total, mime }
+ * Blob'u flat chunk dokümanları olarak Firestore'a yazar.
+ * metaCol: "video_meta" | "chat_meta" | "challenge_meta"
+ * chunkCol: "video_chunks" | "chat_chunks" | "challenge_chunks"
  */
-async function saveChunks(col, id, b64, meta = {}, onProgress) {
-  const total = Math.ceil(b64.length / CHUNK_SIZE);
-  console.log(`[Chunk] BAŞLIYOR: ${col}/${id} → ${total} chunk, ${(b64.length/1024).toFixed(0)}KB b64`);
-  onProgress?.(2, `Hazırlanıyor… (${total} parça)`);
-
-  // 1. Ana dokümanı ÖNCE yaz
-  try {
-    await setDoc(doc(db, col, id), {
-      total,
-      mime:      meta.mime || "",
-      createdAt: Date.now(),
-      ...meta,
-    });
-    console.log(`[Chunk] Ana doküman yazıldı: ${col}/${id}`);
-  } catch(e) {
-    console.error(`[Chunk] Ana doküman HATASI: ${col}/${id}`, e.code, e.message);
-    throw e;
-  }
-
-  // 2. Chunk'ları sırayla yaz
-  for (let i = 0; i < total; i++) {
-    try {
-      await setDoc(doc(db, col, id, "chunks", _chunkIdx(i)), {
-        data: b64.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE),
-        idx:  i,
-        total,
-        mime: meta.mime || "",
-      });
-    } catch(e) {
-      console.error(`[Chunk] Chunk HATASI ${i}/${total}: ${col}/${id}/chunks/${_chunkIdx(i)}`, e.code, e.message);
-      throw e;
-    }
-    const pct = 2 + Math.round(((i + 1) / total) * 95);
-    onProgress?.(pct, `Yükleniyor… ${i + 1}/${total}`);
-    if (i % 10 === 0) console.log(`[Chunk] ${i + 1}/${total} yazıldı`);
-  }
-
-  console.log(`[Chunk] TAMAMLANDI: ${col}/${id} → ${total} chunk`);
-  onProgress?.(100, "Tamamlandı!");
-  return total;
-}
-
-/**
- * Sub-collection chunk'larını okuyup base64 döner.
- * Eksik chunk varsa hata loglar.
- */
-async function loadChunks(col, id) {
-  try {
-    // Ana dokümanı oku (total ve mime için)
-    const metaSnap = await getDoc(doc(db, col, id));
-    if (!metaSnap.exists()) {
-      console.warn(`[Chunk] Ana doküman yok: ${col}/${id}`);
-      return null;
-    }
-
-    const { total, mime } = metaSnap.data();
-    if (!total || total < 1) {
-      console.warn(`[Chunk] total geçersiz: ${col}/${id} total=${total}`);
-      return null;
-    }
-
-    // Chunk'ları sırayla oku
-    const parts = [];
-    for (let i = 0; i < total; i++) {
-      const snap = await getDoc(doc(db, col, id, "chunks", _chunkIdx(i)));
-      if (!snap.exists()) {
-        console.error(`[Chunk] Eksik chunk: ${col}/${id}/chunks/${_chunkIdx(i)}`);
-        return null;
-      }
-      parts.push(snap.data().data || "");
-    }
-
-    return { b64: parts.join(""), mime };
-  } catch(e) {
-    console.error("[Chunk] loadChunks hatası:", col, id, e.message);
-    return null;
-  }
-}
-
-/** Video blob'unu Firestore'a kaydeder: videos/{videoId}/chunks/... */
-async function saveVideoChunks(videoId, blob, onProgress) {
+async function _writeChunks(metaCol, chunkCol, id, blob, extraMeta = {}, onProgress) {
+  // Blob → base64
   const dataUrl = await new Promise((res, rej) => {
     const r = new FileReader();
-    r.onload = () => res(r.result);
+    r.onload  = () => res(r.result);
     r.onerror = () => rej(r.error);
     r.readAsDataURL(blob);
   });
-  const b64 = dataUrl.slice(dataUrl.indexOf(",") + 1);
-  await saveChunks("videos", videoId, b64, { mime: blob.type || "video/webm", videoId }, onProgress);
-  return { mime: blob.type || "video/webm" };
-}
+  const b64   = dataUrl.slice(dataUrl.indexOf(",") + 1);
+  const mime  = blob.type || "video/webm";
+  const total = Math.ceil(b64.length / CHUNK_SIZE);
 
-/** videos/{videoId} → blob URL — chunk chunk yükle, MediaSource ile stream et */
-async function loadVideoUrl(videoId, mime) {
-  if (_videoUrlCache.has(videoId)) return _videoUrlCache.get(videoId);
+  onProgress?.(2, `Hazırlanıyor… (${total} parça)`);
 
-  // Önce ana dokümanı oku
-  let metaSnap;
-  try {
-    metaSnap = await getDoc(doc(db, "videos", videoId));
-  } catch(e) {
-    console.warn("[Video] meta okuma hatası:", e.message);
-    return null;
-  }
+  // 1. Meta dokümanı ÖNCE yaz — okuyucu total'ı buradan öğrenir
+  await setDoc(doc(db, metaCol, id), {
+    total, mime,
+    createdAt: Date.now(),
+    owner: currentUser?.uid || null,
+    ...extraMeta,
+  });
 
-  if (!metaSnap.exists()) {
-    console.warn("[Video] bulunamadı:", videoId);
-    return null;
-  }
-
-  const { total, mime: storedMime } = metaSnap.data();
-  const actualMime = storedMime || mime || "video/webm";
-
-  if (!total || total < 1) {
-    console.warn("[Video] total geçersiz:", total);
-    return null;
-  }
-
-  // Tüm chunk'ları sırayla oku, birleştir
-  const parts = [];
+  // 2. Chunk'ları sırayla yaz
   for (let i = 0; i < total; i++) {
+    const chunkId = `${id}_${_ci(i)}`;
+    await setDoc(doc(db, chunkCol, chunkId), {
+      data:    b64.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE),
+      videoId: id,   // arama için
+      idx:     i,
+      total,
+    });
+    const pct = 2 + Math.round(((i + 1) / total) * 95);
+    onProgress?.(pct, `Yükleniyor… ${i + 1}/${total}`);
+  }
+
+  onProgress?.(96, "Sunucuya ulaştı mı kontrol ediliyor…");
+
+  // KRİTİK DOĞRULAMA: Firestore'un yerel cache'i "yazma başarılı" der ama
+  // bu veri henüz sunucuya ulaşmamış olabilir (özellikle zayıf/kararsız bağlantıda).
+  // getDocFromServer ile CACHE'İ ATLAYIP doğrudan sunucudan oku.
+  // Hem meta hem de SON chunk'ı kontrol ediyoruz — meta küçük olduğundan
+  // tek başına hızlı senkronize olabilir, asıl risk chunk'ların tamamlanmasında.
+  // Geçici ağ dalgalanmalarına karşı 1 kez tekrar deniyoruz, her deneme max 8sn.
+  async function _verifyOnServer() {
+    const withTimeout = (p) => Promise.race([
+      p, new Promise((_, rej) => setTimeout(() => rej(new Error("Zaman aşımı")), 8000)),
+    ]);
+    const metaSnap  = await withTimeout(getDocFromServer(doc(db, metaCol, id)));
+    const lastChunk = await withTimeout(getDocFromServer(doc(db, chunkCol, `${id}_${_ci(total - 1)}`)));
+    return metaSnap.exists() && lastChunk.exists();
+  }
+
+  let verified = false;
+  for (let attempt = 0; attempt < 2 && !verified; attempt++) {
     try {
-      const snap = await getDoc(doc(db, "videos", videoId, "chunks", _chunkIdx(i)));
-      if (!snap.exists()) {
-        console.error(`[Video] Chunk yok: ${videoId}/chunks/${_chunkIdx(i)}`);
-        return null;
-      }
-      parts.push(snap.data().data || "");
-    } catch(e) {
-      console.error(`[Video] Chunk ${i} okuma hatası:`, e.message);
-      return null;
+      verified = await _verifyOnServer();
+    } catch(verifyErr) {
+      console.warn("[Upload] Doğrulama denemesi başarısız:", attempt + 1, verifyErr.message);
+      if (attempt === 0) await new Promise(r => setTimeout(r, 1500)); // kısa bekle, tekrar dene
     }
   }
 
-  const b64 = parts.join("");
-
-  // Blob'a çevir
-  let blob;
-  try {
-    const res = await fetch(`data:${actualMime};base64,${b64}`);
-    blob = await res.blob();
-  } catch {
-    const bin = atob(b64);
-    const buf = new Uint8Array(bin.length);
-    for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
-    blob = new Blob([buf], { type: actualMime });
+  if (!verified) {
+    throw new Error(
+      "Yükleme tamamlanamadı (bağlantı sorunu olabilir). " +
+      "Lütfen internet bağlantınızı kontrol edip tekrar deneyin."
+    );
   }
 
-  const url = URL.createObjectURL(blob);
+  console.log(`[Upload] ✅ Sunucuda doğrulandı: ${metaCol}/${id} (${total} parça, ${(b64.length/1024).toFixed(0)}KB)`);
+  onProgress?.(100, "Tamamlandı!");
+  return { total, mime };
+}
+
+/**
+ * Flat chunk dokümanlarını sırayla okuyup blob URL üretir.
+ * Yükleme sırasında progress callback verir.
+ */
+async function _readChunks(metaCol, chunkCol, id, onProgress) {
+  // Meta dokümanı oku
+  let metaSnap = await getDoc(doc(db, metaCol, id));
+  if (!metaSnap.exists()) {
+    // Yerel cache'de yok olabilir (örn. başka cihazdan yüklenmiş, henüz senkronize olmamış)
+    // — doğrudan sunucudan tekrar dene, ama offline kullanıcıyı sonsuza kadar bekletme
+    try {
+      metaSnap = await Promise.race([
+        getDocFromServer(doc(db, metaCol, id)),
+        new Promise((_, rej) => setTimeout(() => rej(new Error("Zaman aşımı")), 6000)),
+      ]);
+    } catch(e) {
+      console.warn(`[Media] Sunucudan da okunamadı: ${metaCol}/${id}`, e.message);
+    }
+  }
+  if (!metaSnap.exists()) {
+    console.warn(`[Media] Meta yok: ${metaCol}/${id}`);
+    return null;
+  }
+  const { total, mime } = metaSnap.data();
+  if (!total) { console.warn(`[Media] total=0: ${id}`); return null; }
+
+  // Chunk'ları PARALEL oku — sıralı okuma büyük videolarda (70+ chunk)
+  // her biri network round-trip gerektirdiğinden 10-40 saniye sürebiliyordu.
+  // Firestore okuma kotası yazmadan çok daha yüksek, paralel okuma güvenli.
+  let done = 0;
+  const parts = await Promise.all(
+    Array.from({ length: total }, async (_, i) => {
+      const chunkRef = doc(db, chunkCol, `${id}_${_ci(i)}`);
+      let snap = await getDoc(chunkRef);
+      if (!snap.exists()) {
+        // Cache'de yok — sunucudan tekrar dene, ama 6sn'den fazla bekletme
+        try {
+          snap = await Promise.race([
+            getDocFromServer(chunkRef),
+            new Promise((_, rej) => setTimeout(() => rej(new Error("Zaman aşımı")), 6000)),
+          ]);
+        } catch {}
+      }
+      done++;
+      onProgress?.(Math.round((done / total) * 90), `Yükleniyor… ${done}/${total}`);
+      if (!snap.exists()) {
+        console.error(`[Media] Chunk eksik: ${chunkCol}/${id}_${_ci(i)}`);
+        return null;
+      }
+      return snap.data().data || "";
+    })
+  );
+
+  // Herhangi bir chunk eksikse tüm yükleme başarısız
+  if (parts.some(p => p === null)) return null;
+
+  return { b64: parts.join(""), mime };
+}
+
+/* ─── VİDEO ─────────────────────────────────────────── */
+
+async function saveVideoChunks(videoId, blob, onProgress) {
+  return _writeChunks("video_meta", "video_chunks", videoId, blob, { videoId }, onProgress);
+}
+
+async function loadVideoUrl(videoId, _mime) {
+  if (_videoUrlCache.has(videoId)) return _videoUrlCache.get(videoId);
+
+  const result = await _readChunks("video_meta", "video_chunks", videoId);
+  if (!result) return null;
+
+  let blobObj;
+  try {
+    blobObj = await fetch(`data:${result.mime};base64,${result.b64}`).then(r => r.blob());
+  } catch {
+    const bin = atob(result.b64);
+    const buf = new Uint8Array(bin.length);
+    for (let j = 0; j < bin.length; j++) buf[j] = bin.charCodeAt(j);
+    blobObj = new Blob([buf], { type: result.mime });
+  }
+
+  const url = URL.createObjectURL(blobObj);
   _videoUrlCache.set(videoId, url);
   return url;
 }
 
-/** videos/{videoId} ve tüm chunk'larını siler */
 async function deleteVideoChunks(videoId) {
   if (!videoId) return;
-  _videoUrlCache.delete(videoId);
+  const cached = _videoUrlCache.get(videoId);
+  if (cached) { URL.revokeObjectURL(cached); _videoUrlCache.delete(videoId); }
   try {
-    const metaSnap = await getDoc(doc(db, "videos", videoId));
+    const metaSnap = await getDoc(doc(db, "video_meta", videoId));
     if (!metaSnap.exists()) return;
-    const total = metaSnap.data().total || 0;
-    const dels = [
-      deleteDoc(doc(db, "videos", videoId)),
-      ...Array.from({ length: total }, (_, i) =>
-        deleteDoc(doc(db, "videos", videoId, "chunks", _chunkIdx(i)))
+    const { total } = metaSnap.data();
+    await Promise.all([
+      deleteDoc(doc(db, "video_meta", videoId)),
+      ...Array.from({ length: total || 0 }, (_, i) =>
+        deleteDoc(doc(db, "video_chunks", `${videoId}_${_ci(i)}`))
       ),
-    ];
-    await Promise.all(dels);
-  } catch {}
+    ]);
+  } catch(e) { console.warn("[Video] delete:", e.message); }
 }
 
-/** Chat fotoğrafını Firestore'a kaydeder: chatPhotos/{chunkId}/chunks/... */
+/* ─── CHAT FOTOĞRAF ─────────────────────────────────── */
+
 async function _saveChatPhoto(file) {
-  const b64Full = await new Promise((res, rej) => {
-    const r = new FileReader();
-    r.onload = () => res(r.result);
-    r.onerror = () => rej(r.error);
-    r.readAsDataURL(file);
-  });
-  const compressed = await compressImage(b64Full, 800, 0.7);
-  const b64 = compressed.slice(compressed.indexOf(",") + 1);
-  const chunkId = `chatphoto_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
-  const total = await saveChunks("chatPhotos", chunkId, b64, { mime: "image/jpeg" });
+  const compressed = await compressImage(
+    await new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload = () => res(r.result); r.onerror = () => rej(r.error);
+      r.readAsDataURL(file);
+    }), 800, 0.7
+  );
+  const chunkId = `cp_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
+  const b64     = compressed.slice(compressed.indexOf(",") + 1);
+  const mime    = "image/jpeg";
+  const total   = Math.ceil(b64.length / CHUNK_SIZE);
+
+  await setDoc(doc(db, "chat_meta", chunkId), { total, mime, createdAt: Date.now() });
+  for (let i = 0; i < total; i++) {
+    await setDoc(doc(db, "chat_chunks", `${chunkId}_${_ci(i)}`), {
+      data: b64.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE), idx: i, total,
+    });
+  }
   return { chunkId, chunkCount: total };
 }
 
-/** chatPhotos/{chunkId} → base64 */
-async function _loadChatPhotoChunks(_chatIdStr, chunkId, _chunkCount) {
+async function _loadChatPhotoChunks(_chatId, chunkId, _count) {
   if (_chatPhotoCache.has(chunkId)) return _chatPhotoCache.get(chunkId);
-  const result = await loadChunks("chatPhotos", chunkId);
+  const result = await _readChunks("chat_meta", "chat_chunks", chunkId);
   if (!result) return null;
   _chatPhotoCache.set(chunkId, result.b64);
   return result.b64;
 }
 
-/** chunk:// URI'yi çözümler → challengePhotos/{chunkId} */
+/* ─── CHALLENGE FOTOĞRAF ────────────────────────────── */
+
 async function _resolvePhotoUrl(url) {
   if (!url) return null;
   if (!url.startsWith("chunk://")) return url;
-  const [chunkId] = url.replace("chunk://", "").split("::");
-  const result = await loadChunks("challengePhotos", chunkId);
-  if (!result) return null;
-  return "data:image/jpeg;base64," + result.b64;
+  const chunkId = url.replace("chunk://", "").split("::")[0];
+  const result  = await _readChunks("challenge_meta", "challenge_chunks", chunkId);
+  return result ? `data:image/jpeg;base64,${result.b64}` : null;
 }
 /** Video blob'undan thumbnail JPEG data URL çeker */
 function extractThumbnail(blob, maxPx = 540, quality = 0.75) {
@@ -5738,7 +5891,16 @@ function extractThumbnail(blob, maxPx = 540, quality = 0.75) {
     const url = URL.createObjectURL(blob);
     const vid = document.createElement("video");
     vid.muted = true; vid.playsInline = true; vid.preload = "auto";
+    // Bazı mobil tarayıcılarda (Safari/iOS) DOM'a eklenmemiş <video> elementinde
+    // currentTime/seek ve canvas çekimi güvenilir çalışmıyor — görünmez şekilde ekle
+    vid.style.cssText = "position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;";
+    document.body.appendChild(vid);
     let settled = false;
+
+    function cleanup() {
+      URL.revokeObjectURL(url);
+      vid.remove();
+    }
 
     function grabFrame() {
       if (settled) return; settled = true;
@@ -5751,30 +5913,138 @@ function extractThumbnail(blob, maxPx = 540, quality = 0.75) {
         }
         c.width = w; c.height = h;
         c.getContext("2d").drawImage(vid, 0, 0, w, h);
-        URL.revokeObjectURL(url); vid.src = "";
+        cleanup();
         res(c.toDataURL("image/jpeg", quality));
-      } catch { URL.revokeObjectURL(url); res(null); }
+      } catch(e) {
+        console.warn("[Thumbnail] çekim hatası:", e.message);
+        cleanup();
+        res(null);
+      }
     }
-    vid.onloadedmetadata = () => { vid.currentTime = 0.5; };
+    vid.onloadedmetadata = () => {
+      // Video çok kısaysa 0.5s'ye atlamak başarısız olabilir — duration'ın yarısını dene
+      const seekTo = vid.duration && vid.duration < 1 ? vid.duration / 2 : 0.5;
+      try { vid.currentTime = seekTo; } catch { grabFrame(); }
+    };
     vid.onseeked         = grabFrame;
     vid.onloadeddata     = () => { if (vid.readyState >= 2) setTimeout(grabFrame, 80); };
-    vid.onerror          = () => { URL.revokeObjectURL(url); res(null); };
-    setTimeout(() => { if (!settled) grabFrame(); }, 3000);
+    vid.onerror          = () => { cleanup(); res(null); };
+    // Fallback süresi kısaltıldı — kullanıcı 3sn değil 1.2sn sonra placeholder görsün
+    setTimeout(() => { if (!settled) grabFrame(); }, 1200);
     vid.src = url;
   });
 }
 
 /* ─── Video kaydı tamamlandı — önce önizle, sonra yükle ─── */
+/**
+ * Eğer blob H.264 değilse (örn. VP9/VP8 ile kaydedilmek zorunda kalındıysa),
+ * cihazda H.264'e yeniden kodlar: video oynatılır → canvas'a çizilir →
+ * canvas stream'i H.264 ile yeniden kaydedilir. Bu, tarayıcının kendi
+ * donanım decode+encode hattını kullanır — özel binary parser yazmaya
+ * gerek yoktur, bu yüzden güvenilirdir.
+ *
+ * Amaç: kaydeden cihaz VP9'u oynatabilse de, video Safari/iOS gibi VP9
+ * desteklemeyen bir cihazda izlenince "siyah ekran" oluyordu. Cihazda
+ * H.264'e çevirerek bu videoyu HER platformda oynatılabilir hale getiriyoruz.
+ */
+async function _transcodeToH264IfNeeded(blob, onProgress) {
+  const isAlreadyH264 = /h264|avc1/i.test(blob.type) || blob.type === "video/mp4";
+  const h264Mime = ["video/mp4;codecs=h264,aac", "video/webm;codecs=h264,opus"]
+    .find(t => MediaRecorder.isTypeSupported(t));
+
+  if (isAlreadyH264 || !h264Mime) {
+    // Zaten uyumlu, veya cihaz hiç H.264 encode edemiyor — transcode'a gerek/imkan yok
+    return { blob, mime: blob.type };
+  }
+
+  onProgress?.("Video uyumlu hale getiriliyor…");
+
+  return new Promise((resolve) => {
+    const srcUrl = URL.createObjectURL(blob);
+    const vid = document.createElement("video");
+    vid.muted = true; vid.playsInline = true; vid.preload = "auto";
+    vid.style.cssText = "position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;";
+    document.body.appendChild(vid);
+
+    const cleanup = () => { URL.revokeObjectURL(srcUrl); vid.remove(); };
+    const fallback = () => { cleanup(); resolve({ blob, mime: blob.type }); }; // başarısızsa orijinali kullan
+
+    // 8 saniyeden uzun sürerse vazgeç, orijinal videoyu kullan
+    const giveUpTimer = setTimeout(fallback, 8000);
+
+    vid.onloadedmetadata = async () => {
+      try {
+        const w = vid.videoWidth  || 480;
+        const h = vid.videoHeight || 480;
+        const canvas = document.createElement("canvas");
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext("2d");
+
+        const canvasStream = canvas.captureStream(30);
+        // Orijinal videodaki ses varsa ekle — SADECE stream'e yönlendir,
+        // hoparlöre bağlama (kullanıcı arka plan transcode'unu duymamalı)
+        try {
+          const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+          const src  = audioCtx.createMediaElementSource(vid);
+          const dest = audioCtx.createMediaStreamDestination();
+          src.connect(dest);
+          dest.stream.getAudioTracks().forEach(t => canvasStream.addTrack(t));
+        } catch {} // ses eklenemezse sessiz devam et
+
+        const rec = new MediaRecorder(canvasStream, { mimeType: h264Mime, videoBitsPerSecond: 2_000_000 });
+        const outChunks = [];
+        rec.ondataavailable = e => { if (e.data?.size > 0) outChunks.push(e.data); };
+        rec.onstop = () => {
+          clearTimeout(giveUpTimer);
+          cleanup();
+          if (!outChunks.length) { resolve({ blob, mime: blob.type }); return; }
+          resolve({ blob: new Blob(outChunks, { type: h264Mime }), mime: h264Mime });
+        };
+
+        let frameReq;
+        const drawFrame = () => {
+          if (vid.paused || vid.ended) return;
+          ctx.drawImage(vid, 0, 0, w, h);
+          frameReq = requestAnimationFrame(drawFrame);
+        };
+
+        vid.onended = () => { cancelAnimationFrame(frameReq); rec.stop(); };
+        rec.start();
+        await vid.play();
+        drawFrame();
+      } catch(e) {
+        console.warn("[Transcode] hata:", e.message);
+        clearTimeout(giveUpTimer);
+        fallback();
+      }
+    };
+    vid.onerror = () => { clearTimeout(giveUpTimer); fallback(); };
+    vid.src = srcUrl;
+  });
+}
+
 async function finalizeVideo() {
   if (!recChunks.length) { toast("⚠️ Video kaydedilemedi"); return; }
   const dur = Date.now() - recStartTime;
   if (dur < 800) { toast("⚠️ Video çok kısa"); recChunks = []; return; }
 
-  const mimeType = recChunks[0]?.type || "video/webm";
-  const blob     = new Blob(recChunks, { type: mimeType });
+  const rawMime = recChunks[0]?.type || "video/webm";
+  let blob      = new Blob(recChunks, { type: rawMime });
   recChunks = [];
 
   if (blob.size > 150 * 1024 * 1024) { toast("⚠️ Video çok büyük (maks 150 MB)"); return; }
+
+  // Codec uyumluluğu için gerekirse cihazda H.264'e çevir (tarayıcının kendi
+  // donanım decode+encode hattını kullanır — bu, videoyu Safari/iOS dahil
+  // tüm cihazlarda oynatılabilir kılar)
+  let mimeType = rawMime;
+  const needsTranscode = !(/h264|avc1/i.test(rawMime) || rawMime === "video/mp4");
+  if (needsTranscode) {
+    toast("⏳ Video uyumlu hale getiriliyor…");
+    const result = await _transcodeToH264IfNeeded(blob);
+    blob     = result.blob;
+    mimeType = result.mime;
+  }
 
   toast("⏳ Önizleme hazırlanıyor…");
 
@@ -5817,14 +6087,6 @@ function openNewVideoModal(thumbnail, videoId, mime) {
   applyPMtoUI();
   openModal(EL.photoModal);
   pushModalState("photoModal");
-}
-
-function blobToDataUrl(blob) {
-  return new Promise(res => {
-    const r = new FileReader();
-    r.onload = () => res(r.result);
-    r.readAsDataURL(blob);
-  });
 }
 
 // ─── Capture butonu: foto → tıkla | video → bas/bırak ───
@@ -5958,7 +6220,6 @@ let _mirrorStream  = null;
 let _mirrorRafId   = null;
 
 function startMirrorCanvas() {
-  
   const w = EL.cameraVideo.videoWidth  || 640;
   const h = EL.cameraVideo.videoHeight || 480;
   _mirrorCanvas = document.createElement("canvas");
@@ -6002,6 +6263,7 @@ function openSideMenu() {
   EL.sideMenu.classList.add("open");
   EL.sideMenuOverlay.classList.add("open");
   EL.menuToggleBtn.setAttribute("aria-expanded", "true");
+  pushModalState("sideMenu");
   // Profili güncelle
   updateSideMenuProfile();
   updateSideMenuFilters();
@@ -6128,10 +6390,15 @@ document.addEventListener("keydown", e => {
    CHAT SİSTEMİ — Firebase RTDB
 ═══════════════════════════════════════════ */
 let chatKnownUsers = [], chatActiveUid = null, chatActiveChatId = null;
+let _convPresenceUnsub = null, _convPresenceRef = null;
 let _chatUsersLoaded = false; // cache flag — sadece 1 kez yükle
 let _chatMsgListener = null, _chatListListeners = [], _presenceListeners = {}, _totalChatUnread = 0;
 
 function chatId(a,b){ return [a,b].sort().join("_"); }
+
+let _presenceSetupDone = false;
+let _presenceConnRef    = null;
+let _presenceVisHandler = null;
 
 function setupPresence(uid, displayName, photoURL) {
   if (!rtdb) { console.error("[Presence] RTDB başlatılmadı"); return; }
@@ -6140,36 +6407,33 @@ function setupPresence(uid, displayName, photoURL) {
   const onlineData  = { online: true,  lastSeen: Date.now(), displayName: displayName||"", photoURL: photoURL||null };
   const offlineData = { online: false, lastSeen: Date.now(), displayName: displayName||"", photoURL: photoURL||null };
 
-  // Test: önce RTDB'ye yazabilir miyiz?
-  set(pr, onlineData)
-    .then(() => console.log("[Presence] ✅ presence yazıldı"))
-    .catch(e  => console.error("[Presence] ❌ set hatası:", e.code, e.message,
-      "→ Firebase Console'da RTDB Rules'ı kontrol et: .write: 'auth != null'"));
+  set(pr, onlineData).catch(e => console.error("[Presence] set hatası:", e.code, e.message));
 
   // Bağlantı kopunca offline yap
-  onDisconnect(pr).set(offlineData)
-    .catch(e => console.error("[Presence] onDisconnect hata:", e.message));
+  onDisconnect(pr).set(offlineData).catch(e => console.error("[Presence] onDisconnect hata:", e.message));
 
-  // RTDB bağlantı durumu
-  const connRef = rtRef(rtdb, ".info/connected");
-  onValue(connRef, snap => {
-    const connected = !!snap.val();
-    console.log("[RTDB] Bağlantı:", connected ? "✅ Bağlı" : "❌ Yok");
-    if (connected) {
-      // Yeniden bağlanınca online yap
-      set(pr, { ...onlineData, lastSeen: Date.now() }).catch(() => {});
-      onDisconnect(pr).set({ ...offlineData, lastSeen: Date.now() }).catch(() => {});
-    }
-  });
+  // RTDB bağlantı durumu — sadece bir kez kur (applyUser tekrar çağrılırsa duplicate listener olmasın)
+  if (!_presenceSetupDone) {
+    _presenceConnRef = rtRef(rtdb, ".info/connected");
+    onValue(_presenceConnRef, snap => {
+      const connected = !!snap.val();
+      if (connected && currentUser) {
+        // Yeniden bağlanınca online yap — güncel uid'yi kullan
+        const livePr = rtRef(rtdb, `presence/${currentUser.uid}`);
+        set(livePr, { online: true, lastSeen: Date.now(), displayName: currentUser.displayName||"", photoURL: currentUser.photoURL||null }).catch(() => {});
+        onDisconnect(livePr).set({ online: false, lastSeen: Date.now(), displayName: currentUser.displayName||"", photoURL: currentUser.photoURL||null }).catch(() => {});
+      }
+    });
 
-  // Sekme değişimi
-  document.addEventListener("visibilitychange", () => {
-    if (!currentUser || currentUser.uid !== uid) return;
-    rtUpdate(pr, { online: !document.hidden, lastSeen: Date.now() })
-      .catch(e => console.error("[Presence] visibility update hata:", e.message));
-  });
+    _presenceVisHandler = () => {
+      if (!currentUser) return;
+      rtUpdate(rtRef(rtdb, `presence/${currentUser.uid}`), { online: !document.hidden, lastSeen: Date.now() })
+        .catch(e => console.error("[Presence] visibility update hata:", e.message));
+    };
+    document.addEventListener("visibilitychange", _presenceVisHandler);
 
-  console.log("[Presence] kuruldu →", uid.slice(0,8));
+    _presenceSetupDone = true;
+  }
 }
 
 /** Kullanıcının aktif konuşmasını RTDB'ye yaz — bildirim throttle için */
@@ -6345,8 +6609,6 @@ function _loadMoreMsgs() {
 }
 
 function _renderChatMessages(msgs) {
-  const msgIdxMap = new Map(msgs.map((m,i) => [m.id, i]));
-
   EL.chatMessages.innerHTML = "";
 
   if (!msgs.length) {
@@ -6557,13 +6819,21 @@ async function _deleteChatMsg(msg) {
   if (!ok) return;
   try {
     await set(rtRef(rtdb, `chats/${chatActiveChatId}/messages/${msg.id}`), null);
+    // Silinen mesaj sabitliyse, sabitlemeyi de kaldır
+    const pinSnap = await get(rtRef(rtdb, `chats/${chatActiveChatId}/pinned`)).catch(() => null);
+    if (pinSnap?.exists() && pinSnap.val()?.id === msg.id) {
+      await set(rtRef(rtdb, `chats/${chatActiveChatId}/pinned`), null).catch(() => {});
+    }
     toast("🗑 Silindi");
   } catch(e) { toast("❌ " + e.message); }
 }
 
 /* Sabitlenmiş mesaj dinleyicisi */
+let _pinnedUnsub = null;
 function _listenPinnedMsg(chatIdStr) {
-  const ref = rtRef(rtdb, `chats/${chatIdStr}/pinned`);
+  if (_pinnedUnsub) { off(rtRef(rtdb, _pinnedUnsub)); _pinnedUnsub = null; }
+  const path = `chats/${chatIdStr}/pinned`;
+  const ref = rtRef(rtdb, path);
   onValue(ref, snap => {
     if (!EL.chatPinnedBar) return;
     if (snap.exists()) {
@@ -6575,6 +6845,7 @@ function _listenPinnedMsg(chatIdStr) {
       EL.chatPinnedBar.style.display = "none";
     }
   });
+  _pinnedUnsub = path;
 }
 
 if (EL.chatPinnedClose) {
@@ -6741,7 +7012,7 @@ const _chatPhotoCache = new Map(); // chunkId → base64
 /* ── Alıntılanan mesaja scroll ── */
 function _scrollToMsg(msgId) {
   const el = EL.chatMessages.querySelector(`[data-msg-id="${msgId}"]`);
-  if (!el) return;
+  if (!el) { toast("⚠️ Mesaj bulunamadı (silinmiş olabilir)"); return; }
   el.scrollIntoView({ behavior: "smooth", block: "center" });
   // Kısa highlight animasyonu
   el.classList.add("msg-highlight");
@@ -6751,7 +7022,6 @@ function _scrollToMsg(msgId) {
 /* ── Swipe-to-reply touch handler ── */
 function _addSwipeReply(row, wrap, swipeIcon, msg) {
   const SWIPE_THRESHOLD = 72;  // px — reply tetikleme eşiği
-  const SWIPE_MAX       = 90;  // px — ham max (direnç öncesi)
   let startX = 0, startY = 0, lastDx = 0;
   let swiping = false, triggered = false, locked = false;
 
@@ -6946,6 +7216,8 @@ EL.sideChatBtn.addEventListener("click", () => {
 
 EL.chatConvBack.addEventListener("click", () => {
   if (_chatMsgListener) { try { _chatMsgListener(); } catch {} _chatMsgListener = null; }
+  if (_pinnedUnsub) { off(rtRef(rtdb, _pinnedUnsub)); _pinnedUnsub = null; }
+  if (_convPresenceUnsub && _convPresenceRef) { off(_convPresenceRef); _convPresenceUnsub = null; _convPresenceRef = null; }
   _stopTypingListener();
   _clearTypingSignal();
   setActiveChat(null);
@@ -6996,9 +7268,11 @@ function openChatConv(user) {
   _listenPinnedMsg(chatActiveChatId);
   setActiveChat(chatActiveChatId);
 
-  // Presence dinle
-  const pr = rtRef(rtdb, `presence/${user.uid}`);
-  onValue(pr, snap => _updateConvStatus(snap.val()));
+  // Presence dinle — önceki listener'ı kapat
+  if (_convPresenceUnsub) { off(_convPresenceRef); _convPresenceUnsub = null; }
+  _convPresenceRef = rtRef(rtdb, `presence/${user.uid}`);
+  onValue(_convPresenceRef, snap => _updateConvStatus(snap.val()));
+  _convPresenceUnsub = true;
 
   setTimeout(() => EL.chatInput.focus(), 300);
   _markChatRead();
@@ -7257,6 +7531,7 @@ function _createPC() {
     } else if (state === "disconnected") {
       if (EL.callStatus) EL.callStatus.textContent = "Bağlantı zayıf…";
       // 8 saniye sonra hâlâ disconnected'sa cleanup
+      clearTimeout(disconnectTimer); // önceki timer'ı temizle (state tekrar tetiklenirse leak olmasın)
       disconnectTimer = setTimeout(() => {
         if (_pc?.connectionState === "disconnected" || _pc?.connectionState === "failed") {
           toast("📞 Bağlantı kesildi");
@@ -7617,7 +7892,7 @@ function _startChallengeListener(uid) {
     }
 
     // Modal açıksa yenile
-    if (EL.challengeModal.classList.contains("open")) {
+    if (EL.challengeModal.style.display === "flex") {
       _renderChallengeBody();
     }
   }, e => console.warn("[Challenge] listener:", e.message));
@@ -7632,6 +7907,7 @@ async function openChallengeModal() {
 }
 
 EL.challengeClose.addEventListener("click", () => {
+  if (_chCountdownInterval) { clearInterval(_chCountdownInterval); _chCountdownInterval = null; }
   EL.challengeModal.style.animation = "chSlideOut .3s ease forwards";
   setTimeout(() => {
     EL.challengeModal.style.display    = "none";
@@ -7957,7 +8233,6 @@ function _renderChallengeActive() {
 
   // Tüm slotlar bitti mi?
   const allDone = slots.every(h => myPics[_slotKey(h)] && theirPics[_slotKey(h)]);
-  const myAllDone = slots.every(h => myPics[_slotKey(h)]);
 
   // Sonraki slot geri sayımı
   const now2       = new Date();
@@ -8055,7 +8330,11 @@ function _renderChallengeActive() {
     await updateDoc(doc(db,"challenges",_challengeId),{status:"cancelled"});
     _challenge=null; _challengeId=null; _renderChallengeBody();
   });
-  q("chSlideshowBtn")?.addEventListener("click", () => { EL.challengeModal.style.display="none"; _startSlideshow(); });
+  q("chSlideshowBtn")?.addEventListener("click", () => {
+    if (_chCountdownInterval) { clearInterval(_chCountdownInterval); _chCountdownInterval = null; }
+    EL.challengeModal.style.display = "none";
+    _startSlideshow();
+  });
 
   // Countdown başlat
   _startChallengeCountdown(slots);
@@ -8099,7 +8378,11 @@ function _renderChallengeDone() {
     <button class="ch-btn" id="chSlideshowBtn2">🎬 Sunumu İzle</button>
     <button class="ch-btn secondary" id="chNewBtn">➕ Yeni Meydan Okuma</button>`;
 
-  q("chSlideshowBtn2")?.addEventListener("click", () => { closeModal(EL.challengeModal); _startSlideshow(); });
+  q("chSlideshowBtn2")?.addEventListener("click", () => {
+    if (_chCountdownInterval) { clearInterval(_chCountdownInterval); _chCountdownInterval = null; }
+    EL.challengeModal.style.display = "none";
+    _startSlideshow();
+  });
   q("chNewBtn")?.addEventListener("click", async () => {
     await updateDoc(doc(db,"challenges",_challengeId),{status:"cancelled"});
     _challenge=null; _challengeId=null; _renderChallengeBody();
@@ -8119,10 +8402,18 @@ function _takeChallengePhoto(hour) {
       const base64 = await _compressPhoto(file, 900);
       if (!base64) throw new Error("Sıkıştırılamadı");
 
-      const b64      = base64.includes(",") ? base64.split(",")[1] : base64;
-      const chunkId  = `ch_${_challengeId}_${currentUser.uid}_${hour}`;
-      await saveChunks("challengePhotos", chunkId, b64, { mime: "image/jpeg" });
-      const url = `chunk://${chunkId}::done`;
+      const b64     = base64.includes(",") ? base64.split(",")[1] : base64;
+      const chunkId = `ch_${_challengeId}_${currentUser.uid}_${hour}`;
+      const mime    = "image/jpeg";
+      const total   = Math.ceil(b64.length / CHUNK_SIZE);
+
+      await setDoc(doc(db, "challenge_meta", chunkId), { total, mime, createdAt: Date.now() });
+      for (let i = 0; i < total; i++) {
+        await setDoc(doc(db, "challenge_chunks", `${chunkId}_${_ci(i)}`), {
+          data: b64.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE), idx: i, total,
+        });
+      }
+      const url = `chunk://${chunkId}::${total}`;
 
       await updateDoc(doc(db, "challenges", _challengeId), {
         [`photos.${currentUser.uid}.${_slotKey(hour)}`]: {
@@ -8235,7 +8526,7 @@ EL.sideChallengeBtn.addEventListener("click", openChallengeModal);
 
 /* Periyodik challenge check — saat değişince render'ı güncelle */
 setInterval(() => {
-  if (_challenge?.status === "active" && EL.challengeModal.classList.contains("open")) {
+  if (_challenge?.status === "active" && EL.challengeModal.style.display === "flex") {
     _renderChallengeBody();
   }
 }, 60_000); // her dakika
@@ -8281,6 +8572,8 @@ function _handleDeepLink() {
   const params = new URLSearchParams(location.search);
   const pubId  = params.get("openPub");
   if (!pubId) return;
+  let attempts = 0;
+  const MAX_ATTEMPTS = 15; // ~15 saniye sonra vazgeç
   // pubCache yüklendikten sonra aç
   const tryOpen = () => {
     const item = pubCache.find(p => p.id === pubId);
@@ -8289,9 +8582,13 @@ function _handleDeepLink() {
       setTimeout(() => openPubModal(item), 300);
       // URL'yi temizle
       history.replaceState(null, "", location.pathname);
-    } else if (pubCache.length === 0) {
+    } else if (pubCache.length === 0 && attempts < MAX_ATTEMPTS) {
       // Henüz yüklenmedi, 1sn bekle
+      attempts++;
       setTimeout(tryOpen, 1000);
+    } else {
+      // Bulunamadı veya yüklenemedi — URL'yi temizle, sessizce vazgeç
+      history.replaceState(null, "", location.pathname);
     }
   };
   setTimeout(tryOpen, 800);
@@ -8346,6 +8643,8 @@ function tryHideSplash(source) {
   }
 }
 
+let _swMsgListenerSet = false; // service worker message listener'ı sadece 1 kez kur
+
 function applyUser(user) {
   currentUser = user;
   if (user) {
@@ -8396,8 +8695,8 @@ function applyUser(user) {
     });
     _handleDeepLink(); // ?openPub=xxx deep link
 
-    // Service Worker'dan gelen bildirim tıklama mesajları
-    if ("serviceWorker" in navigator) {
+    // Service Worker'dan gelen bildirim tıklama mesajları — sadece bir kez kur
+    if ("serviceWorker" in navigator && !_swMsgListenerSet) {
       navigator.serviceWorker.addEventListener("message", event => {
         const { type, data } = event.data || {};
         if (type === "SW_NOTIF_CLICK") {
@@ -8415,6 +8714,7 @@ function applyUser(user) {
           }
         }
       });
+      _swMsgListenerSet = true;
     }
   } else {
     // Kullanıcı yok → login ekranına geç, splash'ı kapat
@@ -8425,6 +8725,17 @@ function applyUser(user) {
     stopCamera();
     unsubPhotos?.();    unsubPhotos    = null;
     unsubPublished?.(); unsubPublished = null;
+    _stopNotifListener();
+    if (_challengeUnsub) { try { _challengeUnsub(); } catch {} _challengeUnsub = null; }
+    if (_incomingUnsub)  { try { _incomingUnsub();  } catch {} _incomingUnsub  = null; }
+    if (_pinnedUnsub)    { off(rtRef(rtdb, _pinnedUnsub)); _pinnedUnsub = null; }
+    if (_convPresenceUnsub && _convPresenceRef) { off(_convPresenceRef); _convPresenceUnsub = null; _convPresenceRef = null; }
+    if (_chatMsgListener) { try { _chatMsgListener(); } catch {} _chatMsgListener = null; }
+    _stopTypingListener();
+    _stopChatListeners();
+    _challenge = null; _challengeId = null;
+    chatActiveUid = null; chatActiveChatId = null;
+    if (_pendingVideoBlob) { _pendingVideoBlob = null; _pendingVideoMime = null; }
     EL.galleryPage.innerHTML      = "";
     EL.publishedGallery.innerHTML = "";
     EL.statsArea.innerHTML        = "";
