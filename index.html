@@ -3171,10 +3171,6 @@ import {
   onDisconnect, update as rtUpdate,
   query as rtQuery, limitToLast, orderByKey
 } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-database.js";
-import {
-  getStorage, ref as stRef, uploadBytesResumable,
-  getDownloadURL, deleteObject
-} from "https://www.gstatic.com/firebasejs/10.12.4/firebase-storage.js";
 
 /* ─── Firebase ─── */
 const FB = initializeApp({
@@ -3188,7 +3184,6 @@ const FB = initializeApp({
 });
 const db       = getFirestore(FB);
 const rtdb     = getDatabase(FB);
-const storage  = getStorage(FB);
 const auth     = getAuth(FB);
 const provider = new GoogleAuthProvider();
 
@@ -3543,9 +3538,7 @@ const pm = {
   favorite: false, publishedId: null,
   locationLabel: "", mapsUrl: "", isNew: false,
   isVideo: false,
-  videoId:      null,  // (eski) videos/{id}/chunks/{i} sub-collection key
-  videoUrl:     null,  // (yeni) Firebase Storage indirme URL'i
-  videoPath:    null,  // (yeni) Storage yolu — silmek için (videos/{id}.webm)
+  videoId:      null,  // videos/{id}/chunks/{i} sub-collection key
   videoMime:    null,  // video/webm veya video/mp4
   videoBlobUrl: null,  // session blob URL (cache)
 };
@@ -3974,7 +3967,7 @@ function renderGallery(photos, preserveScroll = false) {
 
       // Tek dokunuş → detay modal | çift dokunuş → foto fullscreen / video oynat
       addDoubleTapListener(card, () => openPhotoModal(p), () => {
-        if (p.isVideo && (p.videoId || p.videoUrl)) {
+        if (p.isVideo && p.videoId) {
           playGalleryVideo(card, p);
         } else if (!p.isVideo) {
           openFullscreen(p.image, p.note);
@@ -3998,7 +3991,7 @@ async function playGalleryVideo(card, p) {
 
   let url;
   try {
-    url = await loadVideoUrl(p.videoId, p.videoMime || "video/webm", null, p.videoUrl);
+    url = await loadVideoUrl(p.videoId, p.videoMime || "video/webm");
   } catch(e) {
     console.error("[Video] playGalleryVideo:", e.message);
   }
@@ -4256,7 +4249,7 @@ function openPubModal(item) {
 
 /* Video oynatma — pub modalda */
 async function _pubPlayVideo(item) {
-  if (!item?.isVideo || (!item.videoId && !item.videoUrl)) {
+  if (!item?.isVideo || !item.videoId) {
     toast("⚠️ Video bilgisi bulunamadı"); return;
   }
 
@@ -4272,7 +4265,7 @@ async function _pubPlayVideo(item) {
       (pct, label) => {
         // Spinner üzerinde küçük bir progress yazısı göster (gerekiyorsa)
         if (label && EL.pubVideoPlayOverlay) EL.pubVideoPlayOverlay.title = label;
-      }, item.videoUrl);
+      });
     if (!url) throw new Error("Video bulunamadı");
 
     EL.pubVideo.src = url;
@@ -4489,7 +4482,7 @@ function resetPM() {
     id: null, image: "", created: null, note: "",
     favorite: false, publishedId: null,
     locationLabel: "", mapsUrl: "", isNew: false,
-    isVideo: false, videoId: null, videoUrl: null, videoPath: null, videoMime: null, videoBlobUrl: null,
+    isVideo: false, videoId: null, videoMime: null, videoBlobUrl: null,
   });
   // NOT: _pendingVideoBlob burada temizlenmiyor
   // closePhotoModal veya kaydet/yayınla tamamlanınca temizlenir
@@ -4577,7 +4570,7 @@ function applyPMtoUI() {
       const url = pm.videoBlobUrl || _videoUrlCache.get(pm.videoId);
       vidEl.src = url;
       vidEl.style.display = "block";
-    } else if (pm.videoId || pm.videoUrl) {
+    } else if (pm.videoId) {
       vidEl.style.display = "none";
       imgEl.src = pm.image || ""; imgEl.style.display = "block";
 
@@ -4589,7 +4582,7 @@ function applyPMtoUI() {
       EL.photoImgWrap.appendChild(loadingOv);
 
       const requestedVideoId = pm.videoId; // race condition koruması
-      loadVideoUrl(pm.videoId, pm.videoMime || "video/webm", null, pm.videoUrl).then(url => {
+      loadVideoUrl(pm.videoId, pm.videoMime || "video/webm").then(url => {
         EL.photoImgWrap.querySelector(".video-loading-overlay")?.remove();
         // Modal kapatılıp başka bir foto/video açılmışsa bu sonucu uygulama
         if (!url || pm.videoId !== requestedVideoId) return;
@@ -4640,19 +4633,16 @@ function openPhotoModal(photo) {
     isNew:         false,
     isVideo:       !!photo.isVideo,
     videoId:       photo.videoId       || null,
-    videoUrl:      photo.videoUrl      || null,
-    videoPath:     photo.videoPath     || null,
     videoMime:     photo.videoMime     || "video/webm",
     videoBlobUrl:  null,
   });
-  // Video ise yükle — loadVideoUrl önce IndexedDB'ye, sonra Storage URL'ine,
-  // en son (eski videolar için) Firestore chunk'larına bakar
-  if (photo.isVideo && (photo.videoId || photo.videoUrl)) {
-    const cached = photo.videoId ? _videoUrlCache.get(photo.videoId) : null;
+  // Video ise yükle — loadVideoUrl önce IndexedDB'ye bakar, yoksa Firestore'a düşer
+  if (photo.isVideo && photo.videoId) {
+    const cached = _videoUrlCache.get(photo.videoId);
     if (cached) {
       pm.videoBlobUrl = cached;
     } else {
-      loadVideoUrl(photo.videoId, photo.videoMime || "video/webm", null, photo.videoUrl)
+      loadVideoUrl(photo.videoId, photo.videoMime || "video/webm")
         .then(url => { if (url) { pm.videoBlobUrl = url; applyPMtoUI(); } })
         .catch(e => console.warn("[Video] yükleme:", e.message));
     }
@@ -4712,50 +4702,55 @@ async function publishPhoto() {
   EL.publishBtn.textContent = "Yayınlanıyor…";
 
   try {
-    // Video: blob varsa yükle, yoksa mevcut videoId'yi kullan
+    // Video: SADECE yayınlamada Firestore'a yüklenir.
     let finalVideoId   = pm.videoId;
     let finalVideoMime = pm.videoMime;
-    let finalVideoUrl  = pm.videoUrl  || null;
-    let finalVideoPath = pm.videoPath || null;
 
     if (pm.isVideo) {
-      if (_pendingVideoBlob) {
-        // Yeni çekilmiş video — önce blob'u koru, sonra modal'ı kapat
-        const blobToUpload  = _pendingVideoBlob;
-        const mimeToUpload  = _pendingVideoMime || pm.videoMime || "video/webm";
-        const tempVideoId   = pm.videoId;
+      const isRealId = pm.videoId && !pm.videoId.startsWith("tmp_");
 
-        // Modal'ı saved=true ile kapat (blob silinmez)
+      // Zaten yayınlanmış + gerçek id → video Firestore'da, tekrar yükleme yok
+      if (pm.publishedId && isRealId) {
+        finalVideoId = pm.videoId;
+      } else {
+        // Yüklenecek blob'u bul: önce taze çekim (pending), yoksa galeriden (IndexedDB)
+        let blobToUpload = _pendingVideoBlob;
+        let mimeToUpload = _pendingVideoMime || pm.videoMime || "video/webm";
+        if (!blobToUpload && pm.videoId) {
+          const local = await _loadVideoLocal(pm.videoId);
+          if (local?.blob) { blobToUpload = local.blob; if (local.mime) mimeToUpload = local.mime; }
+        }
+        if (!blobToUpload) {
+          toast("❌ Video verisi bulunamadı. Tekrar çekin.");
+          return;
+        }
+
+        const tempVideoId = pm.videoId;
+        // Galeriden geliyorsa mevcut gerçek id'yi KORU (galeri dokümanıyla
+        // aynı id'ye yazsın); taze çekimse yeni id ver.
+        finalVideoId   = isRealId ? pm.videoId : `vid_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
+        finalVideoMime = mimeToUpload;
+
         closePhotoModal(true);
         await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
         showUploadModal("Video yükleniyor", "🎬");
         await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
 
-        finalVideoId   = `vid_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
-        finalVideoMime = mimeToUpload;
-
-        // YENİ: Firebase Storage'a yükle — herkes akıtarak izleyebilir
-        const up = await uploadVideoToStorage(finalVideoId, blobToUpload, mimeToUpload,
+        await saveVideoChunks(finalVideoId, blobToUpload,
           (pct, sub) => setUploadProgress(pct, sub));
-        finalVideoUrl  = up.videoUrl;
-        finalVideoPath = up.videoPath;
 
-        // Cache'i güncelle
+        // Cache + IndexedDB'yi gerçek id'ye hizala
         const blobUrl = _videoUrlCache.get(tempVideoId);
-        if (blobUrl) { _videoUrlCache.set(finalVideoId, blobUrl); _videoUrlCache.delete(tempVideoId); }
-        // IndexedDB kaydını gerçek ID'ye taşı — kendi cihazında her zaman
-        // anında erişim kalır, ağa hiç gitmeden
+        if (blobUrl && tempVideoId !== finalVideoId) {
+          _videoUrlCache.set(finalVideoId, blobUrl); _videoUrlCache.delete(tempVideoId);
+        }
         _saveVideoLocal(finalVideoId, blobToUpload, mimeToUpload).catch(() => {});
-        _deleteVideoLocal(tempVideoId).catch(() => {});
+        if (tempVideoId && tempVideoId !== finalVideoId) _deleteVideoLocal(tempVideoId).catch(() => {});
         _pendingVideoBlob = null;
         _pendingVideoMime = null;
+        pm.videoId = finalVideoId;
         hideUploadModal();
-      } else if (!finalVideoUrl && (!finalVideoId || finalVideoId.startsWith("tmp_"))) {
-        // Ne Storage URL'i ne gerçek videoId var — bu video hiç yüklenmemiş
-        toast("❌ Video verisi bulunamadı. Tekrar çekin.");
-        return;
       }
-      // else: gerçek videoUrl/videoId var, zaten Firebase'de
     }
 
     const image = pm.image?.startsWith("data:")
@@ -4770,8 +4765,6 @@ async function publishPhoto() {
       note:            pm.note,
       isVideo:         pm.isVideo       || false,
       videoId:         finalVideoId     || null,
-      videoUrl:        finalVideoUrl    || null,
-      videoPath:       finalVideoPath   || null,
       videoMime:       finalVideoMime   || null,
       createdAtClient: pm.created       || Date.now(),
       likes:           {},
@@ -4782,8 +4775,6 @@ async function publishPhoto() {
         await updateDoc(doc(db, "publishedPhotos", pm.publishedId), {
           note: pm.note, image,
           videoId:   finalVideoId   || null,
-          videoUrl:  finalVideoUrl  || null,
-          videoPath: finalVideoPath || null,
           videoMime: finalVideoMime || null,
         });
         toast("✅ Yayın güncellendi!");
@@ -4818,11 +4809,11 @@ async function publishPhoto() {
   }
 }
 async function sharePhoto() {
-  if (!pm.image && !pm.videoId && !pm.videoUrl) return;
+  if (!pm.image && !pm.videoId) return;
   try {
     // Video ise blob al
-    if (pm.isVideo && (pm.videoId || pm.videoUrl)) {
-      const url = (pm.videoId && _videoUrlCache.get(pm.videoId)) || pm.videoBlobUrl || pm.videoUrl;
+    if (pm.isVideo && pm.videoId) {
+      const url = _videoUrlCache.get(pm.videoId) || pm.videoBlobUrl;
       if (url) {
         const resp = await fetch(url);
         const blob = await resp.blob();
@@ -4902,41 +4893,35 @@ async function savePhoto() {
   try {
     let finalVideoId   = pm.videoId;
     let finalVideoMime = pm.videoMime;
-    let finalVideoUrl  = pm.videoUrl  || null;
-    let finalVideoPath = pm.videoPath || null;
 
     if (pm.isVideo) {
       if (_pendingVideoBlob) {
-        const blobToUpload = _pendingVideoBlob;
-        const mimeToUpload = _pendingVideoMime || pm.videoMime || "video/webm";
+        // ── SADECE YEREL KAYIT ──────────────────────────────
+        // Galeriye kaydetme Firestore'a YÜKLEME YAPMAZ. Video
+        // IndexedDB'de kalıcı id ile saklanır; kendi cihazında
+        // anında oynar. Firestore'a yükleme yalnızca "Yayınla"da
+        // olur (diğer cihazların izleyebilmesi için).
         const tempVideoId  = pm.videoId;
-
-        closePhotoModal(true);
-        await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-        showUploadModal("Video yükleniyor", "🎬");
-        await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-
+        const mimeToSave   = _pendingVideoMime || pm.videoMime || "video/webm";
         finalVideoId   = `vid_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
-        finalVideoMime = mimeToUpload;
+        finalVideoMime = mimeToSave;
 
-        // YENİ: Firebase Storage'a yükle
-        const up = await uploadVideoToStorage(finalVideoId, blobToUpload, mimeToUpload,
-          (pct, sub) => setUploadProgress(pct, sub));
-        finalVideoUrl  = up.videoUrl;
-        finalVideoPath = up.videoPath;
-
+        // IndexedDB'de tmp_ id'den kalıcı id'ye taşı
+        await _saveVideoLocal(finalVideoId, _pendingVideoBlob, mimeToSave);
+        if (tempVideoId) _deleteVideoLocal(tempVideoId).catch(() => {});
         const blobUrl = _videoUrlCache.get(tempVideoId);
         if (blobUrl) { _videoUrlCache.set(finalVideoId, blobUrl); _videoUrlCache.delete(tempVideoId); }
-        // IndexedDB kaydını gerçek ID'ye taşı
-        _saveVideoLocal(finalVideoId, blobToUpload, mimeToUpload).catch(() => {});
-        _deleteVideoLocal(tempVideoId).catch(() => {});
+
+        // Blob'u temizle ama IndexedDB'de duruyor — ileride yayınlanırsa
+        // publishPhoto onu IndexedDB'den okuyup yükleyecek
         _pendingVideoBlob = null;
         _pendingVideoMime = null;
-        hideUploadModal();
-      } else if (!finalVideoUrl && (!finalVideoId || finalVideoId.startsWith("tmp_"))) {
+        pm.videoId = finalVideoId;
+      } else if (!finalVideoId || finalVideoId.startsWith("tmp_")) {
         toast("❌ Video verisi bulunamadı. Tekrar çekin.");
         return;
       }
+      // else: zaten kayıtlı, gerçek id'li video — değişiklik yok
     }
 
     const image = pm.image?.startsWith("data:")
@@ -4953,8 +4938,6 @@ async function savePhoto() {
       publishedId:     pm.publishedId    || null,
       isVideo:         pm.isVideo        || false,
       videoId:         finalVideoId      || null,
-      videoUrl:        finalVideoUrl     || null,
-      videoPath:       finalVideoPath    || null,
       videoMime:       finalVideoMime    || null,
     };
 
@@ -4984,13 +4967,11 @@ async function deletePhoto() {
       await _deleteAllComments(pm.publishedId).catch(() => {});
       await deleteDoc(doc(db, "publishedPhotos", pm.publishedId)).catch(()=>{});
     }
-    if (pm.videoId || pm.videoPath) {
-      if (pm.videoId) {
-        const cached = _videoUrlCache.get(pm.videoId);
-        if (cached) { try { URL.revokeObjectURL(cached); } catch {} }
-        _videoUrlCache.delete(pm.videoId);
-      }
-      deleteVideoChunks(pm.videoId, pm.videoPath).catch(() => {});
+    if (pm.videoId) {
+      const cached = _videoUrlCache.get(pm.videoId);
+      if (cached) URL.revokeObjectURL(cached);
+      _videoUrlCache.delete(pm.videoId);
+      deleteVideoChunks(pm.videoId).catch(() => {});
     }
     toast(`🗑 ${label} silindi`);
     closeModal(EL.photoModal);
@@ -6024,85 +6005,23 @@ async function _readChunks(col, id, onProgress) {
 
 /* ─── VİDEO ─────────────────────────────────────────── */
 
-/**
- * Videoyu Firebase Storage'a yükler ve herkesin akıtarak (streaming)
- * izleyebileceği kalıcı bir indirme URL'i döndürür.
- *
- * Eski sistem (base64 → Firestore chunk) yerine bunu kullanıyoruz:
- *  • Firestore'un 1MB doküman limiti yok → uzun videolar sorunsuz
- *  • base64 şişmesi (≈%33) yok → daha küçük, daha hızlı
- *  • <video src="..."> doğrudan akıtır → tüm parçayı indirmeyi beklemez
- *
- * Dönen { videoUrl, videoPath } Firestore'a yazılır; videoPath silmek
- * için Storage referansını yeniden kurmamızı sağlar.
- */
-async function uploadVideoToStorage(videoId, blob, mime, onProgress) {
-  const ext  = /mp4/i.test(mime || "") ? "mp4" : "webm";
-  const path = `videos/${videoId}.${ext}`;
-  const ref  = stRef(storage, path);
-
-  onProgress?.(2, "Yükleme başlıyor…");
-
-  const task = uploadBytesResumable(ref, blob, {
-    contentType: mime || (ext === "mp4" ? "video/mp4" : "video/webm"),
-  });
-
-  await new Promise((res, rej) => {
-    task.on("state_changed",
-      snap => {
-        const pct = 2 + Math.round((snap.bytesTransferred / snap.totalBytes) * 94);
-        const mb  = (snap.bytesTransferred / 1048576).toFixed(1);
-        const tot = (snap.totalBytes      / 1048576).toFixed(1);
-        onProgress?.(pct, `Yükleniyor… ${mb} / ${tot} MB`);
-      },
-      err => {
-        // En sık görülen hata: Storage kuralları izin vermiyor (unauthorized)
-        // veya proje Spark planında (Storage Blaze gerektirir → 402/403).
-        let msg = err?.message || "Yükleme hatası";
-        if (err?.code === "storage/unauthorized")
-          msg = "Storage izni yok. Güvenlik kurallarını ve oturumu kontrol edin.";
-        else if (err?.code === "storage/retry-limit-exceeded")
-          msg = "Bağlantı zaman aşımına uğradı. Tekrar deneyin.";
-        rej(new Error(msg));
-      },
-      () => res()
-    );
-  });
-
-  onProgress?.(98, "Bağlantı oluşturuluyor…");
-  const url = await getDownloadURL(ref);
-  onProgress?.(100, "Tamamlandı!");
-  return { videoUrl: url, videoPath: path };
-}
-
 async function saveVideoChunks(videoId, blob, onProgress) {
   return _writeChunks("videos", videoId, blob, { videoId }, onProgress);
 }
 
-async function loadVideoUrl(videoId, fallbackMime, onProgress, videoUrl) {
-  if (videoId && _videoUrlCache.has(videoId)) return _videoUrlCache.get(videoId);
+async function loadVideoUrl(videoId, fallbackMime, onProgress) {
+  if (_videoUrlCache.has(videoId)) return _videoUrlCache.get(videoId);
 
   // 1. ÖNCE yerel IndexedDB'ye bak — kendi cihazında çekilmiş/yüklenmiş videolar
-  // burada anında ve güvenilir şekilde bulunur, ağa hiç gidilmez
-  if (videoId) {
-    const local = await _loadVideoLocal(videoId);
-    if (local?.blob) {
-      const url = URL.createObjectURL(local.blob);
-      _videoUrlCache.set(videoId, url);
-      return url;
-    }
+  // burada anında ve güvenilir şekilde bulunur, Firestore'a hiç gidilmez
+  const local = await _loadVideoLocal(videoId);
+  if (local?.blob) {
+    const url = URL.createObjectURL(local.blob);
+    _videoUrlCache.set(videoId, url);
+    return url;
   }
 
-  // 2. YENİ SİSTEM — Firebase Storage indirme URL'i varsa doğrudan onu döndür.
-  // <video> elementi bu URL'i akıtarak oynatır; indirip çözmeye gerek yok.
-  if (videoUrl && /^https?:\/\//i.test(videoUrl)) {
-    if (videoId) _videoUrlCache.set(videoId, videoUrl);
-    return videoUrl;
-  }
-
-  // 3. ESKİ SİSTEM (geriye dönük uyumluluk) — Firestore chunk'larından çek.
-  // Storage'a geçmeden önce yüklenmiş videolar hâlâ böyle açılır.
-  if (!videoId) { console.warn("[Video] ne URL ne ID var"); return null; }
+  // 2. Yoksa Firestore'dan chunk'ları çek (başka cihazdan yüklenmiş video)
   const result = await _readChunks("videos", videoId, onProgress);
   if (!result) { console.warn("[Video] bulunamadı:", videoId); return null; }
 
@@ -6125,22 +6044,11 @@ async function loadVideoUrl(videoId, fallbackMime, onProgress, videoUrl) {
   return url;
 }
 
-async function deleteVideoChunks(videoId, videoPath) {
-  if (!videoId && !videoPath) return;
-  if (videoId) {
-    const cached = _videoUrlCache.get(videoId);
-    if (cached) { try { URL.revokeObjectURL(cached); } catch {} _videoUrlCache.delete(videoId); }
-    _deleteVideoLocal(videoId).catch(() => {});
-  }
-
-  // YENİ SİSTEM — Storage'daki dosyayı sil
-  if (videoPath) {
-    try { await deleteObject(stRef(storage, videoPath)); }
-    catch(e) { if (e?.code !== "storage/object-not-found") console.warn("[Video] Storage silme:", e.message); }
-  }
-
-  // ESKİ SİSTEM — Firestore chunk'larını sil (varsa)
+async function deleteVideoChunks(videoId) {
   if (!videoId) return;
+  const cached = _videoUrlCache.get(videoId);
+  if (cached) { URL.revokeObjectURL(cached); _videoUrlCache.delete(videoId); }
+  _deleteVideoLocal(videoId).catch(() => {});
   try {
     const metaSnap = await getDoc(doc(db, "videos", videoId));
     if (!metaSnap.exists()) return;
