@@ -2809,7 +2809,7 @@
       Çıkış Yap
     </button>
 
-    <div class="side-version-footer">Pelus Takip · v1.0.6</div>
+    <div class="side-version-footer">Pelus Takip · v1.0.7</div>
 
   </div>
 </div>
@@ -9086,19 +9086,77 @@ window.addEventListener("online",  () => toast("✅ Bağlantı kuruldu"));
 window.addEventListener("offline", () => toast("⚠️ Bağlantı kesildi — çevrimdışısın"));
 
 /* ═══════════════════════════════════════════
-   GLOBAL ERROR HANDLER
+   GLOBAL ERROR HANDLER + UZAK HATA LOGU
+   Konsola düşen hatalar Firestore "errorLogs"e yazılır,
+   admin panelinde görünür. Spam/loop önlemleri içerir.
 ═══════════════════════════════════════════ */
+const APP_VERSION = "v1.0.7";
+const _errLog = { count: 0, recent: new Map(), inFlight: false };
+const _ERR_MAX = 60;          // oturum başına en fazla
+const _ERR_DEDUPE_MS = 15000; // aynı mesajı 15 sn içinde tekrar yazma
+// Gürültü/loop yaratan beklenen hataları yutmak için filtre
+const _ERR_IGNORE = /offline|WebChannel|transport|errorLogs|Failed to fetch|Load failed|ResizeObserver|The operation was aborted|user aborted|permission-denied/i;
+
+async function logClientError(kind, message, stack, extra) {
+  try {
+    message = String(message || "").slice(0, 600).trim();
+    if (!message || _ERR_IGNORE.test(message)) return;
+
+    const now = Date.now();
+    const last = _errLog.recent.get(message) || 0;
+    if (now - last < _ERR_DEDUPE_MS) return;
+    _errLog.recent.set(message, now);
+    if (_errLog.recent.size > 80) _errLog.recent.clear();
+    if (_errLog.count >= _ERR_MAX) return;
+    _errLog.count++;
+
+    await addDoc(collection(db, "errorLogs"), {
+      kind,
+      message,
+      stack: stack ? String(stack).slice(0, 2500) : null,
+      uid:   currentUser?.uid || null,
+      name:  currentUser?.displayName || null,
+      url:   location.href,
+      ua:    navigator.userAgent,
+      appVersion: APP_VERSION,
+      ts:    now,
+      resolved: false,
+      ...(extra || {}),
+    });
+  } catch (_) { /* loglama hatasını sessizce yut */ }
+}
+
 window.onerror = (msg, src, line, col, err) => {
   console.error("[GlobalError]", msg, src, line, col);
-  // Kritik hatalarda kullanıcıya gösterme — sadece log
+  logClientError("error", msg, err?.stack, { src: src || null, line: line || null });
 };
+
 window.addEventListener("unhandledrejection", e => {
   const reason = e.reason;
   const msg = reason?.message || reason?.code || String(reason);
   // Firestore offline hatalarını sustur (beklenen)
   if (msg.includes("offline") || msg.includes("WebChannel") || msg.includes("transport")) return;
   console.error("[UnhandledPromise]", msg, reason);
+  logClientError("unhandledrejection", msg, reason?.stack);
 });
+
+// console.error'ı sarmala — uygulamadaki tüm console.error çağrıları da loglansın
+const _origConsoleError = console.error.bind(console);
+console.error = (...args) => {
+  _origConsoleError(...args);
+  if (_errLog.inFlight) return; // SDK kaynaklı console.error loop'unu önle
+  try {
+    const errObj = args.find(a => a instanceof Error);
+    const msg = args.map(a =>
+      a instanceof Error ? (a.message || String(a))
+      : (a && typeof a === "object" ? (()=>{ try { return JSON.stringify(a).slice(0,200); } catch { return String(a); } })()
+      : String(a))
+    ).join(" ");
+    if (_ERR_IGNORE.test(msg)) return;
+    _errLog.inFlight = true;
+    logClientError("console.error", msg, errObj?.stack).finally(() => { _errLog.inFlight = false; });
+  } catch (_) { _errLog.inFlight = false; }
+};
 
 /* ═══════════════════════════════════════════
    AUTH + SPLASH ENTEGRASYONu
@@ -9258,13 +9316,11 @@ async function login() {
       const userClosed = popupErr.code === "auth/popup-closed-by-user";
 
       if (userClosed) {
-        // Kullanıcı pencereyi kapattı — sessizce iptal, redirect'e zorlama
         EL.loginLoader.style.display = "none";
         EL.googleLoginBtn.disabled   = false;
         return;
       }
       if (cantOpen) {
-        // Popup gerçekten açılamadı — son çare redirect
         EL.loginWarning.textContent   = "Açılır pencere engellendi, yönlendiriliyorsunuz…";
         EL.loginWarning.style.display = "block";
         await signInWithRedirect(auth, provider);
