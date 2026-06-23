@@ -3059,6 +3059,10 @@
           <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M12 22a2 2 0 0 0 2-2h-4a2 2 0 0 0 2 2Zm6-6V11a6 6 0 0 0-5-5.91V4a1 1 0 0 0-2 0v1.09A6 6 0 0 0 6 11v5l-2 2v1h16v-1l-2-2Z"/></svg>
           <span id="notifBtnLabel">Bildirimleri Etkinleştir</span>
         </button>
+        <button id="repairCoversBtn" class="btn btn-secondary btn-full" type="button" style="margin-top:10px;">
+          <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M21 19V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2ZM8.5 13.5l2.5 3 3.5-4.5 4.5 6H5l3.5-4.5Z"/></svg>
+          <span id="repairCoversLabel">🖼 Video Kapaklarını Onar</span>
+        </button>
         <button id="logoutBtn" class="btn btn-secondary btn-logout btn-full" type="button" style="margin-top:10px;">
           <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M17 7 15.6 8.4l2.6 2.6H9v2h9.2l-2.6 2.6L17 17l5-5-5-5ZM5 5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h7v-2H5V5Z"/></svg>
           Çıkış Yap
@@ -3391,8 +3395,9 @@ const EL = {
   settingsInitials:q("settingsInitials"),
   settingsName:    q("settingsName"),
   settingsEmail:   q("settingsEmail"),
-  logoutBtn:       q("logoutBtn"),
-  notifBtn:        q("notifBtn"),
+  logoutBtn:       q("logoutBtn"),  notifBtn:        q("notifBtn"),
+  repairCoversBtn: q("repairCoversBtn"),
+  repairCoversLabel: q("repairCoversLabel"),
   notifBtnLabel:   q("notifBtnLabel"),
 
   toast:           q("toast"),
@@ -6128,6 +6133,14 @@ async function loadVideoUrl(videoId, fallbackMime, onProgress) {
     const buf = new Uint8Array(bin.length);
     for (let j = 0; j < bin.length; j++) buf[j] = bin.charCodeAt(j);
     blobObj = new Blob([buf], { type: baseMime });
+
+    // TANI: gelen videonun gerçek formatını yaz (MP4 imzası "ftyp"=66747970,
+    // marka "hvc1/hev1" → HEVC/H.265 = çoğu cihaz oynatmaz; "avc1/mp42/isom" = H.264)
+    const sig = [...buf.slice(0, 16)].map(x => x.toString(16).padStart(2, "0")).join("");
+    let brand = "?";
+    try { brand = new TextDecoder().decode(buf.slice(8, 12)); } catch {}
+    const hevc = /hvc1|hev1/i.test(brand) || sig.includes("68766331") || sig.includes("68657631");
+    console.log(`[Video TANI] ${videoId} | mime=${rawMime} | marka=${brand} | ${(buf.length/1048576).toFixed(2)}MB | ${hevc ? "⚠️ HEVC/H.265 — birçok cihaz oynatamaz!" : "imza ok"}`);
   } catch (e) {
     console.warn("[Video] çözme hatası:", e.message);
     return null;
@@ -6740,6 +6753,74 @@ EL.sideLogoutBtn.addEventListener("click", async () => {
   chatKnownUsers = []; _chatUsersLoaded = false; // cache sıfırla
   toast("Çıkış yapıldı");
 });
+
+/* ─── VİDEO KAPAKLARINI ONAR ─────────────────────────────
+   Eski (siyah kapaklı) videoların thumbnail'ını yeniden üretir.
+   Yalnızca KENDİ yayınladığın videolara dokunur (kurallar gereği başkasınınkini
+   güncelleyemezsin). Videoyu okur → yeni kapak üretir → publishedPhotos ve
+   galeri dokümanındaki `image` alanını günceller. Yükleme/izleme koduna
+   dokunmaz, sadece kapak (image) alanını yeniler. */
+async function repairVideoCovers() {
+  if (!currentUser) { toast("⚠️ Giriş yapın"); return; }
+  const mine = pubCache.filter(it => it.isVideo && it.videoId && it.uid === currentUser.uid);
+  if (!mine.length) { toast("Onarılacak (kendi) videon yok"); return; }
+
+  const ok = await openConfirm({
+    title: "Kapaklar onarılsın mı?",
+    text: `${mine.length} videonun kapağı yeniden oluşturulacak. Videolar okunacağı için biraz sürebilir.`,
+    okLabel: "Onar", cancelLabel: "Vazgeç", icon: "🖼",
+  });
+  if (!ok) return;
+
+  EL.repairCoversBtn.disabled = true;
+  const origLabel = EL.repairCoversLabel.textContent;
+  showUploadModal("Kapaklar onarılıyor", "🖼");
+
+  let done = 0, fixed = 0, failed = 0;
+  for (const item of mine) {
+    done++;
+    setUploadProgress(Math.round((done / mine.length) * 100), `${done}/${mine.length} işleniyor…`);
+    try {
+      // Videoyu blob olarak al (loadVideoUrl IndexedDB → Firestore yolunu kullanır)
+      const url = await loadVideoUrl(item.videoId, item.videoMime || "video/mp4");
+      if (!url) { failed++; continue; }
+      const blob = await fetch(url).then(r => r.blob());
+
+      let thumb = await extractThumbnail(blob).catch(() => null);
+      if (!thumb) { failed++; continue; }
+      thumb = await compressImage(thumb, 600, 0.7).catch(() => thumb);
+
+      // 1) Yayın dokümanının kapağını güncelle
+      await updateDoc(doc(db, "publishedPhotos", item.id), { image: thumb }).catch(e => {
+        console.warn("[Kapak] yayın güncellenemedi:", e.message); throw e;
+      });
+
+      // 2) Eşleşen galeri dokümanını da güncelle (publishedId === item.id)
+      const galleryDoc = (typeof allPhotos !== "undefined" ? allPhotos : [])
+        .find(p => p.publishedId === item.id);
+      if (galleryDoc?.id) {
+        await updateDoc(doc(db, "users", currentUser.uid, "photos", galleryDoc.id), { image: thumb })
+          .catch(() => {});
+      }
+
+      fixed++;
+    } catch (e) {
+      failed++;
+      console.warn("[Kapak] onarılamadı:", item.id, e.message);
+    }
+  }
+
+  hideUploadModal();
+  EL.repairCoversBtn.disabled = false;
+  EL.repairCoversLabel.textContent = origLabel;
+  toast(failed
+    ? `🖼 ${fixed} kapak onarıldı, ${failed} başarısız`
+    : `🖼 ${fixed} kapak onarıldı`);
+}
+
+if (EL.repairCoversBtn) {
+  EL.repairCoversBtn.addEventListener("click", () => { repairVideoCovers(); });
+}
 
 /* ═══════════════════════════════════════════
    CHAT SİSTEMİ — Firebase RTDB
