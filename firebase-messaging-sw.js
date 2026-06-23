@@ -1,46 +1,21 @@
 /* ─────────────────────────────────────────────
    firebase-messaging-sw.js
-   BU DOSYAYI index.html İLE AYNI KÖKE (root) KOY.
-   Örn: https://senin-siten.com/firebase-messaging-sw.js
-   Uygulama kapalıyken/arka plandayken push'u gösteren ve
-   tıklamayı doğru sayfaya yönlendiren worker budur.
+   BU DOSYAYI index.html ILE AYNI KOKE (root) KOY.
+   Orn: https://senin-siten.com/firebase-messaging-sw.js
+   (Tarayicida bu adresi acinca JS gorunmeli, 404 OLMAMALI.)
+
+   Sunucu webpush.notification yolluyor → FCM SDK arka planda
+   bildirimi OTOMATIK gosterir. Burada onBackgroundMessage YOK
+   (olsaydi cift bildirim olurdu). Sadece tiklama yonlendirmesi var.
    ───────────────────────────────────────────── */
-importScripts("https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js");
-importScripts("https://www.gstatic.com/firebasejs/10.12.4/firebase-messaging-compat.js");
 
-firebase.initializeApp({
-  apiKey:            "AIzaSyBu3fMWUupz6EIbRyB4FBOfplF7GFDToMc",
-  authDomain:        "pelustakip-3be95.firebaseapp.com",
-  projectId:         "pelustakip-3be95",
-  storageBucket:     "pelustakip-3be95.firebasestorage.app",
-  messagingSenderId: "1080638886274",
-  appId:             "1:1080638886274:web:ccc5ca53699e4d0fa53f9b",
-});
-
-const messaging = firebase.messaging();
-
-/* Sunucu data-only mesaj yolluyor → gösterimi biz yapıyoruz (çift bildirim olmaz) */
-messaging.onBackgroundMessage(payload => {
-  const d = payload.data || {};
-  const title = d.title || "Pelüş Takip 🐾";
-  const options = {
-    body:  d.body || "",
-    icon:  d.icon && d.icon.startsWith("http") ? d.icon : "/icon-192.png",
-    badge: "/icon-192.png",
-    tag:   d.tag || "pelus",
-    renotify: d.type === "call",        // arama tekrar tekrar bildirilebilsin
-    requireInteraction: d.type === "call",
-    vibrate: d.type === "call" ? [200,100,200,100,200] : [80,40,80],
-    data: d,
-  };
-  return self.registration.showNotification(title, options);
-});
-
-/* Bildirime tıklayınca: açık sekme varsa ona odaklan + uygulamaya mesaj at,
-   yoksa uygun URL ile yeni pencere aç. Uygulama SW_NOTIF_CLICK'i dinliyor. */
+/* 1) notificationclick'i FCM importlarindan ONCE tanimla
+      (yoksa FCM kendi davranisini uzerine yazabilir) */
+// SW_VERSION: v1.0.8  (bunu her degisiklikte artir → tum cihazlar guncellenir)
 self.addEventListener("notificationclick", event => {
   event.notification.close();
-  const d = event.notification.data || {};
+  const raw = event.notification.data || {};
+  const d = raw.FCM_MSG?.data || raw.data || raw || {};
 
   event.waitUntil((async () => {
     const all = await clients.matchAll({ type: "window", includeUncontrolled: true });
@@ -55,3 +30,22 @@ self.addEventListener("notificationclick", event => {
     return clients.openWindow(url);
   })());
 });
+
+/* 2) Yeni SW'yi aninda devreye al (guncellemeler beklemesin) */
+self.addEventListener("install", () => self.skipWaiting());
+self.addEventListener("activate", e => e.waitUntil(self.clients.claim()));
+
+/* 3) Firebase messaging'i baslat → arka plan bildirimi otomatik gosterilir */
+importScripts("https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js");
+importScripts("https://www.gstatic.com/firebasejs/10.12.4/firebase-messaging-compat.js");
+
+firebase.initializeApp({
+  apiKey:            "AIzaSyBu3fMWUupz6EIbRyB4FBOfplF7GFDToMc",
+  authDomain:        "pelustakip-3be95.firebaseapp.com",
+  projectId:         "pelustakip-3be95",
+  storageBucket:     "pelustakip-3be95.firebasestorage.app",
+  messagingSenderId: "1080638886274",
+  appId:             "1:1080638886274:web:ccc5ca53699e4d0fa53f9b",
+});
+
+firebase.messaging(); // onBackgroundMessage YOK — notification payload otomatik gosterilir
