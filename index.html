@@ -4010,6 +4010,13 @@ async function playGalleryVideo(card, p) {
   const vid = document.createElement("video");
   vid.src = url; vid.playsInline = true; vid.controls = false; vid.loop = false;
   vid.style.cssText = "width:100%;height:100%;object-fit:cover;";
+  // Codec/format desteklenmiyorsa sessizce siyah ekran kalmasın — kullanıcıya
+  // bildir ve kartı thumbnail'a geri döndür
+  vid.onerror = () => {
+    delete card.dataset.videoPlaying;
+    toast("⚠️ Bu video bu cihazda oynatılamıyor");
+    applyFilters();
+  };
   card.appendChild(vid);
   vid.play().catch(() => {});
   vid.addEventListener("ended", () => { delete card.dataset.videoPlaying; applyFilters(); });
@@ -4252,6 +4259,7 @@ async function _pubPlayVideo(item) {
   if (!item?.isVideo || !item.videoId) {
     toast("⚠️ Video bilgisi bulunamadı"); return;
   }
+  const reqId = item.videoId; // yarış koruması: yükleme bitince hâlâ bu mu açık?
 
   // Yükleme durumu: overlay'i göster + spinner'a çevir (henüz "playing" yapma —
   // o class overlay'i tamamen şeffaf yapıyor, kullanıcı boş ekran görür)
@@ -4261,12 +4269,18 @@ async function _pubPlayVideo(item) {
   if (EL.pubVideoPlayOverlay) EL.pubVideoPlayOverlay.style.display = "flex";
 
   try {
-    const url = await loadVideoUrl(item.videoId, item.videoMime || "video/webm",
+    const url = await loadVideoUrl(item.videoId, item.videoMime || "video/mp4",
       (pct, label) => {
         // Spinner üzerinde küçük bir progress yazısı göster (gerekiyorsa)
         if (label && EL.pubVideoPlayOverlay) EL.pubVideoPlayOverlay.title = label;
       });
     if (!url) throw new Error("Video bulunamadı");
+
+    // Modal kapandıysa veya kullanıcı başka bir yayın açtıysa bu sonucu UYGULAMA
+    if (currentPubItem?.videoId !== reqId) {
+      playCircle?.classList.remove("loading");
+      return;
+    }
 
     EL.pubVideo.src = url;
     EL.pubVideo.style.display = "block";
@@ -4589,6 +4603,13 @@ function applyPMtoUI() {
         pm.videoBlobUrl = url;
         vidEl.src = url; vidEl.style.display = "block";
         imgEl.style.display = "none";
+        // Codec/format desteklenmiyorsa thumbnail'a geri dön + bildir
+        vidEl.onerror = () => {
+          if (pm.videoId !== requestedVideoId) return;
+          vidEl.style.display = "none";
+          imgEl.src = pm.image || ""; imgEl.style.display = "block";
+          toast("⚠️ Bu video bu cihazda oynatılamıyor");
+        };
       }).catch(e => {
         EL.photoImgWrap.querySelector(".video-loading-overlay")?.remove();
         console.warn("[Video]", e.message);
@@ -5778,6 +5799,24 @@ function hideUploadModal() {
 
 const CHUNK_SIZE      = 400_000; // ~300KB binary per chunk — daha küçük/güvenli, Firestore 1MB limitine daha uzak
 const _videoUrlCache  = new Map(); // videoId → objectURL (session)
+
+// Bellek sınırı: cache büyürse en eski objectURL'leri revoke edip sil.
+// Şu an oynayan/görünen videoları (DOM'daki <video> src'leri ve foto modalı)
+// ASLA silmez — yalnızca kullanımda olmayan eski blob'ları temizler.
+const _VIDEO_CACHE_MAX = 24;
+function _evictVideoCacheIfNeeded() {
+  if (_videoUrlCache.size <= _VIDEO_CACHE_MAX) return;
+  const active = new Set(
+    [...document.querySelectorAll("video")].map(v => v.src).filter(Boolean)
+  );
+  if (pm?.videoBlobUrl) active.add(pm.videoBlobUrl);
+  for (const [id, url] of _videoUrlCache) {           // Map = ekleme sırası (en eski önce)
+    if (_videoUrlCache.size <= _VIDEO_CACHE_MAX) break;
+    if (active.has(url)) continue;                    // kullanımda → atla
+    try { URL.revokeObjectURL(url); } catch {}
+    _videoUrlCache.delete(id);
+  }
+}
 const _chatPhotoCache = new Map(); // chunkId → base64
 let   _pendingVideoBlob = null;
 let   _pendingVideoMime = null;
@@ -5856,7 +5895,14 @@ async function _writeChunks(col, id, blob, extraMeta = {}, onProgress) {
     r.onerror = () => rej(r.error);
     r.readAsDataURL(blob);
   });
-  const b64   = dataUrl.slice(dataUrl.indexOf(",") + 1);
+  // KRİTİK: "base64," işaretinden ayır, ilk virgülden DEĞİL. MP4/MKV mime'leri
+  // codec listesinde virgül içerir (video/mp4;codecs=avc1.42E01E,mp4a.40.2),
+  // indexOf(",") o virgülü bulur ve base64'ün başına çöp katar → karşı cihazda
+  // atob "not correctly encoded" hatası verir.
+  const _b64Marker = dataUrl.indexOf("base64,");
+  const b64   = _b64Marker >= 0
+    ? dataUrl.slice(_b64Marker + 7)
+    : dataUrl.slice(dataUrl.indexOf(",") + 1);
   const mime  = blob.type || "application/octet-stream";
   const total = Math.ceil(b64.length / CHUNK_SIZE);
 
@@ -5931,6 +5977,16 @@ async function _writeChunks(col, id, blob, extraMeta = {}, onProgress) {
   }
 
   if (!verified) {
+    // Yarım yükleme çöpünü temizle — eksik kalan meta+chunk'lar Firestore'da
+    // yetim olarak kalmasın (kota/çöp birikmesin)
+    try {
+      await Promise.all([
+        deleteDoc(doc(db, col, id)).catch(() => {}),
+        ...Array.from({ length: total }, (_, i) =>
+          deleteDoc(doc(db, col, id, "chunks", _ci(i))).catch(() => {})
+        ),
+      ]);
+    } catch {}
     throw new Error(
       missingIdx.length > 0
         ? `Yükleme eksik kaldı (${missingIdx.length} parça sunucuya ulaşmadı). Lütfen tekrar deneyin.`
@@ -5950,33 +6006,50 @@ async function _writeChunks(col, id, blob, extraMeta = {}, onProgress) {
  *  şart: 70 chunk'ı sırayla okumak 10-40 saniye sürebiliyordu.)
  */
 async function _readChunks(col, id, onProgress) {
-  let metaSnap = await getDoc(doc(db, col, id));
-  if (!metaSnap.exists()) {
-    // Cache'de yok — başka cihazdan yüklenmiş, henüz senkronize olmamış olabilir
+  let permDenied = false;
+  let metaSnap   = null;
+
+  // 1) Önce yerel cache (hızlı). Hata olursa yut, sunucu denemesine geç.
+  try { metaSnap = await getDoc(doc(db, col, id)); }
+  catch (e) { if (e?.code === "permission-denied") permDenied = true; }
+
+  // 2) Cache'de yoksa SUNUCUDAN zorla oku (başka cihazdan yüklenmiş video burada)
+  if (!metaSnap || !metaSnap.exists()) {
     try {
       metaSnap = await Promise.race([
         getDocFromServer(doc(db, col, id)),
-        new Promise((_, rej) => setTimeout(() => rej(new Error("Zaman aşımı")), 6000)),
+        new Promise((_, rej) => setTimeout(() => rej(new Error("Zaman aşımı")), 8000)),
       ]);
-    } catch(e) { console.warn(`[Media] sunucudan okunamadı: ${col}/${id}`, e.message); }
+    } catch (e) {
+      if (e?.code === "permission-denied") permDenied = true;
+      else console.warn(`[Media] meta sunucudan okunamadı: ${col}/${id}`, e.message);
+    }
   }
-  if (!metaSnap.exists()) { console.warn(`[Media] meta yok: ${col}/${id}`); return null; }
+
+  // İzin reddi → kullanıcıya NET hata (toast olarak görünür)
+  if (permDenied) {
+    throw new Error("Sunucudan okunamıyor: Firestore güvenlik kuralları izin vermiyor. 'videos' ve 'videos/{id}/chunks' için okuma kuralı ekleyin.");
+  }
+  if (!metaSnap || !metaSnap.exists()) { console.warn(`[Media] meta yok: ${col}/${id}`); return null; }
 
   const { total, mime } = metaSnap.data();
   if (!total) return null;
 
+  let chunkPermDenied = false;
   const readOne = async (i) => {
     const ref = doc(db, col, id, "chunks", _ci(i));
-    let snap = await getDoc(ref);
-    if (!snap.exists()) {
+    let snap = null;
+    try { snap = await getDoc(ref); }
+    catch (e) { if (e?.code === "permission-denied") chunkPermDenied = true; }
+    if (!snap || !snap.exists()) {
       try {
         snap = await Promise.race([
           getDocFromServer(ref),
-          new Promise((_, rej) => setTimeout(() => rej(new Error("Zaman aşımı")), 6000)),
+          new Promise((_, rej) => setTimeout(() => rej(new Error("Zaman aşımı")), 8000)),
         ]);
-      } catch {}
+      } catch (e) { if (e?.code === "permission-denied") chunkPermDenied = true; }
     }
-    return snap.exists() ? (snap.data().data || "") : null;
+    return (snap && snap.exists()) ? (snap.data().data || "") : null;
   };
 
   let done = 0;
@@ -6001,6 +6074,9 @@ async function _readChunks(col, id, onProgress) {
   }
 
   if (parts.some(p => p === null)) {
+    if (chunkPermDenied) {
+      throw new Error("Video parçaları okunamıyor: Firestore güvenlik kuralları 'chunks' alt koleksiyonuna izin vermiyor.");
+    }
     console.error(`[Media] chunk(lar) hâlâ eksik: ${col}/${id}`);
     return null;
   }
@@ -6024,6 +6100,7 @@ async function loadVideoUrl(videoId, fallbackMime, onProgress) {
   if (local?.blob) {
     const url = URL.createObjectURL(local.blob);
     _videoUrlCache.set(videoId, url);
+    _evictVideoCacheIfNeeded();
     return url;
   }
 
@@ -6039,7 +6116,15 @@ async function loadVideoUrl(videoId, fallbackMime, onProgress) {
   const baseMime = (rawMime.split(";")[0] || "video/webm").trim() || "video/webm";
   let blobObj;
   try {
-    const bin = atob(result.b64);
+    // ESKİ VİDEO KURTARMA: hatalı yazma yüzünden base64'ün başına mime çöpü
+    // eklenmiş olabilir (ör. "mp4a.40.2;base64,GERÇEKVERİ"). Geçerli base64
+    // ASLA virgül içermez; bu yüzden SON virgülden sonrası her zaman gerçek
+    // base64'tür. Virgül yoksa (yeni/temiz video) string olduğu gibi kalır.
+    let b64 = result.b64.replace(/\s/g, "");
+    const lastComma = b64.lastIndexOf(",");
+    if (lastComma >= 0) b64 = b64.slice(lastComma + 1);
+
+    const bin = atob(b64);
     const buf = new Uint8Array(bin.length);
     for (let j = 0; j < bin.length; j++) buf[j] = bin.charCodeAt(j);
     blobObj = new Blob([buf], { type: baseMime });
@@ -6050,6 +6135,7 @@ async function loadVideoUrl(videoId, fallbackMime, onProgress) {
 
   const url = URL.createObjectURL(blobObj);
   _videoUrlCache.set(videoId, url);
+  _evictVideoCacheIfNeeded();
   // Firestore'dan indirilen videoyu da yerel cache'e al — bir dahaki açılışta
   // tekrar indirmeye gerek kalmasın
   _saveVideoLocal(videoId, blobObj, baseMime).catch(() => {});
