@@ -2809,7 +2809,7 @@
       Çıkış Yap
     </button>
 
-    <div class="side-version-footer">Pelus Takip · v1.0.5</div>
+    <div class="side-version-footer">Pelus Takip · v1.0.6</div>
 
   </div>
 </div>
@@ -9234,27 +9234,40 @@ async function login() {
   EL.googleLoginBtn.disabled    = true;
   EL.loginWarning.style.display = "none";
   EL.loginLoader.style.display  = "block";
-  try {
-    // iframe içinde veya popup engelliyse redirect kullan
-    const useRedirect = window.self !== window.top
-      || /iPhone|iPad|iPod/i.test(navigator.userAgent);
+  // iframe içindeysek popup açılamaz → redirect zorunlu
+  const inIframe = window.self !== window.top;
 
-    if (useRedirect) {
+  try {
+    if (inIframe) {
       await signInWithRedirect(auth, provider);
       return; // redirect — sayfa yeniden yüklenir
     }
 
+    // FIX (iOS ana ekran/standalone PWA): Eskiden iOS'ta signInWithRedirect
+    // zorlanıyordu. Ana ekrana eklenmiş PWA'da Google'a yönlenip dönünce iOS
+    // uygulamayı SIFIRDAN açıyor, sessionStorage siliniyor ve getRedirectResult
+    // boş dönüyordu → tekrar login ekranı. Popup ana pencereyi terk etmediği
+    // için oturum korunur; bu yüzden iOS dahil her yerde ÖNCE popup deniyoruz.
     try {
       await signInWithPopup(auth, provider);
     } catch (popupErr) {
-      const blocked = popupErr.code === "auth/popup-blocked"
+      const cantOpen =
+           popupErr.code === "auth/popup-blocked"
         || popupErr.code === "auth/cancelled-popup-request"
-        || popupErr.code === "auth/popup-closed-by-user";
-      if (blocked) {
-        // Popup engellendi — redirect dene
-        EL.loginWarning.textContent   = "Popup engellendi, yönlendiriliyorsunuz…";
+        || popupErr.code === "auth/operation-not-supported-in-this-environment";
+      const userClosed = popupErr.code === "auth/popup-closed-by-user";
+
+      if (userClosed) {
+        // Kullanıcı pencereyi kapattı — sessizce iptal, redirect'e zorlama
+        EL.loginLoader.style.display = "none";
+        EL.googleLoginBtn.disabled   = false;
+        return;
+      }
+      if (cantOpen) {
+        // Popup gerçekten açılamadı — son çare redirect
+        EL.loginWarning.textContent   = "Açılır pencere engellendi, yönlendiriliyorsunuz…";
         EL.loginWarning.style.display = "block";
-        setTimeout(() => signInWithRedirect(auth, provider), 800);
+        await signInWithRedirect(auth, provider);
         return;
       }
       throw popupErr;
