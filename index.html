@@ -4713,9 +4713,9 @@ async function publishPhoto() {
       if (pm.publishedId && isRealId) {
         finalVideoId = pm.videoId;
       } else {
-        // Yüklenecek blob'u bul: önce taze çekim (pending), yoksa galeriden (IndexedDB)
+        // Yüklenecek blob'u bul: önce taze çekim, yoksa galeriden (IndexedDB)
         let blobToUpload = _pendingVideoBlob;
-        let mimeToUpload = _pendingVideoMime || pm.videoMime || "video/webm";
+        let mimeToUpload = _pendingVideoMime || pm.videoMime || "video/mp4";
         if (!blobToUpload && pm.videoId) {
           const local = await _loadVideoLocal(pm.videoId);
           if (local?.blob) { blobToUpload = local.blob; if (local.mime) mimeToUpload = local.mime; }
@@ -4726,8 +4726,7 @@ async function publishPhoto() {
         }
 
         const tempVideoId = pm.videoId;
-        // Galeriden geliyorsa mevcut gerçek id'yi KORU (galeri dokümanıyla
-        // aynı id'ye yazsın); taze çekimse yeni id ver.
+        // Galeriden geliyorsa mevcut gerçek id'yi koru; taze çekimse yeni id ver
         finalVideoId   = isRealId ? pm.videoId : `vid_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
         finalVideoMime = mimeToUpload;
 
@@ -4739,7 +4738,6 @@ async function publishPhoto() {
         await saveVideoChunks(finalVideoId, blobToUpload,
           (pct, sub) => setUploadProgress(pct, sub));
 
-        // Cache + IndexedDB'yi gerçek id'ye hizala
         const blobUrl = _videoUrlCache.get(tempVideoId);
         if (blobUrl && tempVideoId !== finalVideoId) {
           _videoUrlCache.set(finalVideoId, blobUrl); _videoUrlCache.delete(tempVideoId);
@@ -4896,13 +4894,11 @@ async function savePhoto() {
 
     if (pm.isVideo) {
       if (_pendingVideoBlob) {
-        // ── SADECE YEREL KAYIT ──────────────────────────────
-        // Galeriye kaydetme Firestore'a YÜKLEME YAPMAZ. Video
-        // IndexedDB'de kalıcı id ile saklanır; kendi cihazında
-        // anında oynar. Firestore'a yükleme yalnızca "Yayınla"da
-        // olur (diğer cihazların izleyebilmesi için).
-        const tempVideoId  = pm.videoId;
-        const mimeToSave   = _pendingVideoMime || pm.videoMime || "video/webm";
+        // SADECE YEREL KAYIT — galeriye kaydetme Firestore'a YÜKLEMEZ.
+        // Video IndexedDB'de kalıcı id ile saklanır; kendi cihazında anında
+        // oynar. Firestore'a yükleme yalnızca "Yayınla"da olur.
+        const tempVideoId = pm.videoId;
+        const mimeToSave  = _pendingVideoMime || pm.videoMime || "video/mp4";
         finalVideoId   = `vid_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
         finalVideoMime = mimeToSave;
 
@@ -4912,7 +4908,7 @@ async function savePhoto() {
         const blobUrl = _videoUrlCache.get(tempVideoId);
         if (blobUrl) { _videoUrlCache.set(finalVideoId, blobUrl); _videoUrlCache.delete(tempVideoId); }
 
-        // Blob'u temizle ama IndexedDB'de duruyor — ileride yayınlanırsa
+        // Blob'u bırak (IndexedDB'de duruyor); ileride yayınlanırsa
         // publishPhoto onu IndexedDB'den okuyup yükleyecek
         _pendingVideoBlob = null;
         _pendingVideoMime = null;
@@ -5636,14 +5632,23 @@ async function startRecording() {
   // donanım hızlandırmalı (GPU/CPU) decode desteğine sahiptir, evrensel uyumluluk sağlar.
   // VP9/VP8 ise Safari'de HİÇ decode edilemez — Android'de kaydedilen bir VP9 videosu
   // iPhone'da "siyah ekran" olarak görünür çünkü tarayıcı kareyi hiç çözemez.
+  // MP4 (H.264 + AAC) her cihazda (iPhone dahil) oynar. Önce cihazın
+  // gerçekten desteklediği MP4 codec adlarını dene — bazı cihazlar MP4'ü
+  // yalnızca "avc1.42E01E,mp4a.40.2" gibi açık codec adıyla kabul eder;
+  // "h264,aac" yazınca desteklemiyor görünüp WebM/MKV'ye düşer (bunlar
+  // iPhone'da oynamaz). Sıralama bu yüzden önemli.
   const mimeType = [
+    "video/mp4;codecs=avc1.42E01E,mp4a.40.2",
+    "video/mp4;codecs=avc1.4D401E,mp4a.40.2",
     "video/mp4;codecs=h264,aac",
-    "video/webm;codecs=h264,opus",
+    "video/mp4;codecs=avc1,mp4a",
     "video/mp4",
+    "video/webm;codecs=h264,opus",
     "video/webm;codecs=vp8,opus",
     "video/webm;codecs=vp9,opus",
     "video/webm",
   ].find(t => MediaRecorder.isTypeSupported(t)) || "";
+  console.log("[Kayıt] Seçilen format:", mimeType || "(varsayılan)");
 
   try {
     mediaRecorder = new MediaRecorder(
@@ -5983,13 +5988,14 @@ async function _readChunks(col, id, onProgress) {
     })
   );
 
-  // İlk geçişte eksik kalan chunk'lar varsa, sadece onları tekrar dene
-  // (geçici bir tek-chunk hatası tüm video/fotoğrafı "bulunamadı" yapmasın)
-  const missing = parts.map((p, i) => p === null ? i : -1).filter(i => i >= 0);
-  if (missing.length > 0) {
-    console.warn(`[Media] ${missing.length} chunk eksik, tekrar deneniyor:`, missing);
-    onProgress?.(88, `${missing.length} parça tekrar deneniyor…`);
-    await new Promise(r => setTimeout(r, 1000));
+  // İlk geçişte eksik kalan chunk'lar varsa, sadece onları birkaç kez tekrar
+  // dene (geçici tek-chunk hatası tüm videoyu "bulunamadı" yapmasın).
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    const missing = parts.map((p, i) => p === null ? i : -1).filter(i => i >= 0);
+    if (missing.length === 0) break;
+    console.warn(`[Media] ${missing.length} chunk eksik (deneme ${attempt}/3):`, missing);
+    onProgress?.(88, `${missing.length} parça tekrar deneniyor… (${attempt}/3)`);
+    await new Promise(r => setTimeout(r, 800 * attempt));
     const retried = await Promise.all(missing.map(i => readOne(i)));
     missing.forEach((i, k) => { parts[i] = retried[k]; });
   }
@@ -6025,22 +6031,28 @@ async function loadVideoUrl(videoId, fallbackMime, onProgress) {
   const result = await _readChunks("videos", videoId, onProgress);
   if (!result) { console.warn("[Video] bulunamadı:", videoId); return null; }
 
-  const mime = result.mime || fallbackMime || "video/webm";
+  // Konteyner tipini ayıkla. "video/x-matroska;codecs=avc1,opus" gibi virgüllü
+  // mime'ler data URL'i bozar (ilk virgül başlık/veri ayıracıdır → base64 hiç
+  // çözülmez, video bozuk çıkar). Bu yüzden base64'ü her zaman virgülden
+  // etkilenmeyen atob ile çözüyoruz.
+  const rawMime  = result.mime || fallbackMime || "video/webm";
+  const baseMime = (rawMime.split(";")[0] || "video/webm").trim() || "video/webm";
   let blobObj;
   try {
-    blobObj = await fetch(`data:${mime};base64,${result.b64}`).then(r => r.blob());
-  } catch {
     const bin = atob(result.b64);
     const buf = new Uint8Array(bin.length);
     for (let j = 0; j < bin.length; j++) buf[j] = bin.charCodeAt(j);
-    blobObj = new Blob([buf], { type: mime });
+    blobObj = new Blob([buf], { type: baseMime });
+  } catch (e) {
+    console.warn("[Video] çözme hatası:", e.message);
+    return null;
   }
 
   const url = URL.createObjectURL(blobObj);
   _videoUrlCache.set(videoId, url);
   // Firestore'dan indirilen videoyu da yerel cache'e al — bir dahaki açılışta
   // tekrar indirmeye gerek kalmasın
-  _saveVideoLocal(videoId, blobObj, mime).catch(() => {});
+  _saveVideoLocal(videoId, blobObj, baseMime).catch(() => {});
   return url;
 }
 
