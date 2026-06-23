@@ -2809,7 +2809,7 @@
       Çıkış Yap
     </button>
 
-    <div class="side-version-footer">Pelus Takip · v1.0.7</div>
+    <div class="side-version-footer">Pelus Takip · v1.0.8</div>
 
   </div>
 </div>
@@ -5222,10 +5222,13 @@ async function _tryGetFcmToken(showSuccess = false) {
   if (location.protocol !== 'https:' && location.hostname !== 'localhost') return null;
   if (Notification.permission !== 'granted') return null;
   try {
+    // updateViaCache:"none" → tarayıcı SW dosyasını (ve importScripts'i) ASLA
+    // HTTP önbelleğinden almaz, hep taze çeker → uzaktan güncelleme anında yayılır
     let swReg;
-    try   { swReg = await navigator.serviceWorker.register("/firebase-messaging-sw.js"); }
-    catch { swReg = await navigator.serviceWorker.register("./firebase-messaging-sw.js").catch(()=>null); }
+    try   { swReg = await navigator.serviceWorker.register("/firebase-messaging-sw.js",  { updateViaCache: "none" }); }
+    catch { swReg = await navigator.serviceWorker.register("./firebase-messaging-sw.js", { updateViaCache: "none" }).catch(()=>null); }
     if (!swReg) return null;
+    try { swReg.update(); } catch {} // her token denemesinde güncel mi diye bak
     await Promise.race([
       navigator.serviceWorker.ready,
       new Promise(r => setTimeout(r, 5000)),
@@ -9090,7 +9093,53 @@ window.addEventListener("offline", () => toast("⚠️ Bağlantı kesildi — ç
    Konsola düşen hatalar Firestore "errorLogs"e yazılır,
    admin panelinde görünür. Spam/loop önlemleri içerir.
 ═══════════════════════════════════════════ */
-const APP_VERSION = "v1.0.7";
+const APP_VERSION = "v1.0.8";
+
+/* ═══════════════════════════════════════════
+   SERVICE WORKER'I UZAKTAN GÜNCEL TUT
+   firebase-messaging-sw.js'i her açılışta/odakta + periyodik kontrol eder.
+   Sunucuda dosya değişince tüm cihazlar elle "unregister" yapmadan,
+   bir sonraki açılış/odakta yeni sürüme geçer (SW'de skipWaiting var).
+═══════════════════════════════════════════ */
+let _swFreshStarted = false;
+async function _keepSwFresh() {
+  if (_swFreshStarted) return;
+  _swFreshStarted = true;
+  if (!("serviceWorker" in navigator)) return;
+  if (location.protocol !== "https:" && location.hostname !== "localhost") return;
+
+  try {
+    const hadController = !!navigator.serviceWorker.controller; // sayfa açılırken zaten kontrolcü var mıydı?
+    // Kayıt yoksa erkenden kur (token akışını beklemeden)
+    let reg = await navigator.serviceWorker.getRegistration("/firebase-messaging-sw.js")
+           || await navigator.serviceWorker.getRegistration();
+    if (!reg) {
+      reg = await navigator.serviceWorker.register("/firebase-messaging-sw.js", { updateViaCache: "none" })
+              .catch(() => navigator.serviceWorker.register("./firebase-messaging-sw.js", { updateViaCache: "none" }).catch(() => null));
+    }
+    if (!reg) return;
+
+    const check = () => { try { reg.update(); } catch {} };
+    check();                                  // açılışta
+    setInterval(check, 30 * 60 * 1000);       // her 30 dk
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") check();   // uygulamaya her dönüşte
+    });
+
+    // Yeni SW devralınca sayfayı bir kez tazele — ama SADECE gerçek güncellemede
+    // (ilk kurulumda kontrolcü yoktu; o durumda yenileme yapma)
+    let _reloaded = false;
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if (_reloaded || !hadController) return;
+      _reloaded = true;
+      location.reload();
+    });
+  } catch (e) {
+    console.warn("[SW] keepFresh:", e.message);
+  }
+}
+_keepSwFresh();
+
 const _errLog = { count: 0, recent: new Map(), inFlight: false };
 const _ERR_MAX = 60;          // oturum başına en fazla
 const _ERR_DEDUPE_MS = 15000; // aynı mesajı 15 sn içinde tekrar yazma
