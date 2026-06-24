@@ -1518,8 +1518,8 @@
       overflow: hidden !important;
       background: linear-gradient(170deg, #fce8f0 0%, #f5b8d0 100%);
     }
-    /* Chat aktifken bottombar gizle */
-    body.chat-active .bottombar { display: none !important; }
+    /* Alt bar yalnızca bir KONUŞMA açıkken gizlenir; Mesajlar listesinde görünür */
+    body.conv-open .bottombar { display: none !important; }
     body.chat-active #chatPage   { opacity: 1; pointer-events: auto; }
 
     /* Sub-view'lar: liste ve konuşma */
@@ -1588,7 +1588,7 @@
     .chat-user-list {
       flex: 1 1 0; min-height: 0;
       overflow-y: auto; -webkit-overflow-scrolling: touch;
-      padding: 8px 10px;
+      padding: 8px 10px calc(80px + env(safe-area-inset-bottom, 0px) + 16px);
     }
     .chat-user-item {
       display: flex; align-items: center; gap: 11px;
@@ -1660,7 +1660,9 @@
     /* ── Mesaj context menüsü ── */
     .msg-context-menu {
       position: fixed; z-index: 9000; background: #fff; border-radius: 14px;
-      box-shadow: 0 8px 32px rgba(0,0,0,.18); overflow: hidden; min-width: 170px;
+      box-shadow: 0 8px 32px rgba(0,0,0,.18); overflow-y: auto; overflow-x: hidden; min-width: 170px;
+      max-width: calc(100vw - 16px); max-height: calc(100vh - 16px);
+      -webkit-overflow-scrolling: touch;
       animation: ctxMenuIn .16s cubic-bezier(.2,.9,.3,1.1) both;
       transform-origin: top left;
     }
@@ -2575,6 +2577,10 @@
             <div id="chatConvName" class="chat-conv-name">—</div>
             <div id="chatConvStatus" class="chat-conv-status"></div>
           </div>
+          <!-- Sohbette ara -->
+          <button id="chatSearchBtn" class="chat-call-btn" type="button" title="Sohbette Ara">
+            <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 1 0-.7.7l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14z"/></svg>
+          </button>
           <!-- Sesli arama butonu -->
           <button id="callBtn" class="chat-call-btn" type="button" title="Sesli Arama">
             <svg viewBox="0 0 24 24" width="20" height="20">
@@ -2614,6 +2620,9 @@
             <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
           </button>
           <input id="chatPhotoInput" type="file" accept="image/*" style="display:none;">
+          <button id="chatMicBtn" class="chat-photo-btn" type="button" title="Sesli Mesaj">
+            <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2z"/></svg>
+          </button>
           <textarea id="chatInput" class="chat-input" placeholder="Mesaj yaz…" rows="1" maxlength="1000"></textarea>
           <button id="chatSendBtn" class="chat-send-btn" type="button" disabled>
             <svg viewBox="0 0 24 24" width="18" height="18"><path fill="#fff" d="M2.01 21 23 12 2.01 3 2 10l15 2-15 2z"/></svg>
@@ -2809,7 +2818,7 @@
       Çıkış Yap
     </button>
 
-    <div class="side-version-footer">Pelus Takip · v1.1.0</div>
+    <div class="side-version-footer">Pelus Takip · v1.3.5</div>
 
   </div>
 </div>
@@ -3281,6 +3290,8 @@ const EL = {
   callRejectBtn:       q("callRejectBtn"),
   remoteAudio:         q("remoteAudio"),
   chatPhotoBtn:        q("chatPhotoBtn"),
+  chatMicBtn:          q("chatMicBtn"),
+  chatSearchBtn:       q("chatSearchBtn"),
   chatPhotoInput:      q("chatPhotoInput"),
   typingIndicator:     q("typingIndicator"),
   typingName:          q("typingName"),
@@ -5493,6 +5504,7 @@ function showPage(page) {
 
   // Chat aktifken bottombar'ı gizle
   document.body.classList.toggle("chat-active", page === "chat");
+  document.body.classList.remove("conv-open"); // sayfa değişince konuşma kapanır → alt bar geri gelsin
 
   EL.navLocal.classList.toggle("active",      page === "local");
   EL.navPublished.classList.toggle("active",  page === "published");
@@ -7142,6 +7154,13 @@ function _renderChatMessages(msgs) {
     let lastDate  = "";
     const GROUP_GAP = 120_000;
 
+    // İlk okunmamış mesajı bir kez yakala (sohbeti açtığımız andaki sınır)
+    if (_pendingUnreadMarker) {
+      const fu = msgs.find(m => m.from !== currentUser.uid && !m.read);
+      _firstUnreadId = fu ? fu.id : null;
+      _pendingUnreadMarker = false;
+    }
+
     msgs.forEach((msg, i) => {
       const prev = msgs[i-1];
       const next = msgs[i+1];
@@ -7149,12 +7168,20 @@ function _renderChatMessages(msgs) {
       const d    = new Date(msg.ts);
 
       // Tarih ayracı
-      const ds = d.toLocaleDateString("tr-TR", {day:"numeric",month:"long",year:"numeric"});
+      const ds = _smartDate(d);
       if (ds !== lastDate) {
         const sep = document.createElement("div");
         sep.className = "msg-date-sep";
         sep.innerHTML = `<span>${ds}</span>`;
         frag.appendChild(sep); lastDate = ds;
+      }
+
+      // "Yeni mesajlar" ayracı — ilk okunmamış mesajın hemen üstüne
+      if (_firstUnreadId && msg.id === _firstUnreadId) {
+        const us = document.createElement("div");
+        us.className = "msg-unread-sep";
+        us.innerHTML = `<span>Yeni mesajlar</span>`;
+        frag.appendChild(us);
       }
 
       // Gruplama
@@ -7171,6 +7198,8 @@ function _renderChatMessages(msgs) {
       row.className = `msg-row${mine?" mine":""} ${groupClass}${isNewMsg ? " msg-row-new" : ""}`;
       row.style.position = "relative";
       row.dataset.msgId  = msg.id;
+      if (_selectMode && _selectedIds.has(msg.id)) row.classList.add("selected");
+      row.addEventListener("click", () => { if (_selectMode) _toggleSelect(msg.id, row); });
 
       // Swipe ok ikonu
       const swipeIcon = document.createElement("div");
@@ -7222,8 +7251,26 @@ function _renderChatMessages(msgs) {
         bubble.appendChild(qt);
       }
 
-      // Fotoğraf veya metin
-      if (msg.type === "photo") {
+      // Arama kaydı / Fotoğraf / metin
+      if (msg.type === "call") {
+        const c = msg.call || {};
+        const out = mine;
+        const missed = c.status === "missed" || c.status === "rejected" || c.status === "cancelled";
+        bubble.classList.add("msg-call");
+        const dirTxt = out ? "Giden arama" : "Gelen arama";
+        const subTxt = c.status === "answered" ? _fmtDur(c.duration)
+                     : c.status === "missed"   ? "Cevapsız"
+                     : c.status === "rejected" ? "Reddedildi" : "İptal edildi";
+        const cb = document.createElement("div");
+        cb.className = "call-log" + (missed ? " missed" : "");
+        cb.innerHTML = `<span class="call-log-ic">${missed ? "📵" : "📞"}</span>` +
+          `<span class="call-log-info"><b>${dirTxt}</b><small>${subTxt}</small></span>` +
+          `<span class="call-log-redial">↻</span>`;
+        cb.addEventListener("click", () => { if (chatActiveUid && typeof startCall === "function") startCall(); });
+        bubble.appendChild(cb);
+      } else if (msg.type === "audio") {
+        _renderAudioBubble(msg, bubble);
+      } else if (msg.type === "photo") {
         const img = document.createElement("img");
         img.className = "msg-photo";
         img.loading   = "lazy";
@@ -7254,7 +7301,7 @@ function _renderChatMessages(msgs) {
         bubble.appendChild(img);
       } else {
         const textNode = document.createElement("div");
-        textNode.innerHTML = _esc(msg.text||"").replace(/\n/g,"<br>");
+        textNode.innerHTML = _formatMsgText(msg.text||"");
         bubble.appendChild(textNode);
       }
       wrap.appendChild(bubble);
@@ -7268,13 +7315,28 @@ function _renderChatMessages(msgs) {
       bubble.addEventListener("pointercancel", () => clearTimeout(_lpTimer));
       bubble.addEventListener("contextmenu",   e  => { e.preventDefault(); _showMsgCtxMenu(e, msg, row); });
 
+      // Çift dokunuş → hızlı ❤️ (fotoğraf/arama/ses hariç)
+      if (msg.type !== "photo" && msg.type !== "call" && msg.type !== "audio") {
+        let _lastTap = 0;
+        bubble.addEventListener("click", () => {
+          const now = Date.now();
+          if (now - _lastTap < 320) _toggleReaction(msg, "❤️");
+          _lastTap = now;
+        });
+      }
+
+      // Reaksiyon balonları (balonun altında)
+      const reactEl = _renderReactions(msg);
+      if (reactEl) wrap.appendChild(reactEl);
+
       // Meta (zaman + tick) — grup sonunda
       const meta = document.createElement("div");
       meta.className = "msg-meta";
       const ts = d.toLocaleTimeString("tr-TR",{hour:"2-digit",minute:"2-digit"});
-      meta.innerHTML = mine
-        ? `<span>${ts}</span><span class="${msg.read?"msg-tick read":"msg-tick"}">${msg.read?"✓✓":"✓"}</span>`
-        : `<span>${ts}</span>`;
+      const editedTag = msg.edited ? '<span class="msg-edited">düzenlendi</span>' : '';
+      meta.innerHTML = (mine && msg.type !== "call")
+        ? `${editedTag}<span>${ts}</span><span class="${msg.read?"msg-tick read":"msg-tick"}">${msg.read?"✓✓":"✓"}</span>`
+        : `${editedTag}<span>${ts}</span>`;
       wrap.appendChild(meta);
       row.appendChild(wrap);
       frag.appendChild(row);
@@ -7292,10 +7354,21 @@ function _renderChatMessages(msgs) {
         const newScrollHeight = EL.chatMessages.scrollHeight;
         EL.chatMessages.scrollTop = newScrollHeight - prevScrollHeight + prevScrollTop;
       } else if (wasNearBottom || prevMsgCount === 0) {
-        // İlk yükleme veya kullanıcı zaten en alttaydı — en alta kaydır
-        EL.chatMessages.scrollTop = EL.chatMessages.scrollHeight;
+        // İlk yükleme veya kullanıcı zaten en alttaydı
+        if (prevMsgCount === 0 && _firstUnreadId) {
+          const sep = EL.chatMessages.querySelector(".msg-unread-sep");
+          if (sep) sep.scrollIntoView({ block: "center" });
+          else EL.chatMessages.scrollTop = EL.chatMessages.scrollHeight;
+        } else {
+          EL.chatMessages.scrollTop = EL.chatMessages.scrollHeight;
+        }
+        _chatNewCount = 0;
+        _updateScrollFab(true);
+      } else {
+        // Kullanıcı yukarıda — gelen yeni (karşı taraf) mesajları say, rozet göster
+        const incoming = msgs.filter(m => !prevIds.has(m.id) && m.from !== currentUser.uid).length;
+        _bumpChatNew(incoming);
       }
-      // Diğer durumda (kullanıcı yukarıda, mesaj sayısı değişmedi) scroll'a dokunma
     });
     _markChatRead();
 }
@@ -7310,10 +7383,24 @@ function _showMsgCtxMenu(e, msg, row) {
   const menu = document.createElement("div");
   menu.className = "msg-context-menu";
 
+  // Hızlı reaksiyon çubuğu (en üstte)
+  const reactRow = document.createElement("div");
+  reactRow.className = "msg-ctx-reactions";
+  REACTIONS.forEach(e => {
+    const b = document.createElement("div");
+    b.className = "msg-ctx-react";
+    b.textContent = e;
+    b.addEventListener("click", ev => { ev.stopPropagation(); _toggleReaction(msg, e); });
+    reactRow.appendChild(b);
+  });
+  if (msg.id) menu.appendChild(reactRow);
+
   const items = [
     { icon:"📌", label:"Sabitle",    action: () => _pinMessage(msg) },
     { icon:"↩️", label:"Yanıtla",   action: () => { _setReply(msg); _hideCtxMenu(); } },
-    { icon:"📋", label:"Kopyala",   action: () => { navigator.clipboard?.writeText(msg.text||""); toast("📋 Kopyalandı"); _hideCtxMenu(); } },
+    ...((msg.type == null || msg.type === "text") ? [{ icon:"📋", label:"Kopyala", action: () => { navigator.clipboard?.writeText(msg.text||""); toast("📋 Kopyalandı"); _hideCtxMenu(); } }] : []),
+    { icon:"☑️", label:"Seç",       action: () => { _enterSelectMode(msg); _hideCtxMenu(); } },
+    ...(mine && (msg.type == null || msg.type === "text") ? [{ icon:"✏️", label:"Düzenle", action: () => { _startEdit(msg); _hideCtxMenu(); } }] : []),
     ...(mine ? [{ icon:"🗑", label:"Sil", danger: true, action: () => _deleteChatMsg(msg) }] : []),
   ];
 
@@ -7325,14 +7412,44 @@ function _showMsgCtxMenu(e, msg, row) {
     menu.appendChild(btn);
   });
 
-  // Konumlandır — hem üst/alt sınır hem de sol/sağ sınır kontrolü
-  // (çok dar ekranlarda menü viewport dışına taşmasın)
-  const rect = row.getBoundingClientRect();
-  const top  = Math.max(8, Math.min(rect.bottom + 4, window.innerHeight - 180));
-  const left = Math.max(8, Math.min(rect.left, window.innerWidth - 180));
-  menu.style.cssText = `top:${top}px;left:${left}px`;
+  // Konumlandır — menüyü önce görünmez ekleyip GERÇEK boyutunu ölç,
+  // sonra ekran sınırları içine sığacak şekilde yerleştir.
+  menu.style.visibility = "hidden";
+  menu.style.top = "0px";
+  menu.style.left = "0px";
   document.body.appendChild(menu);
   _ctxMenu = menu;
+
+  const pad = 8;
+  const vw  = window.innerWidth;
+  const vh  = window.innerHeight;
+  const mw  = menu.offsetWidth;
+  const mh  = menu.offsetHeight;
+  const rect = row.getBoundingClientRect();
+
+  // Dokunulan nokta (varsa) — yoksa satırın kenarı
+  const px = (e && Number.isFinite(e.clientX)) ? e.clientX
+           : (e && e.changedTouches && e.changedTouches[0]) ? e.changedTouches[0].clientX
+           : rect.left;
+  const py = (e && Number.isFinite(e.clientY)) ? e.clientY
+           : (e && e.changedTouches && e.changedTouches[0]) ? e.changedTouches[0].clientY
+           : rect.bottom;
+
+  // Yatay: kendi mesajımsa sağa hizala, değilse sola — sonra ekrana kıstır
+  let left = mine ? Math.min(px, rect.right) - mw : Math.min(px, rect.left);
+  if (!Number.isFinite(left)) left = px;
+  left = Math.max(pad, Math.min(left, vw - mw - pad));
+
+  // Dikey: altta yer varsa alta, yoksa üste, ikisi de olmazsa ekrana sığdır
+  let top;
+  if (py + 6 + mh <= vh - pad)      top = py + 6;            // dokunma noktasının altına
+  else if (py - 6 - mh >= pad)      top = py - 6 - mh;       // üstüne
+  else                              top = vh - mh - pad;     // sığmıyorsa ekran altına yasla
+  top = Math.max(pad, Math.min(top, vh - mh - pad));
+
+  menu.style.left = left + "px";
+  menu.style.top  = top + "px";
+  menu.style.visibility = "";
 
   setTimeout(() => document.addEventListener("click", _hideCtxMenu, { once: true }), 50);
 }
@@ -7465,7 +7582,9 @@ function _setReply(msg) {
 
 function _clearReply() {
   _replyTo = null;
+  _editing = null;
   EL.replyPreview.style.display = "none";
+  EL.replyPreview.classList.remove("chat-edit-bar");
   EL.replyPreviewName.textContent = "";
   EL.replyPreviewText.textContent = "";
 }
@@ -7474,6 +7593,11 @@ EL.replyPreviewClose.addEventListener("click", _clearReply);
 
 /* ── Fotoğraf Gönder ── */
 EL.chatPhotoBtn.addEventListener("click", () => EL.chatPhotoInput.click());
+
+EL.chatMicBtn.addEventListener("click", () => {
+  if (_mediaRec) _stopVoiceRec(true);
+  else _startVoiceRec();
+});
 
 EL.chatPhotoInput.addEventListener("change", async () => {
   const file = EL.chatPhotoInput.files?.[0];
@@ -7559,6 +7683,141 @@ function _scrollToMsg(msgId) {
   setTimeout(() => el.classList.remove("msg-highlight"), 1200);
 }
 
+/* ── Sohbette arama ── */
+let _searchBar = null, _searchHits = [], _searchIdx = -1;
+function _buildSearchBar(){
+  if (_searchBar) return _searchBar;
+  const bar = document.createElement("div");
+  bar.className = "chat-search-bar";
+  bar.innerHTML =
+    `<input type="text" class="cs-input" placeholder="Mesajlarda ara…">` +
+    `<span class="cs-count"></span>` +
+    `<button class="cs-prev" type="button" title="Önceki">▲</button>` +
+    `<button class="cs-next" type="button" title="Sonraki">▼</button>` +
+    `<button class="cs-close" type="button" title="Kapat">✕</button>`;
+  const input = bar.querySelector(".cs-input");
+  input.addEventListener("input", ()=>_runSearch(input.value));
+  input.addEventListener("keydown", e=>{ if(e.key==="Enter"){ e.preventDefault(); _searchStep(e.shiftKey?-1:1); } });
+  bar.querySelector(".cs-prev").addEventListener("click", ()=>_searchStep(-1));
+  bar.querySelector(".cs-next").addEventListener("click", ()=>_searchStep(1));
+  bar.querySelector(".cs-close").addEventListener("click", _closeSearch);
+  EL.chatMessages.parentNode.insertBefore(bar, EL.chatMessages); // mesaj listesinin hemen üstüne
+  _searchBar = bar;
+  return bar;
+}
+function _openSearch(){ const bar=_buildSearchBar(); bar.classList.add("show"); setTimeout(()=>bar.querySelector(".cs-input").focus(),50); }
+function _closeSearch(){
+  if (!_searchBar) return;
+  _searchBar.classList.remove("show");
+  _searchBar.querySelector(".cs-input").value = "";
+  _searchBar.querySelector(".cs-count").textContent = "";
+  _searchHits = []; _searchIdx = -1;
+}
+function _runSearch(qstr){
+  const q = (qstr||"").trim().toLowerCase();
+  const cnt = _searchBar.querySelector(".cs-count");
+  if (!q){ _searchHits=[]; _searchIdx=-1; cnt.textContent=""; return; }
+  const msgs = _msgCache.get(chatActiveChatId) || [];
+  _searchHits = msgs.filter(m => (m.text||"").toLowerCase().includes(q)).map(m=>m.id);
+  if (!_searchHits.length){ _searchIdx=-1; cnt.textContent="0/0"; return; }
+  _searchIdx = _searchHits.length-1; // en yeni eşleşmeden başla
+  _gotoHit();
+}
+function _searchStep(dir){
+  if (!_searchHits.length) return;
+  _searchIdx = (_searchIdx + dir + _searchHits.length) % _searchHits.length;
+  _gotoHit();
+}
+function _gotoHit(){
+  _searchBar.querySelector(".cs-count").textContent = `${_searchIdx+1}/${_searchHits.length}`;
+  _scrollToMsg(_searchHits[_searchIdx]);
+}
+EL.chatSearchBtn.addEventListener("click", ()=>{
+  if (_searchBar && _searchBar.classList.contains("show")) _closeSearch();
+  else _openSearch();
+});
+
+/* ── Çoklu seçim + toplu silme ── */
+let _selectMode = false; const _selectedIds = new Set(); let _selectBar = null;
+function _buildSelectBar(){
+  if (_selectBar) return _selectBar;
+  const bar = document.createElement("div");
+  bar.className = "chat-select-bar";
+  bar.innerHTML =
+    `<button class="sel-cancel" type="button" title="Vazgeç">✕</button>` +
+    `<span class="sel-count">0 seçili</span>` +
+    `<button class="sel-del" type="button" title="Sil">🗑</button>`;
+  bar.querySelector(".sel-cancel").addEventListener("click", _exitSelectMode);
+  bar.querySelector(".sel-del").addEventListener("click", _bulkDelete);
+  EL.chatMessages.parentNode.insertBefore(bar, EL.chatMessages);
+  _selectBar = bar;
+  return bar;
+}
+function _enterSelectMode(firstMsg){
+  _selectMode = true; _selectedIds.clear();
+  if (firstMsg) _selectedIds.add(firstMsg.id);
+  EL.chatMessages.classList.add("select-mode");
+  _buildSelectBar().classList.add("show");
+  // mevcut satırlara seçili işareti uygula
+  if (firstMsg){ const r = EL.chatMessages.querySelector(`[data-msg-id="${firstMsg.id}"]`); if (r) r.classList.add("selected"); }
+  _updateSelectCount();
+}
+function _exitSelectMode(){
+  _selectMode = false; _selectedIds.clear();
+  EL.chatMessages.classList.remove("select-mode");
+  if (_selectBar) _selectBar.classList.remove("show");
+  EL.chatMessages.querySelectorAll(".msg-row.selected").forEach(r=>r.classList.remove("selected"));
+}
+function _toggleSelect(id, row){
+  if (_selectedIds.has(id)){ _selectedIds.delete(id); row.classList.remove("selected"); }
+  else { _selectedIds.add(id); row.classList.add("selected"); }
+  if (!_selectedIds.size){ _exitSelectMode(); return; }
+  _updateSelectCount();
+}
+function _updateSelectCount(){ if (_selectBar) _selectBar.querySelector(".sel-count").textContent = `${_selectedIds.size} seçili`; }
+async function _bulkDelete(){
+  if (!_selectedIds.size || !chatActiveChatId) return;
+  const ids = [..._selectedIds];
+  const msgs = _msgCache.get(chatActiveChatId) || [];
+  const mineIds = ids.filter(id => { const m = msgs.find(x=>x.id===id); return m && m.from === currentUser.uid; });
+  const skipped = ids.length - mineIds.length;
+  if (!mineIds.length){ toast("⚠️ Sadece kendi mesajlarını silebilirsin"); return; }
+  const ok = await openConfirm({ title:`${mineIds.length} mesaj silinsin mi?`, text: skipped>0?`(${skipped} mesaj sana ait değil, atlanacak)`:"Bu mesajlar silinecek.", okLabel:"Sil", icon:"🗑" });
+  if (!ok) return;
+  try{
+    const upd = {};
+    mineIds.forEach(id => { upd[id] = null; });
+    await rtUpdate(rtRef(rtdb, `chats/${chatActiveChatId}/messages`), upd);
+    toast(`🗑 ${mineIds.length} mesaj silindi`);
+  }catch(e){ toast("❌ "+e.message); }
+  _exitSelectMode();
+}
+
+/* ── Kaydırınca üstte sabit tarih başlığı ── */
+let _stickyDate = null, _stickyHideTimer = null;
+function _ensureStickyDate(){
+  if (_stickyDate) return _stickyDate;
+  const el = document.createElement("div");
+  el.className = "chat-sticky-date";
+  EL.chatConvView.appendChild(el);
+  EL.chatMessages.addEventListener("scroll", _updateStickyDate, { passive:true });
+  _stickyDate = el;
+  return el;
+}
+function _updateStickyDate(){
+  const el = _stickyDate; if (!el) return;
+  const seps = EL.chatMessages.querySelectorAll(".msg-date-sep");
+  if (!seps.length){ el.classList.remove("show"); return; }
+  const top = EL.chatMessages.scrollTop;
+  let cur = seps[0];
+  seps.forEach(s => { if (s.offsetTop - 4 <= top + 8) cur = s; });
+  el.textContent = cur.querySelector("span")?.textContent || "";
+  el.style.top = (EL.chatMessages.offsetTop + 8) + "px";
+  el.classList.add("show");
+  clearTimeout(_stickyHideTimer);
+  _stickyHideTimer = setTimeout(() => el.classList.remove("show"), 1500);
+}
+
 /* ── Swipe-to-reply touch handler ── */
 function _addSwipeReply(row, wrap, swipeIcon, msg) {
   const SWIPE_THRESHOLD = 72;  // px — reply tetikleme eşiği
@@ -7566,6 +7825,7 @@ function _addSwipeReply(row, wrap, swipeIcon, msg) {
   let swiping = false, triggered = false, locked = false;
 
   row.addEventListener("touchstart", e => {
+    if (_selectMode) return;
     if (e.touches.length !== 1) return;
     startX = e.touches[0].clientX;
     startY = e.touches[0].clientY;
@@ -7658,9 +7918,491 @@ function _addSwipeReply(row, wrap, swipeIcon, msg) {
   document.head.appendChild(s);
 })();
 
+/* ═══════════════════════════════════════════
+   CHAT GELİŞTİRMELERİ
+   reaksiyon · akıllı tarih · link · jumbo emoji
+   · düzenleme · en-alta-in butonu
+═══════════════════════════════════════════ */
+(function(){
+  const s = document.createElement("style");
+  s.textContent = `
+  .msg-reactions{display:flex;flex-wrap:wrap;gap:4px;margin-top:3px}
+  .msg-row.mine .msg-reactions{justify-content:flex-end}
+  .msg-reaction{display:inline-flex;align-items:center;gap:3px;background:rgba(255,255,255,.07);
+    border:1px solid rgba(192,100,138,.28);border-radius:11px;padding:1px 7px;font-size:12px;cursor:pointer;line-height:1.5;transition:transform .1s}
+  .msg-reaction:active{transform:scale(.88)}
+  .msg-reaction.own{background:rgba(192,100,138,.24);border-color:rgba(192,100,138,.65)}
+  .msg-reaction .cnt{font-size:11px;opacity:.7}
+  .msg-bubble .jumbo{font-size:34px;line-height:1.25}
+  .msg-bubble a{color:#7db8ff;text-decoration:underline;word-break:break-all}
+  .msg-row.mine .msg-bubble a{color:#e6efff}
+  .msg-ctx-reactions{display:flex;gap:2px;padding:7px 8px;border-bottom:1px solid rgba(0,0,0,.08);justify-content:space-between;position:sticky;top:0;background:#fff;z-index:1}
+  .msg-ctx-react{font-size:22px;cursor:pointer;padding:2px 5px;border-radius:50%;transition:transform .12s}
+  .msg-ctx-react:hover,.msg-ctx-react:active{transform:scale(1.3)}
+  .msg-edited{opacity:.55;font-size:10px;margin-right:4px}
+  .chat-scroll-fab{position:absolute;right:14px;bottom:88px;width:42px;height:42px;border-radius:50%;
+    background:var(--surface-1,#2a1b27);border:1px solid rgba(192,100,138,.4);color:var(--text,#fff);
+    display:none;align-items:center;justify-content:center;cursor:pointer;z-index:6;
+    box-shadow:0 4px 16px rgba(0,0,0,.45)}
+  .chat-scroll-fab.show{display:flex;animation:fabIn .2s ease}
+  .chat-scroll-fab:active{transform:scale(.92)}
+  .chat-scroll-fab .fab-badge{position:absolute;top:-5px;right:-4px;min-width:18px;height:18px;padding:0 4px;
+    background:var(--accent,#c0648a);color:#fff;border-radius:9px;font-size:11px;font-weight:700;display:none;
+    align-items:center;justify-content:center}
+  @keyframes fabIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  .chat-edit-bar{background:rgba(192,100,138,.12)!important}
+  /* Uzun basınca metin seçilmesini engelle → bizim menü açılsın */
+  .msg-bubble{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+  /* Arama kaydı balonu */
+  .msg-call .call-log{display:flex;align-items:center;gap:9px;min-width:150px}
+  .call-log-ic{font-size:20px;flex:0 0 auto}
+  .call-log-info{display:flex;flex-direction:column;line-height:1.25;flex:1}
+  .call-log-info b{font-size:13px;font-weight:600}
+  .call-log-info small{font-size:11px;opacity:.7}
+  .call-log.missed .call-log-ic{filter:grayscale(.2)}
+  .call-log.missed .call-log-info b{color:#e8615f}
+  .call-log-redial{font-size:16px;opacity:.55;flex:0 0 auto}
+  .msg-call .call-log:active .call-log-redial{opacity:1}
+  /* Sesli mesaj — voice note */
+  .msg-audio .voice-note{display:flex;align-items:center;gap:10px;min-width:188px;max-width:248px}
+  .vn-play{flex:0 0 auto;width:38px;height:38px;border-radius:50%;border:none;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.12)}
+  .msg-row.mine .vn-play{background:#fff;color:var(--accent,#c0648a)}
+  .msg-row:not(.mine) .vn-play{background:var(--accent,#c0648a);color:#fff}
+  .vn-play .vn-pause-i{display:none}
+  .vn-play.playing .vn-play-i{display:none}
+  .vn-play.playing .vn-pause-i{display:block}
+  .vn-play.loading svg{display:none}
+  .vn-play.loading::after{content:"";width:15px;height:15px;border-radius:50%;border:2px solid currentColor;border-top-color:transparent;animation:vnspin .7s linear infinite}
+  @keyframes vnspin{to{transform:rotate(360deg)}}
+  .vn-wave{flex:1;display:flex;align-items:center;gap:2px;height:30px;cursor:pointer;min-width:92px}
+  .vn-bar{flex:1;min-width:2px;border-radius:2px;background:currentColor;opacity:.34;transition:opacity .12s}
+  .vn-bar.played{opacity:1}
+  .msg-row.mine .vn-wave{color:#fff}
+  .msg-row:not(.mine) .vn-wave{color:var(--accent,#c0648a)}
+  .vn-time{flex:0 0 auto;font-size:11px;opacity:.8;font-variant-numeric:tabular-nums;min-width:30px;text-align:right}
+  /* Sohbet arka plan deseni — hafif kalpler */
+  .chat-messages{
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='70' height='70'%3E%3Cg fill='%23ffffff' fill-opacity='0.07'%3E%3Cpath d='M22 20c-2.4-4-9-3.2-9 2.4 0 4 5.6 7.2 9 9.6 3.4-2.4 9-5.6 9-9.6 0-5.6-6.6-6.4-9-2.4z'/%3E%3Cpath d='M52 48c-1.8-3-6.8-2.4-6.8 1.8 0 3 4.2 5.4 6.8 7.2 2.6-1.8 6.8-4.2 6.8-7.2 0-4.2-5-4.8-6.8-1.8z' fill-opacity='0.05'/%3E%3C/g%3E%3C/svg%3E");
+    background-size:70px 70px;
+  }
+  /* Kayıt çubuğu */
+  .chat-rec-bar{position:absolute;left:0;right:0;bottom:0;display:none;align-items:center;gap:11px;
+    padding:12px 14px;background:var(--surface-1,#241a22);border-top:1px solid rgba(255,255,255,.08);z-index:7}
+  .chat-rec-bar.show{display:flex;animation:fabIn .18s ease}
+  .chat-rec-bar .rec-cancel{background:none;border:none;color:#e8615f;font-size:18px;cursor:pointer;flex:0 0 auto}
+  .chat-rec-bar .rec-dot{width:11px;height:11px;border-radius:50%;background:#e8615f;animation:recPulse 1s infinite;flex:0 0 auto}
+  @keyframes recPulse{50%{opacity:.3}}
+  .chat-rec-bar .rec-time{font-variant-numeric:tabular-nums;font-weight:600}
+  .chat-rec-bar .rec-hint{color:var(--text-muted,#999);font-size:12px;flex:1}
+  .chat-rec-bar .rec-send{flex:0 0 auto;width:40px;height:40px;border-radius:50%;border:none;cursor:pointer;
+    background:var(--accent,#c0648a);display:flex;align-items:center;justify-content:center}
+  /* Yeni mesajlar ayracı */
+  .msg-unread-sep{display:flex;align-items:center;gap:10px;margin:14px 6px 6px;color:var(--accent,#c0648a);font-size:11px;font-weight:700;letter-spacing:.04em}
+  .msg-unread-sep::before,.msg-unread-sep::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(192,100,138,.5),transparent)}
+  /* Sohbette arama çubuğu */
+  .chat-search-bar{display:none;align-items:center;gap:6px;padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.08);background:var(--surface-1,#241a22);flex:0 0 auto}
+  .chat-search-bar.show{display:flex;animation:fabIn .16s ease}
+  .chat-search-bar .cs-input{flex:1;padding:8px 11px;border-radius:18px;border:1px solid rgba(255,255,255,.12);background:var(--surface-2,rgba(255,255,255,.06));color:var(--text,#fff);font-size:14px;outline:none}
+  .chat-search-bar .cs-count{font-size:12px;color:var(--text-muted,#999);min-width:36px;text-align:center;flex:0 0 auto}
+  .chat-search-bar button{background:none;border:none;color:var(--text,#fff);font-size:14px;cursor:pointer;padding:6px 8px;flex:0 0 auto;opacity:.8}
+  .chat-search-bar button:active{opacity:.4}
+  .chat-search-bar .cs-close{color:#e8615f}
+  /* Çoklu seçim modu */
+  .select-mode .msg-bubble{pointer-events:none}
+  .select-mode .msg-row{cursor:pointer;padding-left:42px}
+  .select-mode .msg-row::after{content:"";position:absolute;left:12px;top:50%;transform:translateY(-50%);
+    width:20px;height:20px;border-radius:50%;border:2px solid rgba(255,255,255,.35);box-sizing:border-box}
+  .select-mode .msg-row.selected{background:rgba(192,100,138,.14);border-radius:8px}
+  .select-mode .msg-row.selected::after{content:"✓";background:var(--accent,#c0648a);border-color:var(--accent,#c0648a);
+    color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700}
+  .chat-select-bar{display:none;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.08);
+    background:var(--surface-1,#241a22);flex:0 0 auto}
+  .chat-select-bar.show{display:flex;animation:fabIn .16s ease}
+  .chat-select-bar .sel-count{flex:1;font-weight:600;font-size:14px}
+  .chat-select-bar button{background:none;border:none;color:var(--text,#fff);font-size:18px;cursor:pointer;padding:5px 8px;flex:0 0 auto}
+  .chat-select-bar .sel-del{color:#e8615f}
+  /* Kaydırınca üstte sabit tarih */
+  .chat-sticky-date{position:absolute;left:50%;transform:translateX(-50%);z-index:5;
+    background:rgba(0,0,0,.6);color:#fff;font-size:11px;font-weight:600;padding:4px 13px;border-radius:13px;
+    opacity:0;transition:opacity .2s;pointer-events:none;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+  .chat-sticky-date.show{opacity:1}
+  `;
+  document.head.appendChild(s);
+})();
+
+let _firstUnreadId = null, _pendingUnreadMarker = false;
+
+function _fmtDur(s){ s = s||0; const m = Math.floor(s/60), x = s%60; return m>0 ? `${m}dk ${x}sn` : `${x}sn`; }
+function _callLogStatus(duration, reason){
+  if (duration > 0) return "answered";
+  if (reason === "rejected") return "rejected";
+  if (reason === "user-hangup" || reason === "offer-failed" || reason === "rtdb-failed") return "cancelled";
+  return "missed";
+}
+/* Arama bitince sohbete kayıt düşür — SADECE arayan yazar (çift kayıt olmaz) */
+async function _logCallRecord(callId, isCaller, duration, reason){
+  if (!isCaller || !callId || !currentUser) return;
+  const status = _callLogStatus(duration, reason);
+  const ts = Date.now();
+  const txt = status === "answered" ? `📞 Arama · ${_fmtDur(duration)}`
+            : status === "missed"   ? "📵 Cevapsız arama"
+            : status === "rejected" ? "📵 Arama reddedildi"
+            :                         "📵 Arama iptal edildi";
+  try{
+    await push(rtRef(rtdb, `chats/${callId}/messages`), {
+      from: currentUser.uid, ts, read: true, type: "call",
+      call: { status, duration: duration||0 }, text: txt,
+    });
+    rtUpdate(rtRef(rtdb, `chats/${callId}/meta`), { lastMsg: txt, lastTs: ts }).catch(()=>{});
+  }catch(e){ console.warn("[Call] kayıt:", e.message); }
+}
+
+/* ─── SESLİ MESAJ ─── */
+const _chatAudioCache = new Map();
+let _mediaRec = null, _recChunks = [], _recStream = null, _recStart = 0, _recTimer = null, _recBar = null, _recCancelled = false;
+
+function _recMime(){
+  const cands = ["audio/webm;codecs=opus","audio/webm","audio/mp4","audio/aac"];
+  for (const c of cands){ try{ if(MediaRecorder.isTypeSupported(c)) return c; }catch{} }
+  return "";
+}
+function _buildRecBar(){
+  if (_recBar) return _recBar;
+  const bar = document.createElement("div");
+  bar.className = "chat-rec-bar";
+  bar.innerHTML =
+    `<button class="rec-cancel" type="button" title="İptal">✕</button>` +
+    `<span class="rec-dot"></span><span class="rec-time">0:00</span>` +
+    `<span class="rec-hint">Kaydediliyor…</span>` +
+    `<button class="rec-send" type="button" title="Gönder"><svg viewBox="0 0 24 24" width="18" height="18"><path fill="#fff" d="M2.01 21 23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>`;
+  bar.querySelector(".rec-cancel").addEventListener("click", ()=>_stopVoiceRec(false));
+  bar.querySelector(".rec-send").addEventListener("click", ()=>_stopVoiceRec(true));
+  EL.chatConvView.appendChild(bar);
+  _recBar = bar;
+  return bar;
+}
+async function _startVoiceRec(){
+  if (_mediaRec || !chatActiveChatId) return;
+  let stream;
+  try { stream = await navigator.mediaDevices.getUserMedia({ audio:true }); }
+  catch(e){ toast("❌ Mikrofon izni gerekli"); return; }
+  _recStream = stream; _recChunks = []; _recCancelled = false;
+  const mime = _recMime();
+  try { _mediaRec = new MediaRecorder(stream, mime ? { mimeType:mime } : undefined); }
+  catch(e){ try { _mediaRec = new MediaRecorder(stream); } catch(e2){ toast("❌ Kayıt desteklenmiyor"); stream.getTracks().forEach(t=>t.stop()); return; } }
+  _mediaRec.ondataavailable = e => { if (e.data && e.data.size) _recChunks.push(e.data); };
+  _mediaRec.onstop = () => _finishVoiceRec();
+  _mediaRec.start();
+  _recStart = Date.now();
+  const bar = _buildRecBar(); bar.classList.add("show");
+  const tEl = bar.querySelector(".rec-time");
+  _recTimer = setInterval(()=>{
+    const s = Math.floor((Date.now()-_recStart)/1000);
+    tEl.textContent = `${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`;
+    if (s >= 120) _stopVoiceRec(true); // max 2dk
+  }, 250);
+  if (navigator.vibrate) navigator.vibrate(20);
+}
+function _stopVoiceRec(send){
+  if (!_mediaRec) return;
+  _recCancelled = !send;
+  clearInterval(_recTimer); _recTimer = null;
+  if (_recBar) _recBar.classList.remove("show");
+  try { _mediaRec.stop(); } catch {}
+}
+async function _finishVoiceRec(){
+  const stream = _recStream; _recStream = null;
+  if (stream) stream.getTracks().forEach(t=>t.stop());
+  const rec = _mediaRec; _mediaRec = null;
+  const dur = Math.max(1, Math.round((Date.now()-_recStart)/1000));
+  const chunks = _recChunks; _recChunks = [];
+  if (_recCancelled || !chunks.length) return;
+  const blob = new Blob(chunks, { type: (rec && rec.mimeType) || "audio/webm" });
+  if (blob.size < 800) { toast("⚠️ Çok kısa"); return; }
+  const cid = chatActiveChatId, partner = chatActiveUid;
+  if (!cid) return;
+  EL.chatMicBtn.style.opacity = "0.4"; EL.chatMicBtn.style.pointerEvents = "none";
+  try{
+    const chunkId = `ca_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
+    const { total } = await _writeChunks("chatAudio", chunkId, blob, { dur });
+    // Dalga formunu burada (kaydeden cihazda) hesapla, mesaja göm
+    let peaks = null;
+    try { peaks = await _computePeaks(await blob.arrayBuffer(), 32); } catch {}
+    if (peaks) _peaksCache.set(chunkId, peaks);
+    const ts = Date.now();
+    await push(rtRef(rtdb, `chats/${cid}/messages`), {
+      from: currentUser.uid, ts, read:false, type:"audio",
+      chunkId, chunkCount: total, dur, mime: blob.type, text:"🎤 Sesli mesaj",
+      ...(peaks ? { peaks } : {}),
+    });
+    const metaRef = rtRef(rtdb, `chats/${cid}/meta`);
+    const prev = (await get(metaRef).catch(()=>null))?.val()?.[`unread_${partner}`] || 0;
+    await rtUpdate(metaRef, { users:[currentUser.uid, partner], lastMsg:"🎤 Sesli mesaj", lastTs:ts, [`unread_${partner}`]:prev+1, [`unread_${currentUser.uid}`]:0 });
+  }catch(e){ toast("❌ Gönderilemedi: "+e.message); }
+  finally{ EL.chatMicBtn.style.opacity = ""; EL.chatMicBtn.style.pointerEvents = ""; }
+}
+async function _loadChatAudio(chunkId){
+  if (_chatAudioCache.has(chunkId)) return _chatAudioCache.get(chunkId);
+  const r = await _readChunks("chatAudio", chunkId);
+  if (!r) return null;
+  const url = `data:${r.mime||"audio/webm"};base64,${r.b64}`;
+  _chatAudioCache.set(chunkId, url);
+  return url;
+}
+/* ── Dalga formu: gerçek ses genliğinden tepe hesabı ── */
+const _peaksCache = new Map(); // chunkId → [int 0..31]
+let _audioCtx = null;
+function _getAudioCtx(){
+  if (_audioCtx) return _audioCtx;
+  const AC = window.AudioContext || window.webkitAudioContext;
+  try { _audioCtx = AC ? new AC() : null; } catch { _audioCtx = null; }
+  return _audioCtx;
+}
+async function _computePeaks(arrayBuffer, n = 32){
+  const ctx = _getAudioCtx(); if (!ctx) return null;
+  let buf;
+  try { buf = await ctx.decodeAudioData(arrayBuffer.slice(0)); } catch { return null; }
+  const ch = buf.getChannelData(0);
+  const block = Math.floor(ch.length / n) || 1;
+  const raw = [];
+  for (let i = 0; i < n; i++){
+    let sum = 0, cnt = 0;
+    const start = i * block, end = Math.min(start + block, ch.length);
+    for (let j = start; j < end; j++){ const v = ch[j]; sum += v * v; cnt++; }
+    raw.push(cnt ? Math.sqrt(sum / cnt) : 0);
+  }
+  const max = Math.max(...raw, 0.0001);
+  return raw.map(p => Math.max(1, Math.round((p / max) * 31))); // 1..31 küçük tamsayılar
+}
+async function _lazyWaveform(msg, bars){
+  try{
+    let peaks = _peaksCache.get(msg.chunkId);
+    if (!peaks){
+      const url = await _loadChatAudio(msg.chunkId); if (!url) return;
+      const ab  = await fetch(url).then(r => r.arrayBuffer());
+      peaks = await _computePeaks(ab, bars.length);
+      if (!peaks) return;
+      _peaksCache.set(msg.chunkId, peaks);
+    }
+    bars.forEach((b, i) => {
+      const p = peaks[i] != null ? peaks[i] : peaks[peaks.length - 1];
+      b.style.height = Math.max(12, Math.round((p / 31) * 100)) + "%";
+    });
+  }catch{}
+}
+
+let _curAudio = null, _curAudioStop = null;
+function _seededBars(seed, n){
+  let x = (seed >>> 0) || 123456789;
+  const arr = [];
+  for (let i = 0; i < n; i++){ x = (x * 1664525 + 1013904223) >>> 0; arr.push(0.22 + (x % 1000) / 1000 * 0.78); }
+  return arr;
+}
+function _renderAudioBubble(msg, bubble){
+  bubble.classList.add("msg-audio");
+  const dur = msg.dur || 0;
+  const fmt = s => `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,"0")}`;
+  const total = fmt(dur);
+
+  const box = document.createElement("div");
+  box.className = "voice-note";
+  box.innerHTML =
+    `<button class="vn-play" type="button">` +
+      `<svg class="vn-play-i" viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M8 5v14l11-7z"/></svg>` +
+      `<svg class="vn-pause-i" viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>` +
+    `</button>` +
+    `<div class="vn-wave"></div>` +
+    `<span class="vn-time">${total}</span>`;
+
+  const play = box.querySelector(".vn-play");
+  const wave = box.querySelector(".vn-wave");
+  const time = box.querySelector(".vn-time");
+
+  const hasPeaks = Array.isArray(msg.peaks) && msg.peaks.length;
+  const N = hasPeaks ? msg.peaks.length : 32;
+  const seed = (msg.id ? [...msg.id].reduce((a,c)=>a + c.charCodeAt(0), 0) : 0) + dur * 7;
+  const heights = hasPeaks
+    ? msg.peaks.map(p => Math.max(0.12, Math.min(1, p / 31)))
+    : _seededBars(seed, N);
+  heights.forEach(h => {
+    const b = document.createElement("span");
+    b.className = "vn-bar";
+    b.style.height = Math.round(h * 100) + "%";
+    wave.appendChild(b);
+  });
+  const bars = [...wave.children];
+  // Kayıtlı tepe yoksa, sesi çözümleyip gerçek dalga formunu yerine koy
+  if (!hasPeaks) _lazyWaveform(msg, bars);
+  const setProgress = p => { const k = Math.round(p * bars.length); bars.forEach((b,i)=>b.classList.toggle("played", i < k)); };
+
+  let audio = null, playing = false, raf = null;
+  const renderFrame = () => {
+    if (audio && audio.duration){ setProgress(audio.currentTime / audio.duration); time.textContent = fmt(audio.currentTime); }
+    if (playing) raf = requestAnimationFrame(renderFrame);
+  };
+  const stopUI = () => { playing = false; play.classList.remove("playing"); if (raf) cancelAnimationFrame(raf); raf = null; };
+
+  async function ensureAudio(){
+    if (audio) return audio;
+    play.classList.add("loading");
+    const url = await _loadChatAudio(msg.chunkId);
+    play.classList.remove("loading");
+    if (!url){ toast("⚠️ Ses yüklenemedi"); return null; }
+    audio = new Audio(url);
+    audio.addEventListener("ended", () => { stopUI(); setProgress(0); time.textContent = total; _curAudio = null; });
+    return audio;
+  }
+  function startPlay(a){
+    if (_curAudio && _curAudio !== a){ try{ _curAudio.pause(); }catch{} _curAudioStop?.(); }
+    a.play(); playing = true; play.classList.add("playing");
+    _curAudio = a; _curAudioStop = stopUI;
+    if (raf) cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(renderFrame);
+  }
+
+  play.addEventListener("click", async e => {
+    e.stopPropagation();
+    const a = await ensureAudio(); if (!a) return;
+    if (playing){ a.pause(); stopUI(); } else startPlay(a);
+  });
+  // Dalga üzerine dokun → o noktaya atla
+  wave.addEventListener("click", async e => {
+    e.stopPropagation();
+    const a = await ensureAudio(); if (!a) return;
+    const r = wave.getBoundingClientRect();
+    const frac = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
+    const go = () => { if (a.duration){ a.currentTime = frac * a.duration; setProgress(frac); } };
+    if (a.readyState >= 1) go(); else a.addEventListener("loadedmetadata", go, { once:true });
+    if (!playing) startPlay(a);
+  });
+
+  bubble.appendChild(box);
+}
+
+const REACTIONS = ["❤️","😂","👍","😮","😢","🔥"];
+
+function _smartDate(d){
+  const now = new Date();
+  const sameDay = (a,b)=>a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate();
+  const yest = new Date(now); yest.setDate(now.getDate()-1);
+  if (sameDay(d,now))  return "Bugün";
+  if (sameDay(d,yest)) return "Dün";
+  if ((now - d)/86400000 < 7) return d.toLocaleDateString("tr-TR",{weekday:"long"});
+  return d.toLocaleDateString("tr-TR",{day:"numeric",month:"long",year:"numeric"});
+}
+
+const _URL_RE = /(https?:\/\/[^\s<]+)/g;
+function _formatMsgText(text){
+  const raw = (text||"").trim();
+  let jumbo = false;
+  try { jumbo = raw.length>0 && /^(?:\s*(?:\p{Extended_Pictographic}|\p{Emoji_Component}|\u200d|\uFE0F)+\s*){1,3}$/u.test(raw); } catch {}
+  const html = _esc(text||"")
+    .replace(_URL_RE, u => `<a href="${u.replace(/"/g,"%22")}" target="_blank" rel="noopener noreferrer">${u}</a>`)
+    .replace(/\n/g,"<br>");
+  return jumbo ? `<span class="jumbo">${html}</span>` : html;
+}
+
+async function _toggleReaction(msg, emoji){
+  if (!chatActiveChatId || !currentUser) return;
+  _hideCtxMenu();
+  try{
+    const cur = (msg.reactions||{})[currentUser.uid];
+    await set(rtRef(rtdb, `chats/${chatActiveChatId}/messages/${msg.id}/reactions/${currentUser.uid}`), cur===emoji ? null : emoji);
+    if (navigator.vibrate) navigator.vibrate(18);
+  }catch(e){ toast("❌ "+e.message); }
+}
+
+function _renderReactions(msg){
+  const r = msg.reactions; if (!r) return null;
+  const entries = Object.entries(r).filter(([,e])=>e);
+  if (!entries.length) return null;
+  const map = {};
+  entries.forEach(([uid,e])=>{ (map[e]=map[e]||{count:0,mine:false}); map[e].count++; if(uid===currentUser.uid) map[e].mine=true; });
+  const box = document.createElement("div");
+  box.className = "msg-reactions";
+  Object.entries(map).forEach(([e,info])=>{
+    const pill = document.createElement("div");
+    pill.className = "msg-reaction"+(info.mine?" own":"");
+    pill.innerHTML = `<span>${e}</span>${info.count>1?`<span class="cnt">${info.count}</span>`:""}`;
+    pill.addEventListener("click", ev=>{ ev.stopPropagation(); _toggleReaction(msg, e); });
+    box.appendChild(pill);
+  });
+  return box;
+}
+
+/* En-alta-in butonu (yeni mesaj sayacıyla) */
+let _chatNewCount = 0, _scrollFab = null;
+function _ensureScrollFab(){
+  if (_scrollFab) return _scrollFab;
+  const fab = document.createElement("button");
+  fab.type = "button"; fab.className = "chat-scroll-fab";
+  fab.innerHTML = `<svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M12 16l-6-6 1.4-1.4L12 13.2l4.6-4.6L18 10z"/></svg><span class="fab-badge"></span>`;
+  fab.addEventListener("click", ()=>{ EL.chatMessages.scrollTop = EL.chatMessages.scrollHeight; _chatNewCount=0; _updateScrollFab(true); _markChatRead(); });
+  EL.chatConvView.appendChild(fab);
+  EL.chatMessages.addEventListener("scroll", ()=> _updateScrollFab());
+  _scrollFab = fab;
+  return fab;
+}
+function _chatNearBottom(){ return EL.chatMessages.scrollHeight - EL.chatMessages.scrollTop - EL.chatMessages.clientHeight < 120; }
+function _updateScrollFab(forceHide){
+  const fab = _scrollFab; if (!fab) return;
+  const badge = fab.querySelector(".fab-badge");
+  if (_chatNearBottom() || forceHide){ fab.classList.remove("show"); _chatNewCount=0; if(badge) badge.style.display="none"; }
+  else fab.classList.add("show");
+}
+function _bumpChatNew(n){
+  if (n<=0) return;
+  _chatNewCount += n;
+  const fab = _ensureScrollFab();
+  const badge = fab.querySelector(".fab-badge");
+  badge.textContent = _chatNewCount>99?"99+":String(_chatNewCount);
+  badge.style.display = "flex";
+  fab.classList.add("show");
+}
+
+/* Mesaj düzenleme */
+let _editing = null;
+function _startEdit(msg){
+  if (msg.type && msg.type !== "text") return; // sadece metin düzenlenebilir
+  _editing = { id: msg.id };
+  _replyTo = null;
+  EL.chatInput.value = msg.text || "";
+  EL.chatSendBtn.disabled = EL.chatInput.value.trim().length === 0;
+  EL.chatInput.style.height = "42px";
+  EL.chatInput.style.height = Math.min(EL.chatInput.scrollHeight, 100) + "px";
+  EL.replyPreview.style.display = "flex";
+  EL.replyPreview.classList.add("chat-edit-bar");
+  EL.replyPreviewName.textContent = "✏️ Düzenleniyor";
+  EL.replyPreviewText.textContent = (msg.text||"").slice(0,80);
+  EL.chatInput.focus();
+}
+
 async function sendChatMsg() {
   const text = EL.chatInput.value.trim();
   if (!text || !chatActiveChatId || !currentUser) return;
+
+  // ── Düzenleme modu: mevcut mesajı güncelle, yenisini gönderme ──
+  if (_editing) {
+    const id = _editing.id;
+    EL.chatInput.value = "";
+    EL.chatInput.style.height = "42px";
+    EL.chatSendBtn.disabled = true;
+    _clearReply();
+    _clearTypingSignal();
+    try {
+      await rtUpdate(rtRef(rtdb, `chats/${chatActiveChatId}/messages/${id}`), { text, edited: true });
+      // Son mesaj buysa liste önizlemesini de güncelle
+      const metaRef = rtRef(rtdb, `chats/${chatActiveChatId}/meta`);
+      const meta = (await get(metaRef).catch(()=>null))?.val() || {};
+      const msgs = _msgCache.get(chatActiveChatId) || [];
+      if (msgs.length && msgs[msgs.length-1]?.id === id) {
+        rtUpdate(metaRef, { lastMsg: text.slice(0,80) }).catch(()=>{});
+      }
+      toast("✏️ Düzenlendi");
+    } catch(e) { toast("❌ Düzenlenemedi"); EL.chatInput.value = text; }
+    return;
+  }
 
   const replyData = _replyTo ? { ..._replyTo } : null;
 
@@ -7762,6 +8504,9 @@ EL.sideChatBtn.addEventListener("click", () => {
 
 /** Konuşma görünümünü kapat — geri butonu, ESC, geri tuşu hepsi bunu kullanır */
 function closeChatConv() {
+  if (_mediaRec) _stopVoiceRec(false);
+  if (typeof _closeSearch === "function") _closeSearch();
+  if (typeof _exitSelectMode === "function") _exitSelectMode();
   if (_chatMsgListener) { try { _chatMsgListener(); } catch {} _chatMsgListener = null; }
   if (_pinnedUnsub) { off(rtRef(rtdb, _pinnedUnsub)); _pinnedUnsub = null; }
   if (_convPresenceUnsub && _convPresenceRef) { off(_convPresenceRef); _convPresenceUnsub = null; _convPresenceRef = null; }
@@ -7769,12 +8514,14 @@ function closeChatConv() {
   _clearTypingSignal();
   setActiveChat(null);
   chatActiveUid = null; chatActiveChatId = null;
+  _firstUnreadId = null; _pendingUnreadMarker = false;
   // Klavye offset sıfırla
   EL.chatConvView.style.transform = "";
   EL.chatConvView.style.height    = "";
   EL.chatInput.blur(); // klavyeyi kapat
   EL.chatConvView.classList.remove("active");
   EL.chatListView.classList.add("active");
+  document.body.classList.remove("conv-open");
   renderChatList();
 }
 EL.chatConvBack.addEventListener("click", closeChatConv);
@@ -7808,9 +8555,11 @@ function openChatConv(user) {
   // Sub-view geçişi
   EL.chatListView.classList.remove("active");
   EL.chatConvView.classList.add("active");
+  document.body.classList.add("conv-open");
 
   // _startMsgListener kendi içinde cache varsa render eder, yoksa "Yükleniyor…" gösterir
   _msgCacheLimit = MSGS_PER_PAGE;
+  _pendingUnreadMarker = true; _firstUnreadId = null;
   _startMsgListener();
   _startTypingListener(user.uid, chatActiveChatId);
   _listenPinnedMsg(chatActiveChatId);
@@ -7824,6 +8573,8 @@ function openChatConv(user) {
 
   setTimeout(() => EL.chatInput.focus(), 300);
   _markChatRead();
+  _ensureScrollFab(); _chatNewCount = 0; _updateScrollFab(true);
+  _ensureStickyDate();
   pushModalState("chatConv");
 }
 
@@ -7940,6 +8691,9 @@ async function _cleanupCall(reason) {
   // callId'yi hemen sakla, sonra temizle
   const closingCallId = _callId;
   _callId = null;
+
+  // Arama kaydını sohbete düşür (değerler sıfırlanmadan yakala)
+  _logCallRecord(closingCallId, _isCaller, _callSeconds, reason);
 
   _stopCallTimer();
   _hideCallOverlay();
@@ -9153,7 +9907,7 @@ window.addEventListener("offline", () => toast("⚠️ Bağlantı kesildi — ç
    Konsola düşen hatalar Firestore "errorLogs"e yazılır,
    admin panelinde görünür. Spam/loop önlemleri içerir.
 ═══════════════════════════════════════════ */
-const APP_VERSION = "v1.1.0";
+const APP_VERSION = "v1.3.5";
 
 /* ═══════════════════════════════════════════
    SERVICE WORKER'I UZAKTAN GÜNCEL TUT
