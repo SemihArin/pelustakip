@@ -2809,7 +2809,7 @@
       Çıkış Yap
     </button>
 
-    <div class="side-version-footer">Pelus Takip · v1.0.8</div>
+    <div class="side-version-footer">Pelus Takip · v1.1.0</div>
 
   </div>
 </div>
@@ -5154,11 +5154,54 @@ EL.notifToastClose.addEventListener("click", e => { e.stopPropagation(); _hideNo
    Başarısız olsa bile in-app çalışmaya devam eder
 ═══════════════════════════════════════════ */
 
+/* Bu cihaza sabit bir kimlik ver → bayat token'ları temizleyebilelim */
+function _deviceId() {
+  let id = null;
+  try { id = localStorage.getItem("pt_device_id"); } catch {}
+  if (!id) {
+    id = (self.crypto && crypto.randomUUID) ? crypto.randomUUID() : ("d" + Date.now() + Math.random().toString(36).slice(2));
+    try { localStorage.setItem("pt_device_id", id); } catch {}
+  }
+  return id;
+}
+function _isStandalone() {
+  return (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) || navigator.standalone === true;
+}
+/* Bu cihazın push durumunu Firestore'a yaz → admin panelde görünür */
+async function _setFcmStatus(state, message) {
+  if (!currentUser) return;
+  try {
+    await setDoc(doc(db, "users", currentUser.uid, "fcmStatus", _deviceId()), {
+      state,
+      message: message ? String(message).slice(0, 300) : null,
+      ua: navigator.userAgent,
+      standalone: _isStandalone(),
+      appVersion: (typeof APP_VERSION !== "undefined" ? APP_VERSION : null),
+      at: Date.now(),
+    }, { merge: true });
+  } catch {}
+}
+
 async function saveFcmToken(token) {
   if (!currentUser || !token) return;
-  await setDoc(doc(db,"users",currentUser.uid,"fcmTokens",token.slice(-30)),
-    { token, updatedAt: Date.now() }, { merge: true }
-  ).catch(()=>{});
+  const deviceId = _deviceId();
+  const docId = token.slice(-30);
+  // Aynı cihaza ait ESKİ/bayat token kayıtlarını sil (SW değişince token değişir)
+  try {
+    const snap = await getDocs(collection(db, "users", currentUser.uid, "fcmTokens"));
+    await Promise.all(snap.docs.map(d => {
+      const v = d.data() || {};
+      if (v.deviceId === deviceId && d.id !== docId) return deleteDoc(d.ref).catch(()=>{});
+      return null;
+    }));
+  } catch {}
+  await setDoc(doc(db, "users", currentUser.uid, "fcmTokens", docId), {
+    token,
+    deviceId,
+    ua:        navigator.userAgent,
+    standalone:_isStandalone(),
+    updatedAt: Date.now(),
+  }, { merge: true }).catch(()=>{});
 }
 
 async function loadNotifPref() {
@@ -5217,49 +5260,66 @@ async function requestNotificationPermission() {
 }
 
 async function _tryGetFcmToken(showSuccess = false) {
-  if (!messaging) return null;
-  if (!('serviceWorker' in navigator)) return null;
-  if (location.protocol !== 'https:' && location.hostname !== 'localhost') return null;
-  if (Notification.permission !== 'granted') return null;
+  const fail = async (msg) => {
+    console.error("[FCM] token alınamadı:", msg);   // console.error → hata loguna düşer
+    await _setFcmStatus("error", msg);
+    return null;
+  };
+  if (!messaging) return fail("messaging desteklenmiyor (tarayıcı)");
+  if (!('serviceWorker' in navigator)) return fail("serviceWorker yok");
+  if (location.protocol !== 'https:' && location.hostname !== 'localhost') return fail("https değil: " + location.protocol);
+  if (Notification.permission !== 'granted') return fail("izin durumu: " + Notification.permission);
   try {
-    // updateViaCache:"none" → tarayıcı SW dosyasını (ve importScripts'i) ASLA
-    // HTTP önbelleğinden almaz, hep taze çeker → uzaktan güncelleme anında yayılır
     let swReg;
     try   { swReg = await navigator.serviceWorker.register("/firebase-messaging-sw.js",  { updateViaCache: "none" }); }
     catch { swReg = await navigator.serviceWorker.register("./firebase-messaging-sw.js", { updateViaCache: "none" }).catch(()=>null); }
-    if (!swReg) return null;
-    try { swReg.update(); } catch {} // her token denemesinde güncel mi diye bak
+    if (!swReg) return fail("SW kaydı başarısız");
+    try { await swReg.update(); } catch {}
     await Promise.race([
       navigator.serviceWorker.ready,
-      new Promise(r => setTimeout(r, 5000)),
+      new Promise(r => setTimeout(r, 8000)),
     ]);
     const token = await getToken(messaging, {
       vapidKey: VAPID_KEY,
       serviceWorkerRegistration: swReg,
-    }).catch(e => { console.warn("[FCM] Token:", e.message); return null; });
-    if (token) {
-      await saveFcmToken(token);
-      if (showSuccess) toast("🔔 Push bildirimler aktif!");
-      console.log("[FCM] Token kaydedildi:", token.slice(0,20)+"\u2026");
-    }
+    });
+    if (!token) return fail("getToken boş döndü");
+    await saveFcmToken(token);
+    await _setFcmStatus("ok", "token: …" + token.slice(-10));
+    if (showSuccess) toast("🔔 Push bildirimler aktif!");
+    console.log("[FCM] Token kaydedildi:", token.slice(0,16) + "\u2026");
     return token;
   } catch(e) {
-    console.warn("[FCM] _tryGetFcmToken:", e.message);
-    return null;
+    return fail(e && e.message ? e.message : String(e));
   }
 }
 
 async function refreshFcmToken() {
   if (!messaging || !currentUser) return;
-  const enabled = await loadNotifPref();
-  if (!enabled) return;
+  if (!("Notification" in window) || Notification.permission !== "granted") return;
+  // İzin varsa her açılışta token'ı tazele → SW/abonelik değişmişse bayat token gitsin
   await _tryGetFcmToken(false);
 }
 let _fgMsgListenerSet = false;
 function initForegroundMessages() {
   if (!messaging || _fgMsgListenerSet) return;
   onMessage(messaging, payload => {
-    // Uygulama ön plandaysa FCM push yerine in-app toast zaten gösterildi
+    // onMessage yalnız uygulama önplandayken tetiklenir. Görünürse in-app toast
+    // zaten gösteriyor; sadece sekme gizliyse (arka planda ama kapalı değil)
+    // bir sistem bildirimi gösterelim ki kaçmasın.
+    try {
+      if (document.visibilityState === "visible") return;
+      const d = Object.assign({}, payload.notification || {}, payload.data || {});
+      navigator.serviceWorker.ready.then(reg => {
+        reg.showNotification(d.title || "Pelüş Takip 🐾", {
+          body:  d.body || "",
+          icon:  (d.icon && /^https?:/.test(d.icon)) ? d.icon : "/icon-192.png",
+          badge: "/icon-192.png",
+          tag:   d.tag || "pelus",
+          data:  d,
+        });
+      }).catch(()=>{});
+    } catch {}
   });
   _fgMsgListenerSet = true;
 }
@@ -9093,7 +9153,7 @@ window.addEventListener("offline", () => toast("⚠️ Bağlantı kesildi — ç
    Konsola düşen hatalar Firestore "errorLogs"e yazılır,
    admin panelinde görünür. Spam/loop önlemleri içerir.
 ═══════════════════════════════════════════ */
-const APP_VERSION = "v1.0.8";
+const APP_VERSION = "v1.1.0";
 
 /* ═══════════════════════════════════════════
    SERVICE WORKER'I UZAKTAN GÜNCEL TUT
@@ -9283,7 +9343,7 @@ function applyUser(user) {
     // Bildirim tercihini Firestore'dan oku ve butonu güncelle
     loadNotifPref().then(enabled => {
       updateNotifBtn(enabled);
-      if (enabled) refreshFcmToken();
+      if (enabled || (("Notification" in window) && Notification.permission === "granted")) refreshFcmToken();
     });
     _handleDeepLink(); // ?openPub=xxx deep link
 
