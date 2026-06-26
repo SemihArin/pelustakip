@@ -251,6 +251,48 @@
     .splash-step.done { color: var(--pink-mid); }
     .splash-step.done::before { background: var(--pink-mid); }
 
+    /* Ayrıntılı durum satırı (gerçekten ne bekleniyor) */
+    .splash-detail {
+      margin-top: 14px; font-size: 11px; line-height: 1.5;
+      color: var(--text-tertiary, rgba(120,80,100,.6));
+      font-family: ui-monospace, "SF Mono", Menlo, monospace;
+      min-height: 16px; text-align: center; word-break: break-word;
+      opacity: .85; transition: opacity .2s;
+    }
+
+    /* Açılış hata / kurtarma ekranı */
+    #bootError {
+      position: fixed; inset: 0; z-index: 100000; display: none;
+      align-items: center; justify-content: center; padding: 28px;
+      background: linear-gradient(160deg, #fff5f9 0%, #fde4ee 100%);
+    }
+    #bootError.show { display: flex; animation: fadeIn .25s ease; }
+    #bootError .be-card {
+      width: min(380px, 92vw); text-align: center;
+      background: #fff; border-radius: 22px; padding: 30px 24px;
+      box-shadow: 0 18px 50px rgba(160,60,100,.18);
+    }
+    #bootError .be-icon { font-size: 44px; margin-bottom: 10px; }
+    #bootError .be-title { font-size: 19px; font-weight: 800; color: var(--text-primary, #3a1f2e); }
+    #bootError .be-sub { font-size: 13px; color: var(--text-secondary, #8a6678); margin-top: 8px; line-height: 1.5; }
+    #bootError .be-detail {
+      margin-top: 16px; text-align: left; font-size: 12px; line-height: 1.55;
+      color: var(--text-secondary, #8a6678); background: #fdeef4;
+      border-radius: 12px; padding: 12px 14px;
+    }
+    #bootError .be-detail:empty { display: none; }
+    #bootError .be-detail ul { margin: 6px 0 0; padding-left: 18px; }
+    #bootError .be-detail .be-reason { font-weight: 600; color: var(--pink-dark, #a03c64); }
+    #bootError .be-detail .be-pending { margin-top: 8px; font-weight: 600; }
+    #bootError .be-retry {
+      margin-top: 20px; width: 100%; padding: 14px; border: none; cursor: pointer;
+      border-radius: 14px; background: linear-gradient(135deg, #c0648a, #a03c64);
+      color: #fff; font-weight: 800; font-size: 15px;
+      box-shadow: 0 6px 18px rgba(160,60,100,.3);
+    }
+    #bootError .be-retry:active { transform: scale(.98); }
+    #bootError .be-hint { margin-top: 14px; font-size: 11.5px; color: var(--text-tertiary, rgba(120,80,100,.6)); }
+
     /* Page loader */
     .page-loader { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; pointer-events:none; opacity:0; transition:opacity .25s; z-index:10; }
     .page-loader.visible { opacity:1; pointer-events:auto; }
@@ -564,6 +606,34 @@
       opacity:0; pointer-events:none; z-index:21;
     }
     .focus-ring.pop { animation: focusPop .6s ease forwards; }
+
+    /* İki parmak yakınlaştırma — parmak geri bildirimi */
+    .pinch-dot {
+      position:absolute; width:56px; height:56px; margin:-28px 0 0 -28px;
+      border:2.5px solid rgba(255,255,255,.92); border-radius:50%;
+      box-shadow:0 0 14px rgba(0,0,0,.45), inset 0 0 14px rgba(255,255,255,.12);
+      pointer-events:none; opacity:0; transform:scale(.55);
+      transition:opacity .14s ease, transform .14s ease; z-index:25;
+    }
+    .pinch-dot.show { opacity:1; transform:scale(1); animation:pinchPulse 1.1s ease-in-out infinite; }
+    @keyframes pinchPulse {
+      0%,100% { box-shadow:0 0 14px rgba(0,0,0,.45), 0 0 0 0 rgba(255,255,255,.30); }
+      50%     { box-shadow:0 0 14px rgba(0,0,0,.45), 0 0 0 10px rgba(255,255,255,0); }
+    }
+    .pinch-line {
+      position:absolute; height:2px; transform-origin:center;
+      background:linear-gradient(90deg, rgba(255,255,255,.05), rgba(255,255,255,.75), rgba(255,255,255,.05));
+      pointer-events:none; opacity:0; transition:opacity .14s ease; z-index:24;
+    }
+    .pinch-line.show { opacity:1; }
+    .pinch-zoom-center {
+      position:absolute; transform:translateX(-50%);
+      background:rgba(0,0,0,.6); color:#fff; font-weight:800; font-size:15px;
+      padding:5px 13px; border-radius:16px; pointer-events:none; opacity:0;
+      transition:opacity .14s ease; z-index:26;
+      backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); white-space:nowrap;
+    }
+    .pinch-zoom-center.show { opacity:1; }
 
     /* Mode toggle */
     .cam-mode-toggle {
@@ -2479,7 +2549,20 @@
         <div class="splash-step" id="splashStep3">Veriler</div>
         <div class="splash-step" id="splashStep4">Hazır</div>
       </div>
+      <div class="splash-detail" id="splashDetail"></div>
     </div>
+  </div>
+</div>
+
+<!-- ═══ AÇILIŞ HATA / KURTARMA EKRANI ═══ -->
+<div id="bootError">
+  <div class="be-card">
+    <div class="be-icon">🔌</div>
+    <div class="be-title">Bağlantı kurulamadı</div>
+    <div class="be-sub">Uygulama düzgün açılamadı. İnternet bağlantın yavaş ya da kopmuş olabilir.</div>
+    <div class="be-detail" id="bootErrorDetail"></div>
+    <button class="be-retry" id="bootRetryBtn" type="button">Tekrar Dene</button>
+    <div class="be-hint">Sorun sürerse uygulamayı kapatıp yeniden açmayı dene.</div>
   </div>
 </div>
 
@@ -2616,13 +2699,12 @@
         </div>
 
         <div class="chat-input-row">
-          <button id="chatPhotoBtn" class="chat-photo-btn" type="button" title="Fotoğraf Gönder">
-            <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+          <button id="chatPlusBtn" class="chat-photo-btn" type="button" title="Ekle">
+            <svg class="chat-plus-ic" viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M11 11V5h2v6h6v2h-6v6h-2v-6H5v-2z"/></svg>
           </button>
+          <button id="chatPhotoBtn" class="chat-photo-btn" type="button" title="Fotoğraf Gönder" style="display:none;" aria-hidden="true"></button>
           <input id="chatPhotoInput" type="file" accept="image/*" style="display:none;">
-          <button id="chatMicBtn" class="chat-photo-btn" type="button" title="Sesli Mesaj">
-            <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2z"/></svg>
-          </button>
+          <button id="chatMicBtn" class="chat-photo-btn" type="button" title="Sesli Mesaj" style="display:none;" aria-hidden="true"></button>
           <textarea id="chatInput" class="chat-input" placeholder="Mesaj yaz…" rows="1" maxlength="1000"></textarea>
           <button id="chatSendBtn" class="chat-send-btn" type="button" disabled>
             <svg viewBox="0 0 24 24" width="18" height="18"><path fill="#fff" d="M2.01 21 23 12 2.01 3 2 10l15 2-15 2z"/></svg>
@@ -2818,7 +2900,7 @@
       Çıkış Yap
     </button>
 
-    <div class="side-version-footer">Pelus Takip · v1.3.5</div>
+    <div class="side-version-footer">Pelus Takip · v1.6.1</div>
 
   </div>
 </div>
@@ -3290,6 +3372,7 @@ const EL = {
   callRejectBtn:       q("callRejectBtn"),
   remoteAudio:         q("remoteAudio"),
   chatPhotoBtn:        q("chatPhotoBtn"),
+  chatPlusBtn:         q("chatPlusBtn"),
   chatMicBtn:          q("chatMicBtn"),
   chatSearchBtn:       q("chatSearchBtn"),
   chatPhotoInput:      q("chatPhotoInput"),
@@ -3421,6 +3504,10 @@ const EL = {
   splashStep2:     q("splashStep2"),
   splashStep3:     q("splashStep3"),
   splashStep4:     q("splashStep4"),
+  splashDetail:    q("splashDetail"),
+  bootError:       q("bootError"),
+  bootErrorDetail: q("bootErrorDetail"),
+  bootRetryBtn:    q("bootRetryBtn"),
 };
 
 /* ═══════════════════════════════════════════
@@ -3448,6 +3535,13 @@ function splashSetStatus(msg) {
   }, 160);
 }
 
+/* Ayrıntılı satır — tam olarak nereye istek atıldığı / ne beklendiği */
+function splashSetDetail(msg) {
+  if (EL.splashDetail) EL.splashDetail.textContent = msg || "";
+}
+
+let _splashPctSeen = 0;
+
 function splashSetProgress(pct) {
   if (!EL.splashBarFill) return;
 
@@ -3460,6 +3554,8 @@ function splashSetProgress(pct) {
   }
 
   EL.splashBarFill.classList.remove("indeterminate");
+  // Geri gitmesin (sinyaller farklı sırada gelebilir)
+  if (pct < _splashPctSeen) pct = _splashPctSeen; else _splashPctSeen = pct;
   EL.splashBarFill.style.width = pct + "%";
 
   // Yüzde etiketi
@@ -3494,6 +3590,7 @@ function hideSplash() {
 // Başlangıç: sayfa yüklendi — adım 1
 splashSetProgress(15);
 splashSetStatus("Uygulama başlatılıyor…");
+splashSetDetail("Firebase SDK yükleniyor…");
 
 /* ═══════════════════════════════════════════
    PAGE LOADER (ara yüklemeler için inline overlay)
@@ -3761,6 +3858,7 @@ function listenPhotos(uid) {
   unsubPhotos?.(); unsubPhotos = null;
   EL.galleryPage.innerHTML = `<div class="skeleton-grid">${Array(9).fill('<div class="skeleton-card"></div>').join("")}</div>`;
   splashSetStatus("Fotoğraflar yükleniyor…");
+  splashSetDetail("Firestore sorgusu: users/" + uid.slice(0,6) + "…/photos");
   splashSetProgress(65);
 
   const col = collection(db, "users", uid, "photos");
@@ -4452,20 +4550,69 @@ async function _sendComment() {
   } catch(e) { toast("❌ Yorum gönderilemedi: " + e.message); }
 }
 
-/* ─── compressImage ─── */
-function compressImage(dataUrl, maxPx = 800, q = 0.65) {
+/* ─── compressImage ───
+   • en-boy oranı KORUNUR (yatay/dikey fark etmez, esneme yok)
+   • ADIMLI küçültme (yarı yarıya) → aliasing/bulanıklık çok azalır
+   • yüksek kaliteli yumuşatma (imageSmoothingQuality:"high")
+   • maxBytes verilirse → o boyuta sığana dek kaliteyi adaptif düşürür
+*/
+function compressImage(dataUrl, maxPx = 800, q = 0.72, maxBytes = 0) {
   return new Promise(resolve => {
     const img = new Image();
     img.onload = () => {
-      let w = img.width, h = img.height;
-      if (w > maxPx || h > maxPx) {
-        if (w > h) { h = Math.round(h * maxPx / w); w = maxPx; }
-        else       { w = Math.round(w * maxPx / h); h = maxPx; }
+      const ow = img.width, oh = img.height;
+      if (!ow || !oh) { resolve(dataUrl); return; }
+
+      // Hedef boyut (en-boy korunarak)
+      let tw = ow, th = oh;
+      if (ow > maxPx || oh > maxPx) {
+        if (ow >= oh) { th = Math.round(oh * maxPx / ow); tw = maxPx; }
+        else          { tw = Math.round(ow * maxPx / oh); th = maxPx; }
       }
-      const c = document.createElement("canvas");
-      c.width = w; c.height = h;
-      c.getContext("2d").drawImage(img, 0, 0, w, h);
-      resolve(c.toDataURL("image/jpeg", q));
+
+      const mk = (w, h) => {
+        const c = document.createElement("canvas"); c.width = w; c.height = h;
+        const x = c.getContext("2d");
+        x.imageSmoothingEnabled = true; x.imageSmoothingQuality = "high";
+        return [c, x];
+      };
+
+      // Başlangıç çalışma boyutu (bellek için en uzun kenarı 3000 ile sınırla)
+      const CAP = 3000;
+      let cw = ow, ch = oh;
+      if (cw > CAP || ch > CAP) {
+        if (cw >= ch) { ch = Math.round(ch * CAP / cw); cw = CAP; }
+        else          { cw = Math.round(cw * CAP / ch); ch = CAP; }
+      }
+      let [cur, cctx] = mk(cw, ch);
+      cctx.drawImage(img, 0, 0, cw, ch);
+
+      // Adımlı yarılama (hedefin 2 katına inene dek)
+      while (cw > tw * 2 || ch > th * 2) {
+        const nw = Math.max(tw, Math.round(cw / 2));
+        const nh = Math.max(th, Math.round(ch / 2));
+        const [n, nctx] = mk(nw, nh);
+        nctx.drawImage(cur, 0, 0, cw, ch, 0, 0, nw, nh);
+        cur = n; cw = nw; ch = nh;
+      }
+
+      // Son adım → hedef boyut
+      const [out, octx] = mk(tw, th);
+      octx.drawImage(cur, 0, 0, cw, ch, 0, 0, tw, th);
+
+      // Adaptif kalite — byte bütçesi varsa ona sığdır
+      let quality = q;
+      let result  = out.toDataURL("image/jpeg", quality);
+      if (maxBytes > 0) {
+        const bytesOf = du => { const i = du.indexOf(","); return Math.ceil((du.length - i - 1) * 3 / 4); };
+        let guard = 0;
+        while (bytesOf(result) > maxBytes && quality > 0.42 && guard < 6) {
+          quality = Math.max(0.42, quality - 0.1);
+          result  = out.toDataURL("image/jpeg", quality);
+          guard++;
+        }
+      }
+      resolve(result);
     };
     img.onerror = () => resolve(dataUrl);
     img.src = dataUrl;
@@ -4958,7 +5105,7 @@ async function savePhoto() {
     }
 
     const image = pm.image?.startsWith("data:")
-      ? await compressImage(pm.image, 800, 0.65)
+      ? await compressImage(pm.image, 1280, 0.85, 360 * 1024)
       : (pm.image || "");
 
     const payload = {
@@ -5579,6 +5726,24 @@ function _killCamera() {
   }
 }
 
+/* getUserMedia'yı zaman aşımıyla sarmala — bazı cihazlar imkânsız bir
+   constraint'i REDDETMEK yerine ASILIYOR; bu da kamerayı hiç açtırmıyor.
+   Süre GENİŞ tutulur (9sn): yavaş ama geçerli açılışları (özellikle arka→ön
+   kamera geçişini) kesmesin, yalnızca gerçek kilitlenmeyi yakalasın. */
+function _gumWithTimeout(constraints, ms = 9000) {
+  let settled = false;
+  const p = navigator.mediaDevices.getUserMedia(constraints);
+  return Promise.race([
+    p.then(s => { settled = true; return s; }),
+    new Promise((_, reject) => setTimeout(() => {
+      if (!settled) {
+        reject(new Error("gum-timeout"));
+        p.then(s => s.getTracks().forEach(t => { try { t.stop(); } catch {} })).catch(() => {});
+      }
+    }, ms)),
+  ]);
+}
+
 async function openCamera(mode) {
   const gen = ++camGen;
 
@@ -5587,14 +5752,14 @@ async function openCamera(mode) {
   EL.camDebugMsg.textContent     = "";
   EL.camDebugRetry.style.display = "none";
 
-  // Her şeyi kapat
   _killCamera();
 
   // Kameranın OS seviyesinde kapanmasını bekle
   await new Promise(r => setTimeout(r, 600));
   if (gen !== camGen) return;
 
-  // Aç
+  // Basit ve güvenilir constraint zinciri (çözünürlük kısıtı YOK — bazı
+  // cihazlarda yüksek çözünürlük isteği açılışı asıyordu)
   const constraints = mode === "user"
     ? [{ video: { facingMode: { exact: "user" } } }, { video: { facingMode: "user" } }, { video: true }]
     : [{ video: { facingMode: { exact: "environment" } } }, { video: { facingMode: "environment" } }, { video: true }];
@@ -5603,12 +5768,12 @@ async function openCamera(mode) {
   for (const c of constraints) {
     if (gen !== camGen) return;
     try {
-      stream = await navigator.mediaDevices.getUserMedia(c);
+      stream = await _gumWithTimeout(c);
       console.log("[CAM] ✅", JSON.stringify(c.video));
       break;
     } catch(e) {
       lastErr = e;
-      console.warn("[CAM] ❌", e.name, JSON.stringify(c.video));
+      console.warn("[CAM] ❌", e.name || e.message, JSON.stringify(c.video));
       if (e.name === "NotAllowedError") break;
       await new Promise(r => setTimeout(r, 300));
     }
@@ -5687,7 +5852,7 @@ async function capture() {
   if (facingMode === "user") { ctx.save(); ctx.translate(c.width, 0); ctx.scale(-1, 1); }
   ctx.drawImage(EL.cameraVideo, 0, 0, c.width, c.height);
   if (facingMode === "user") ctx.restore();
-  const data = c.toDataURL("image/jpeg", .85);
+  const data = c.toDataURL("image/jpeg", .95);
   stopCamera();
   showPage("local");
   setTimeout(() => openNewPhotoModal(data), 220);
@@ -6256,7 +6421,7 @@ async function _saveChatPhoto(file) {
     r.onload = () => res(r.result); r.onerror = () => rej(r.error);
     r.readAsDataURL(file);
   });
-  const compressed = await compressImage(b64Full, 800, 0.7);
+  const compressed = await compressImage(b64Full, 1280, 0.85, 340 * 1024);
   const chunkId = `cp_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
   const blob = await fetch(compressed).then(r => r.blob());
   const { total } = await _writeChunks("chatPhotos", chunkId, blob, {});
@@ -6610,10 +6775,57 @@ EL.zoomRange.addEventListener("input", () => {
 
 /* ─── Pinch-to-zoom ───
    İki parmak uzaklığı değişince kamerayı zoom'lar.
-   Slider API'si ile senkron çalışır.
+   Slider API'si ile senkron çalışır + parmaklara görsel geri bildirim.
 ─────────────────────── */
 let _pinchStartDist = 0;
 let _pinchStartZoom = 1;
+
+/* Gerçek odaklama — dokunulan noktaya kamera odağı uygula (destekleyen cihazlarda) */
+async function _focusAt(nx, ny) {
+  if (!camTrack) return;
+  try {
+    const caps = camTrack.getCapabilities?.() || {};
+    const adv = [];
+    // Ön kamera önizlemesi aynalı → x'i ters çevir
+    const x = facingMode === "user" ? (1 - nx) : nx;
+    const y = ny;
+    if (caps.pointsOfInterest) adv.push({ pointsOfInterest: [{ x, y }] });
+    if (Array.isArray(caps.focusMode)) {
+      if (caps.focusMode.includes("single-shot")) adv.push({ focusMode: "single-shot" });
+      else if (caps.focusMode.includes("continuous")) adv.push({ focusMode: "continuous" });
+    }
+    if (adv.length) await camTrack.applyConstraints({ advanced: adv });
+  } catch { /* desteklenmiyorsa sessiz geç — halka yine de görünür */ }
+}
+
+/* Pinch görsel geri bildirim öğeleri (parmak halkaları + çizgi + zoom etiketi) */
+let _pinchEls = null;
+function _ensurePinchEls() {
+  if (_pinchEls) return _pinchEls;
+  const mk = cls => { const d = document.createElement("div"); d.className = cls; EL.cameraPage.appendChild(d); return d; };
+  _pinchEls = { line: mk("pinch-line"), dot1: mk("pinch-dot"), dot2: mk("pinch-dot"), label: mk("pinch-zoom-center") };
+  return _pinchEls;
+}
+function _showPinch(t1, t2, zoom) {
+  const { dot1, dot2, line, label } = _ensurePinchEls();
+  const r = EL.cameraPage.getBoundingClientRect();
+  const x1 = t1.clientX - r.left, y1 = t1.clientY - r.top;
+  const x2 = t2.clientX - r.left, y2 = t2.clientY - r.top;
+  dot1.style.left = x1 + "px"; dot1.style.top = y1 + "px";
+  dot2.style.left = x2 + "px"; dot2.style.top = y2 + "px";
+  const cx = (x1 + x2) / 2, cy = (y1 + y2) / 2;
+  const len = Math.hypot(x2 - x1, y2 - y1);
+  const ang = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
+  line.style.left = cx + "px"; line.style.top = cy + "px"; line.style.width = len + "px";
+  line.style.transform = `translate(-50%,-50%) rotate(${ang}deg)`;
+  label.style.left = cx + "px"; label.style.top = (cy - 38) + "px";
+  label.textContent = (zoom || 1).toFixed(1) + "x";
+  [dot1, dot2, line, label].forEach(el => el.classList.add("show"));
+}
+function _hidePinch() {
+  if (!_pinchEls) return;
+  Object.values(_pinchEls).forEach(el => el.classList.remove("show"));
+}
 
 EL.cameraPage.addEventListener("touchstart", e => {
   if (e.touches.length === 2) {
@@ -6622,6 +6834,7 @@ EL.cameraPage.addEventListener("touchstart", e => {
       e.touches[0].clientY - e.touches[1].clientY
     );
     _pinchStartZoom = currentZoom;
+    _showPinch(e.touches[0], e.touches[1], currentZoom);
   }
 }, { passive: true });
 
@@ -6639,11 +6852,12 @@ EL.cameraPage.addEventListener("touchmove", e => {
     applyZoom(newZ);
     showZoomBar();  // Pinch sırasında zoom bar'ı göster
   }
+  _showPinch(e.touches[0], e.touches[1], range > 0 ? newZ : currentZoom);
 }, { passive: true });
 
 EL.cameraPage.addEventListener("touchend", e => {
   // Pinch reset
-  if (e.touches.length < 2) _pinchStartDist = 0;
+  if (e.touches.length < 2) { _pinchStartDist = 0; _hidePinch(); }
   // Focus halkası — tek parmak bırakma
   if (e.changedTouches.length !== 1) return;
   if (_pinchStartDist > 0) return;
@@ -6652,11 +6866,15 @@ EL.cameraPage.addEventListener("touchend", e => {
   const cbRect = EL.captureBtn.getBoundingClientRect();
   if (t.clientX >= cbRect.left && t.clientX <= cbRect.right &&
       t.clientY >= cbRect.top  && t.clientY <= cbRect.bottom) return;
-  EL.focusRing.style.left = ((t.clientX - r.left) / r.width  * 100) + "%";
-  EL.focusRing.style.top  = ((t.clientY - r.top)  / r.height * 100) + "%";
+  const nx = (t.clientX - r.left) / r.width;
+  const ny = (t.clientY - r.top)  / r.height;
+  if (nx < 0 || nx > 1 || ny < 0 || ny > 1) return; // video dışına dokunma
+  EL.focusRing.style.left = (nx * 100) + "%";
+  EL.focusRing.style.top  = (ny * 100) + "%";
   EL.focusRing.classList.remove("pop");
   void EL.focusRing.offsetWidth;
   EL.focusRing.classList.add("pop");
+  _focusAt(nx, ny);   // gerçek odaklamayı uygula
 }, { passive: true });
 
 /* ═══════════════════════════════════════════
@@ -7032,6 +7250,7 @@ async function renderChatList() {
   });
   EL.chatUserList.innerHTML = "";
   EL.chatUserList.appendChild(frag);
+  _startGlobalChatWatch();   // partner listesi hazır → global rozet dinleyicisi (idempotent)
 }
 
 function _watchPresenceInList(uid) {
@@ -7048,7 +7267,7 @@ function _watchPresenceInList(uid) {
 
 function _watchChatMeta(cid, partnerUid) {
   const ref = rtRef(rtdb,`chats/${cid}/meta`);
-  onValue(ref, snap => {
+  const unsub = onValue(ref, snap => {
     const m = snap.val()||{};
     const unread = m[`unread_${currentUser.uid}`]||0;
     const le = document.getElementById(`cul-${partnerUid}`);
@@ -7058,7 +7277,40 @@ function _watchChatMeta(cid, partnerUid) {
     if (te && m.lastTs) te.textContent = _chatTimeAgo(m.lastTs);
     if (ue) { ue.textContent = unread; ue.style.display = unread>0?"flex":"none"; }
   });
-  _chatListListeners.push(() => off(ref));
+  // off(ref) yerine kendi unsubscribe'ı — global okunmamış dinleyicisini öldürmesin
+  _chatListListeners.push(typeof unsub === "function" ? unsub : () => off(ref));
+}
+
+/* ── GLOBAL OKUNMAMIŞ MESAJ DİNLEYİCİSİ ──
+   Sohbet sayfasına GİRMEDEN de yeni mesajları yakalar: girişte kurulur,
+   her sohbetin chats/{cid}/meta yolunu dinler, okunmamış toplamını
+   Mesajlar sekmesi rozetine (navChatBadge) canlı yansıtır. */
+let _globalChatUnsubs = [], _globalUnread = {}, _globalChatStarted = false;
+
+async function _startGlobalChatWatch() {
+  if (_globalChatStarted || !currentUser) return;
+  _globalChatStarted = true;
+  await loadChatUsers();
+  if (!chatKnownUsers.length) { _globalChatStarted = false; return; } // partner yok → sonra tekrar denenir
+  _globalUnread = {};
+  chatKnownUsers.forEach(u => {
+    const cid = chatId(currentUser.uid, u.uid);
+    const ref = rtRef(rtdb, `chats/${cid}/meta`);
+    const unsub = onValue(ref, snap => {
+      const m = snap.val() || {};
+      _globalUnread[cid] = m[`unread_${currentUser.uid}`] || 0;
+      _totalChatUnread = Object.values(_globalUnread).reduce((s, n) => s + n, 0);
+      updateChatBadge();
+    });
+    _globalChatUnsubs.push(typeof unsub === "function" ? unsub : () => off(ref));
+  });
+}
+
+function _stopGlobalChatWatch() {
+  _globalChatUnsubs.forEach(fn => { try { fn(); } catch {} });
+  _globalChatUnsubs = [];
+  _globalUnread = {};
+  _globalChatStarted = false;
 }
 
 function _stopChatListeners() {
@@ -7592,11 +7844,40 @@ function _clearReply() {
 EL.replyPreviewClose.addEventListener("click", _clearReply);
 
 /* ── Fotoğraf Gönder ── */
-EL.chatPhotoBtn.addEventListener("click", () => EL.chatPhotoInput.click());
-
-EL.chatMicBtn.addEventListener("click", () => {
-  if (_mediaRec) _stopVoiceRec(true);
-  else _startVoiceRec();
+/* ── "+" ekle menüsü: fotoğraf + sesli mesaj ── */
+let _attachMenu = null;
+function _buildAttachMenu(){
+  if (_attachMenu) return _attachMenu;
+  const m = document.createElement("div");
+  m.className = "chat-attach-menu";
+  m.innerHTML =
+    `<button class="att-item" data-act="photo" type="button"><span class="att-ic">📷</span><span>Fotoğraf</span></button>` +
+    `<button class="att-item" data-act="voice" type="button"><span class="att-ic">🎤</span><span>Sesli mesaj</span></button>`;
+  m.querySelector('[data-act="photo"]').addEventListener("click", e => { e.stopPropagation(); _closeAttachMenu(); EL.chatPhotoInput.click(); });
+  m.querySelector('[data-act="voice"]').addEventListener("click", e => { e.stopPropagation(); _closeAttachMenu(); _startVoiceRec(); });
+  EL.chatConvView.appendChild(m);
+  _attachMenu = m;
+  return m;
+}
+function _openAttachMenu(){
+  const m = _buildAttachMenu();
+  const r  = EL.chatPlusBtn.getBoundingClientRect();
+  const cr = EL.chatConvView.getBoundingClientRect();
+  m.style.left   = (r.left - cr.left) + "px";
+  m.style.bottom = (cr.bottom - r.top + 8) + "px";
+  m.classList.add("show");
+  EL.chatPlusBtn.classList.add("plus-open");
+  setTimeout(() => document.addEventListener("click", _closeAttachMenu, { once: true }), 50);
+}
+function _closeAttachMenu(){
+  if (_attachMenu) _attachMenu.classList.remove("show");
+  EL.chatPlusBtn.classList.remove("plus-open");
+}
+EL.chatPlusBtn.addEventListener("click", e => {
+  e.stopPropagation();
+  if (_mediaRec) { _stopVoiceRec(true); return; } // kayıt sürerken + bitirir
+  if (_attachMenu && _attachMenu.classList.contains("show")) _closeAttachMenu();
+  else _openAttachMenu();
 });
 
 EL.chatPhotoInput.addEventListener("change", async () => {
@@ -7609,8 +7890,8 @@ EL.chatPhotoInput.addEventListener("change", async () => {
   }
   if (file.size > 8 * 1024 * 1024) { toast("❌ Fotoğraf çok büyük (max 8MB)"); return; }
 
-  EL.chatPhotoBtn.style.opacity = "0.4";
-  EL.chatPhotoBtn.style.pointerEvents = "none";
+  EL.chatPlusBtn.style.opacity = "0.4";
+  EL.chatPlusBtn.style.pointerEvents = "none";
 
   try {
     const ts        = Date.now();
@@ -7642,8 +7923,8 @@ EL.chatPhotoInput.addEventListener("change", async () => {
     console.error("[Chat] Photo error:", e.message);
     toast("❌ Gönderilemedi: " + e.message);
   } finally {
-    EL.chatPhotoBtn.style.opacity = "";
-    EL.chatPhotoBtn.style.pointerEvents = "";
+    EL.chatPlusBtn.style.opacity = "";
+    EL.chatPlusBtn.style.pointerEvents = "";
   }
 });
 
@@ -8027,6 +8308,16 @@ function _addSwipeReply(row, wrap, swipeIcon, msg) {
     background:rgba(0,0,0,.6);color:#fff;font-size:11px;font-weight:600;padding:4px 13px;border-radius:13px;
     opacity:0;transition:opacity .2s;pointer-events:none;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
   .chat-sticky-date.show{opacity:1}
+  /* + ekle menüsü */
+  .chat-plus-ic{transition:transform .2s}
+  .plus-open .chat-plus-ic{transform:rotate(45deg)}
+  .chat-attach-menu{position:absolute;z-index:8;display:none;flex-direction:column;gap:2px;padding:6px;
+    background:var(--surface-hi,#fff);border-radius:14px;box-shadow:0 10px 32px rgba(0,0,0,.22);min-width:168px}
+  .chat-attach-menu.show{display:flex;animation:fabIn .16s ease}
+  .att-item{display:flex;align-items:center;gap:11px;padding:11px 13px;border:none;background:none;cursor:pointer;
+    font-size:14px;font-weight:600;color:var(--text-primary,#1a0e14);border-radius:10px;width:100%;text-align:left}
+  .att-item:active{background:rgba(192,100,138,.1)}
+  .att-ic{font-size:18px;width:22px;text-align:center}
   `;
   document.head.appendChild(s);
 })();
@@ -8122,7 +8413,7 @@ async function _finishVoiceRec(){
   if (blob.size < 800) { toast("⚠️ Çok kısa"); return; }
   const cid = chatActiveChatId, partner = chatActiveUid;
   if (!cid) return;
-  EL.chatMicBtn.style.opacity = "0.4"; EL.chatMicBtn.style.pointerEvents = "none";
+  EL.chatPlusBtn.style.opacity = "0.4"; EL.chatPlusBtn.style.pointerEvents = "none";
   try{
     const chunkId = `ca_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
     const { total } = await _writeChunks("chatAudio", chunkId, blob, { dur });
@@ -8140,7 +8431,7 @@ async function _finishVoiceRec(){
     const prev = (await get(metaRef).catch(()=>null))?.val()?.[`unread_${partner}`] || 0;
     await rtUpdate(metaRef, { users:[currentUser.uid, partner], lastMsg:"🎤 Sesli mesaj", lastTs:ts, [`unread_${partner}`]:prev+1, [`unread_${currentUser.uid}`]:0 });
   }catch(e){ toast("❌ Gönderilemedi: "+e.message); }
-  finally{ EL.chatMicBtn.style.opacity = ""; EL.chatMicBtn.style.pointerEvents = ""; }
+  finally{ EL.chatPlusBtn.style.opacity = ""; EL.chatPlusBtn.style.pointerEvents = ""; }
 }
 async function _loadChatAudio(chunkId){
   if (_chatAudioCache.has(chunkId)) return _chatAudioCache.get(chunkId);
@@ -8505,6 +8796,7 @@ EL.sideChatBtn.addEventListener("click", () => {
 /** Konuşma görünümünü kapat — geri butonu, ESC, geri tuşu hepsi bunu kullanır */
 function closeChatConv() {
   if (_mediaRec) _stopVoiceRec(false);
+  if (typeof _closeAttachMenu === "function") _closeAttachMenu();
   if (typeof _closeSearch === "function") _closeSearch();
   if (typeof _exitSelectMode === "function") _exitSelectMode();
   if (_chatMsgListener) { try { _chatMsgListener(); } catch {} _chatMsgListener = null; }
@@ -8621,6 +8913,67 @@ let _callCleanups    = [];         // cleanup fonksiyonları
 let _incomingUnsub   = null;
 let _trackAdded      = false;      // ontrack birden fazla tetiklenme koruması
 let _callActive      = false;      // cleanup re-entry koruması
+let _remoteDescSet   = false;      // remote description set edildi mi
+let _pendingCandidates = [];       // remote desc gelene kadar bekleyen ICE adayları
+let _pendingOffer    = null;       // gelen aramada kabule kadar tutulan offer
+let _outgoingIncomingPath = null;  // arayanın yazdığı incoming kaydının yolu
+
+/* ICE adaylarını remote description gelene kadar KUYRUKLA (erken eklenince düşmesin) */
+function _queueOrAddCandidate(cand){
+  if (_pc && _remoteDescSet) _pc.addIceCandidate(cand).catch(e => console.warn("[ICE] add:", e.message));
+  else _pendingCandidates.push(cand);
+}
+function _flushCandidates(){
+  _remoteDescSet = true;
+  const list = _pendingCandidates; _pendingCandidates = [];
+  list.forEach(c => { if (_pc) _pc.addIceCandidate(c).catch(e => console.warn("[ICE] flush:", e.message)); });
+}
+
+/* Gelen arama zili (WebAudio bip + titreşim) + arayan vazgeçince oto-kapanış */
+let _ringCtx = null, _ringInterval = null, _ringWatchUnsub = null;
+function _startRingtone(){
+  _stopRingtone();
+  try{
+    const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+    _ringCtx = new AC();
+    const beep = () => {
+      if (!_ringCtx) return;
+      const t = _ringCtx.currentTime;
+      const o = _ringCtx.createOscillator(), g = _ringCtx.createGain();
+      o.type = "sine"; o.frequency.value = 470;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.16, t + 0.05);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.5);
+      o.connect(g).connect(_ringCtx.destination);
+      o.start(t); o.stop(t + 0.55);
+    };
+    beep();
+    _ringInterval = setInterval(() => { beep(); if (navigator.vibrate) navigator.vibrate(180); }, 1300);
+    if (navigator.vibrate) navigator.vibrate([250,150,250]);
+  }catch{}
+}
+function _stopRingtone(){
+  if (_ringInterval){ clearInterval(_ringInterval); _ringInterval = null; }
+  if (_ringCtx){ try{ _ringCtx.close(); }catch{} _ringCtx = null; }
+  if (navigator.vibrate) { try{ navigator.vibrate(0); }catch{} }
+}
+function _startRingWatch(){
+  if (!_callId) return;
+  const mref = rtRef(rtdb, `calls/${_callId}/meta`);
+  let first = true;
+  onValue(mref, snap => {
+    if (first){ first = false; return; }       // ilk değer "calling"
+    const st = snap.val()?.status;
+    if (st === "ended" || st === "rejected" || st === "cancelled"){
+      _stopRingtone(); _stopRingWatch();
+      _hideIncomingOverlay();
+      _callActive = false; _callId = null; _pendingOffer = null;
+      toast("📞 Arayan vazgeçti");
+    }
+  });
+  _ringWatchUnsub = () => off(mref);
+}
+function _stopRingWatch(){ if (_ringWatchUnsub){ try{ _ringWatchUnsub(); }catch{} _ringWatchUnsub = null; } }
 
 /* ── Süre sayacı ── */
 function _startCallTimer() {
@@ -8735,6 +9088,16 @@ async function _cleanupCall(reason) {
   _isCaller   = false;
   _isMuted    = false;
   _trackAdded = false;
+  _remoteDescSet = false;
+  _pendingCandidates = [];
+  _pendingOffer = null;
+  _stopRingtone();
+  _stopRingWatch();
+  // Arayan tarafın bıraktığı incoming kaydını temizle (bayat kalmasın)
+  if (_outgoingIncomingPath) {
+    set(rtRef(rtdb, _outgoingIncomingPath), null).catch(() => {});
+    _outgoingIncomingPath = null;
+  }
 
   // UI sıfırla
   EL.callBtn.classList.remove("in-call");
@@ -8770,10 +9133,7 @@ function _listenCandidates(path) {
         sdpMLineIndex: c.sdpMLineIndex ?? null,
       });
 
-      _pc.addIceCandidate(iceCandidate).catch(e => {
-        // "Cannot add ICE candidate" — PC kapatılmış olabilir, sessiz geç
-        console.warn("[ICE] addIceCandidate:", e.message);
-      });
+      _queueOrAddCandidate(iceCandidate);
     });
   });
 
@@ -8790,6 +9150,8 @@ function _createPC() {
     _pc = null;
   }
   _trackAdded = false;
+  _remoteDescSet = false;
+  _pendingCandidates = [];
 
   _pc = new RTCPeerConnection(ICE_SERVERS);
 
@@ -8897,8 +9259,10 @@ async function startCall() {
       meta: { caller: currentUser.uid, callee: chatActiveUid, status: "calling", createdAt: Date.now() },
       offer: { sdp: offer.sdp, type: offer.type },
     });
-    // Alıcının incoming path'ine bildirim yaz
-    await push(rtRef(rtdb, `incoming/${chatActiveUid}`), {
+    // Alıcının incoming path'ine bildirim yaz (anahtarı sakla → sonra temizlenecek)
+    const incRef = push(rtRef(rtdb, `incoming/${chatActiveUid}`));
+    _outgoingIncomingPath = `incoming/${chatActiveUid}/${incRef.key}`;
+    await set(incRef, {
       callId:  _callId,
       caller:  currentUser.uid,
       ts:      Date.now(),
@@ -8920,6 +9284,7 @@ async function startCall() {
     answered  = true; // timeout'u iptal et
     try {
       await _pc.setRemoteDescription(new RTCSessionDescription(answer));
+      _flushCandidates();
     } catch(e) { console.error("[Call] setRemoteDescription(answer):", e.message); }
   });
   _callCleanups.push(() => off(answerRef));
@@ -8949,20 +9314,39 @@ async function startCall() {
 }
 
 async function acceptCall() {
-  if (!_callId || !_pc || !_callActive) {
+  if (!_callId || !_callActive || !_pendingOffer) {
     console.error("[Call] acceptCall geçersiz state"); return;
   }
+  _stopRingtone(); _stopRingWatch();
   _hideIncomingOverlay();
 
-  // Arayanın adını ve fotoğrafını al — overlay için
+  // Arayanın adı/fotoğrafı — overlay için
   const callerName  = EL.incomingCallName.textContent || "Arayan";
   const bgImg = EL.incomingCallAvatar.style.backgroundImage || "";
   const callerPhoto = (bgImg && bgImg !== "none")
     ? bgImg.replace(/^url\(["']?/, "").replace(/["']?\)$/, "")
     : null;
-
-  // Cevaplayan taraf da overlay'i görür
   _showCallOverlay(callerName, callerPhoto, "Bağlanıyor…");
+
+  // Mikrofonu ANCAK ŞİMDİ (kabul edince) iste
+  try {
+    _localStream = await navigator.mediaDevices.getUserMedia({ audio:true, video:false });
+  } catch(e) {
+    console.error("[Call] Mikrofon:", e.message);
+    toast("❌ Mikrofon erişimi reddedildi"); _cleanupCall("mic-denied"); return;
+  }
+
+  _createPC();
+  _localStream.getTracks().forEach(t => _pc.addTrack(t, _localStream));
+
+  try {
+    await _pc.setRemoteDescription(new RTCSessionDescription(_pendingOffer));
+    _flushCandidates();
+  } catch(e) {
+    console.error("[Call] setRemoteDescription(offer):", e.message);
+    toast("❌ Bağlantı kurulamadı"); _cleanupCall("setremote-failed"); return;
+  }
+  _pendingOffer = null;
 
   let answer;
   try {
@@ -8996,8 +9380,9 @@ async function acceptCall() {
 }
 
 async function rejectCall() {
+  _stopRingtone(); _stopRingWatch();
   const rejId = _callId;
-  _callActive = false; _callId = null; _trackAdded = false;
+  _callActive = false; _callId = null; _trackAdded = false; _pendingOffer = null;
   if (rejId) rtUpdate(rtRef(rtdb, `calls/${rejId}/meta`), { status: "rejected" }).catch(() => {});
   if (_localStream) { _localStream.getTracks().forEach(t=>t.stop()); _localStream=null; }
   if (_pc) { _pc.onicecandidate=null; _pc.ontrack=null; _pc.onconnectionstatechange=null; _pc.close(); _pc=null; }
@@ -9042,7 +9427,12 @@ function _listenIncomingCalls(uid) {
       if (callData.meta?.status !== "calling") { set(rtRef(rtdb,`incoming/${uid}/${latest.key}`),null).catch(()=>{}); return; }
     } catch(e) { console.error("[Call] call data:", e.message); return; }
 
+    if (!callData.offer?.sdp) {
+      set(rtRef(rtdb,`incoming/${uid}/${latest.key}`),null).catch(()=>{});
+      return;
+    }
     _callId=latest.callId; _isCaller=false; _callActive=true;
+    _pendingOffer = callData.offer;   // mikrofonu KABUL anında alacağız
 
     // Arayanın bilgisi
     let callerName="Biri", callerPhoto=null;
@@ -9056,23 +9446,9 @@ function _listenIncomingCalls(uid) {
     }
 
     _showIncomingOverlay(callerName, callerPhoto);
-
-    try {
-      _localStream = await navigator.mediaDevices.getUserMedia({ audio:true, video:false });
-      _createPC();
-      _localStream.getTracks().forEach(t => _pc.addTrack(t, _localStream));
-      if (callData.offer?.sdp) {
-        await _pc.setRemoteDescription(new RTCSessionDescription(callData.offer));
-      } else { throw new Error("Offer SDP eksik"); }
-      set(rtRef(rtdb,`incoming/${uid}/${latest.key}`),null).catch(()=>{});
-    } catch(e) {
-      console.error("[Call] Gelen arama hazırlık:", e.message);
-      _callId=null; _callActive=false; _trackAdded=false;
-      if (_pc) { _pc.close(); _pc=null; }
-      if (_localStream) { _localStream.getTracks().forEach(t=>t.stop()); _localStream=null; }
-      _hideIncomingOverlay();
-      set(rtRef(rtdb,`incoming/${uid}/${latest.key}`),null).catch(()=>{});
-    }
+    _startRingtone();
+    _startRingWatch();   // arayan vazgeçerse overlay'i otomatik kapat
+    set(rtRef(rtdb,`incoming/${uid}/${latest.key}`),null).catch(()=>{});
   }, err => console.error("[Call] incoming listener:", err.message));
 
   _incomingUnsub = () => off(inRef);
@@ -9115,6 +9491,18 @@ EL.callSpeakerBtn.addEventListener("click", () => {
       });
   } else {
     if (span) span.textContent = "Desteklenmiyor";
+  }
+});
+
+// Hoparlör butonu mobil tarayıcılarda güvenilir çalışmaz → dokunmatik cihazda gizle
+if (!EL.remoteAudio.setSinkId || (window.matchMedia && window.matchMedia("(pointer:coarse)").matches)) {
+  EL.callSpeakerBtn.style.display = "none";
+}
+
+// Sekme/uygulama kapanırsa aktif aramayı temiz kapat (karşı taraf 8sn beklemesin)
+window.addEventListener("pagehide", () => {
+  if (_callActive && _callId && currentUser) {
+    try { rtUpdate(rtRef(rtdb, `calls/${_callId}/meta`), { status: "ended", endedAt: Date.now() }); } catch {}
   }
 });
 
@@ -9907,7 +10295,7 @@ window.addEventListener("offline", () => toast("⚠️ Bağlantı kesildi — ç
    Konsola düşen hatalar Firestore "errorLogs"e yazılır,
    admin panelinde görünür. Spam/loop önlemleri içerir.
 ═══════════════════════════════════════════ */
-const APP_VERSION = "v1.3.5";
+const APP_VERSION = "v1.6.1";
 
 /* ═══════════════════════════════════════════
    SERVICE WORKER'I UZAKTAN GÜNCEL TUT
@@ -10029,35 +10417,96 @@ console.error = (...args) => {
 
 // Splash kapatma için iki kaynak beklenir: photos + published ilk snapshot
 // Her ikisi de gelince (ya da timeout'ta) splash kapanır
-const _splashReady = { photos: false, published: false, auth: false };
-let _splashHideScheduled = false;
+/* ── Gerçek "kullanılabilir" kapısı ──
+   Splash, ancak şu DÖRT sinyalin hepsi gerçekten gelince kapanır:
+   auth (hesap), rtdb (Realtime Database bağlantısı), photos, published.
+   Belirlenen sürede gelmezse körlemesine kapatıp bozuk uygulama göstermek
+   yerine KURTARMA EKRANI açılır. */
+const _boot = { auth:false, rtdb:false, photos:false, published:false, done:false, failed:false, init:false };
+let _bootTimer = null;
 
-function tryHideSplash(source) {
-  if (source) _splashReady[source] = true;
+const _BOOT_MSG = {
+  auth:      ["Hesap doğrulandı ✓",                       "Google hesabı doğrulandı",                                45],
+  rtdb:      ["Realtime Database bağlandı",               "RTDB: europe-west1 — canlı bağlantı kuruldu",             62],
+  photos:    ["Fotoğraflar yüklendi",                     "Firestore: users/…/photos okundu",                        82],
+  published: ["Yayınlar yüklendi",                        "Firestore: publishedPhotos okundu",                       93],
+};
 
-  // Kullanıcı giriş yapmamışsa, auth false döndü demektir, splash login'e bırakır
-  if (!_splashReady.auth) return;
+function bootSignal(key) {
+  if (_boot.done || _boot.failed) return;
+  if (key && !_boot[key]) {
+    _boot[key] = true;
+    const m = _BOOT_MSG[key];
+    if (m) { splashSetStatus(m[0]); splashSetDetail(m[1]); splashSetProgress(m[2]); }
+  }
+  _maybeFinishBoot();
+}
 
-  // Auth true ama henüz veri yüklenmediyse biraz bekle
-  const dataReady = _splashReady.photos; // photos yeterli, published bonus
-  if (!dataReady && !_splashHideScheduled) {
-    // Max 4 saniye bekle — sonra her halükarda kapat
-    _splashHideScheduled = true;
-    setTimeout(() => hideSplash(), 4000);
-  } else if (dataReady) {
+function _maybeFinishBoot() {
+  if (_boot.done || _boot.failed) return;
+  if (_boot.auth && _boot.rtdb && _boot.photos && _boot.published) {
+    _boot.done = true;
+    if (_bootTimer) { clearTimeout(_bootTimer); _bootTimer = null; }
+    splashSetDetail("");
     hideSplash();
   }
 }
+
+function _bootPending() {
+  const names = {
+    auth: "Hesap doğrulama (Google)",
+    rtdb: "Realtime Database bağlantısı",
+    photos: "Fotoğraflar (Firestore)",
+    published: "Yayınlar (Firestore)",
+  };
+  return Object.keys(names).filter(k => !_boot[k]).map(k => names[k]);
+}
+
+function showBootError(reason) {
+  if (_boot.done) return;
+  _boot.failed = true;
+  if (_bootTimer) { clearTimeout(_bootTimer); _bootTimer = null; }
+  const pending = _bootPending();
+  if (EL.bootErrorDetail) {
+    EL.bootErrorDetail.innerHTML =
+      (reason ? `<div class="be-reason">${_esc(reason)}</div>` : "") +
+      (pending.length
+        ? `<div class="be-pending">Tamamlanamayan adımlar:</div><ul>${pending.map(p => `<li>${_esc(p)}</li>`).join("")}</ul>`
+        : "");
+  }
+  if (EL.bootError) EL.bootError.classList.add("show");
+}
+
+function _startBootWatch() {
+  if (_bootTimer) clearTimeout(_bootTimer);
+  _bootTimer = setTimeout(() => {
+    if (!_boot.done) showBootError("Uygulama beklenenden uzun sürdü; bir bağlantı tamamlanamadı.");
+  }, 22000);
+}
+
+// Geriye dönük uyumluluk: eski tryHideSplash çağrıları artık sinyale dönüşür.
+function tryHideSplash(source) { bootSignal(source || "photos"); }
+
+if (EL.bootRetryBtn) EL.bootRetryBtn.addEventListener("click", () => location.reload());
 
 let _swMsgListenerSet = false; // service worker message listener'ı sadece 1 kez kur
 
 function applyUser(user) {
   currentUser = user;
   if (user) {
-    // Splash: auth tamamlandı → %45
-    _splashReady.auth = true;
-    splashSetProgress(45);
-    splashSetStatus("Veriler yükleniyor…");
+    // Açılış: hesap doğrulandı → izleyiciyi ve RTDB bağlantı sinyalini bir kez kur
+    bootSignal("auth");
+    if (!_boot.init) {
+      _boot.init = true;
+      _startBootWatch();
+      splashSetDetail("Realtime Database'e bağlanılıyor (europe-west1)…");
+      try {
+        const _connRef = rtRef(rtdb, ".info/connected");
+        onValue(_connRef, s => { if (s.val() === true) bootSignal("rtdb"); });
+        // RTDB hiç bağlanamazsa açılışı sonsuza dek bekletmesin diye güvenlik:
+        setTimeout(() => bootSignal("rtdb"), 12000);
+      } catch { bootSignal("rtdb"); }
+    }
 
     EL.loginOverlay.style.display = "none";
     EL.container.style.display    = "flex";
@@ -10093,6 +10542,7 @@ function applyUser(user) {
     setupPresence(user.uid, user.displayName || "Kullanıcı", user.photoURL || null);
     _listenIncomingCalls(user.uid);
     _startChallengeListener(user.uid);
+    _startGlobalChatWatch();   // sohbete girmeden de okunmamış rozeti güncellensin
 
     // Bildirim tercihini Firestore'dan oku ve butonu güncelle
     loadNotifPref().then(enabled => {
@@ -10139,6 +10589,8 @@ function applyUser(user) {
     if (_chatMsgListener) { try { _chatMsgListener(); } catch {} _chatMsgListener = null; }
     _stopTypingListener();
     _stopChatListeners();
+    _stopGlobalChatWatch();
+    _totalChatUnread = 0; updateChatBadge();
     _challenge = null; _challengeId = null;
     chatActiveUid = null; chatActiveChatId = null;
     if (_pendingVideoBlob) { _pendingVideoBlob = null; _pendingVideoMime = null; }
@@ -10214,6 +10666,7 @@ EL.googleLoginBtn.addEventListener("click", login);
 (async () => {
   try {
     splashSetStatus("Hesap doğrulanıyor…");
+    splashSetDetail("Google oturum sonucu kontrol ediliyor…");
     splashSetProgress(30);
     const result = await getRedirectResult(auth);
     if (result?.user) {
@@ -10228,8 +10681,9 @@ onAuthStateChanged(auth, user => {
   applyUser(user);
 });
 
-// Güvenlik: Splash 6 saniyeden uzun sürerse her halükarda kapat
-setTimeout(() => hideSplash(), 6000);
+// Not: Splash artık körlemesine zaman aşımıyla DEĞİL, gerçek hazır sinyalleriyle
+// kapanır (bkz. bootSignal/_maybeFinishBoot). Takılırsa _startBootWatch
+// kurtarma ekranını açar.
 
 window.addEventListener("beforeunload", () => {
   stopCamera();
