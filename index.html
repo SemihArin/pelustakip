@@ -2900,7 +2900,7 @@
       Çıkış Yap
     </button>
 
-    <div class="side-version-footer">Pelus Takip · v1.6.1</div>
+    <div class="side-version-footer">Pelus Takip · v1.6.2</div>
 
   </div>
 </div>
@@ -3250,7 +3250,7 @@
 <script type="module">
 import { initializeApp }       from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
 import {
-  getFirestore, collection, addDoc, query, orderBy,
+  getFirestore, initializeFirestore, collection, addDoc, query, orderBy,
   onSnapshot, deleteDoc, doc, updateDoc, setDoc, getDoc, getDocs, deleteField,
   getDocFromServer
 } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
@@ -3277,7 +3277,18 @@ const FB = initializeApp({
   appId:             "1:1080638886274:web:ccc5ca53699e4d0fa53f9b",
   databaseURL:       "https://pelustakip-3be95-default-rtdb.europe-west1.firebasedatabase.app"
 });
-const db       = getFirestore(FB);
+// Firestore'u long-polling OTOMATİK ALGILAMA ile başlat:
+// Varsayılan streaming (WebChannel) bağlantısı bazı WiFi/güvenlik duvarları
+// tarafından engelleniyor (hücreselde sorun yok) ve iOS'ta ilk açılışta
+// takılabiliyor. AutoDetect, gerekince düz HTTPS long-polling'e geçerek
+// hem engelleyen ağlarda hem iOS'ta bağlantıyı kurtarır.
+let db;
+try {
+  db = initializeFirestore(FB, { experimentalAutoDetectLongPolling: true });
+} catch (e) {
+  // Zaten başlatılmışsa (ör. hot-reload) normal örneğe düş
+  db = getFirestore(FB);
+}
 const rtdb     = getDatabase(FB);
 const auth     = getAuth(FB);
 const provider = new GoogleAuthProvider();
@@ -3854,8 +3865,45 @@ function applyFilters(preserveScroll = false) {
 /* ═══════════════════════════════════════════
    FIRESTORE LISTENERS
 ═══════════════════════════════════════════ */
-function listenPhotos(uid) {
+
+/* İlk-snapshot bekçisi — iOS/engelli WiFi'da Firestore sessizce takılırsa
+   (ne veri ne hata gelir) aç-kapa GEREKTİRMEDEN kendi kendine yeniden
+   abone olur; kullanıcı denemeleri canlı görür. */
+const _MAX_SNAP_RETRY = 3;
+const _snapRetry = {
+  photos:    { n: 0, arrived: false, timer: null, label: "Fotoğraflar" },
+  published: { n: 0, arrived: false, timer: null, label: "Yayınlar" },
+};
+function _armSnapWatch(key, retryFn) {
+  const st = _snapRetry[key];
+  if (st.timer) clearTimeout(st.timer);
+  st.timer = setTimeout(() => {
+    if (st.arrived) return;
+    if (st.n < _MAX_SNAP_RETRY) {
+      st.n++;
+      retryFn();   // temiz şekilde yeniden abone ol
+      if (!_boot.done) splashSetDetail(`Bağlantı yenileniyor — ${st.label} (deneme ${st.n + 1})…`);
+      console.warn(`[snap] ${key} yanıt vermedi, yeniden deneniyor (${st.n})`);
+    } else {
+      console.error(`[snap] ${key} ${_MAX_SNAP_RETRY} denemede de gelmedi`);
+      // tükendi → boot bekçisi (22s) kurtarma ekranını gösterir
+    }
+  }, 6000);
+}
+function _snapArrived(key) {
+  const st = _snapRetry[key];
+  st.arrived = true;
+  if (st.timer) { clearTimeout(st.timer); st.timer = null; }
+}
+function _snapReset(key) {
+  const st = _snapRetry[key];
+  st.n = 0; st.arrived = false;
+  if (st.timer) { clearTimeout(st.timer); st.timer = null; }
+}
+
+function listenPhotos(uid, isRetry = false) {
   unsubPhotos?.(); unsubPhotos = null;
+  if (!isRetry) _snapReset("photos");
   EL.galleryPage.innerHTML = `<div class="skeleton-grid">${Array(9).fill('<div class="skeleton-card"></div>').join("")}</div>`;
   splashSetStatus("Fotoğraflar yükleniyor…");
   splashSetDetail("Firestore sorgusu: users/" + uid.slice(0,6) + "…/photos");
@@ -3876,6 +3924,7 @@ function listenPhotos(uid) {
     if (typeof updateSideMenuFilters === "function") updateSideMenuFilters();
     if (firstSnap) {
       firstSnap = false;
+      _snapArrived("photos");
       splashSetProgress(85);
       splashSetStatus("Neredeyse hazır…");
       tryHideSplash("photos");
@@ -3897,10 +3946,12 @@ function listenPhotos(uid) {
   };
 
   unsubPhotos = onSnapshot(q2, handleSnap, handleErr);
+  _armSnapWatch("photos", () => listenPhotos(uid, true));
 }
 
-function listenPublished() {
+function listenPublished(isRetry = false) {
   unsubPublished?.(); unsubPublished = null;
+  if (!isRetry) _snapReset("published");
 
   // FIX: firstLoad bayrağı snapshot dışında tutulur, diff doğru çalışır
   let initialized = false;
@@ -3933,11 +3984,12 @@ function listenPublished() {
       pubCache = newItems;
       prevIds  = new Set(newItems.map(i => i.id));
       initialized = true;
-      if (firstSnap) { firstSnap = false; tryHideSplash("published"); }
+      if (firstSnap) { firstSnap = false; _snapArrived("published"); tryHideSplash("published"); }
       renderPublished();
     },
     err => { console.error("published:", err); tryHideSplash("published"); }
   );
+  _armSnapWatch("published", () => listenPublished(true));
 }
 
 /* ═══════════════════════════════════════════
@@ -10295,7 +10347,7 @@ window.addEventListener("offline", () => toast("⚠️ Bağlantı kesildi — ç
    Konsola düşen hatalar Firestore "errorLogs"e yazılır,
    admin panelinde görünür. Spam/loop önlemleri içerir.
 ═══════════════════════════════════════════ */
-const APP_VERSION = "v1.6.1";
+const APP_VERSION = "v1.6.2";
 
 /* ═══════════════════════════════════════════
    SERVICE WORKER'I UZAKTAN GÜNCEL TUT
@@ -10481,7 +10533,7 @@ function _startBootWatch() {
   if (_bootTimer) clearTimeout(_bootTimer);
   _bootTimer = setTimeout(() => {
     if (!_boot.done) showBootError("Uygulama beklenenden uzun sürdü; bir bağlantı tamamlanamadı.");
-  }, 22000);
+  }, 24000);
 }
 
 // Geriye dönük uyumluluk: eski tryHideSplash çağrıları artık sinyale dönüşür.
