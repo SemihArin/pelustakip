@@ -1,6 +1,6 @@
 /* ─────────────────────────────────────────────
    firebase-messaging-sw.js  —  BAĞIMSIZ push + önbellek worker
-   SW_VERSION: v1.2.0
+   SW_VERSION: v1.3.0
 
    • firebase kütüphanesi YOK, importScripts YOK → gstatic/DNS riski yok
    • DATA-ONLY push'u DOĞRUDAN işler (titreşim, ses, Cevapla/Reddet)
@@ -9,7 +9,7 @@
    • BU DOSYA index.html ile AYNI KÖKE konur (PWA'nın yayınlandığı adres)
    ───────────────────────────────────────────── */
 
-const SW_VERSION = "v1.2.0";
+const SW_VERSION = "v1.3.0";
 const CACHE = "pelus-shell-" + SW_VERSION;
 const SHELL = ["/", "/index.html", "/icon-192.png", "/icon-512.png", "/manifest.json"];
 
@@ -82,8 +82,20 @@ self.addEventListener("fetch", event => {
   }
 });
 
-/* ── Push geldiğinde bildirimi GÖSTER ── */
+/* ── Push geldiğinde bildirimi GÖSTER ──
+   • Farklı kategoriler (tag) → ayrı bildirimler (birbirini ezmez)
+   • Aynı kategori (tag) → tek bildirimde BİRİKTİRİLİR (alt alta satırlar)
+   • Eşzamanlı gelen push'lar SIRAYA alınır → "3 mesaj 1'e düşmesi" önlenir
+   • Arama → benzersiz tag, biriktirilmez, etkileşim ister
+─────────────────────────────────────────── */
+let _pushChain = Promise.resolve();
 self.addEventListener("push", event => {
+  const work = _pushChain.then(() => handlePush(event)).catch(() => {});
+  _pushChain = work;
+  event.waitUntil(work);
+});
+
+async function handlePush(event) {
   let p = {};
   try { p = event.data ? event.data.json() : {}; }
   catch { try { p = { data: { body: event.data.text() } }; } catch (e) {} }
@@ -94,26 +106,61 @@ self.addEventListener("push", event => {
        (p.fcmOptions && p.fcmOptions.link) ||
        (p.fcm_options && p.fcm_options.link) ||
        d.link || "/";
-  const tag    = d.tag || n.tag || "pelus";
+  const tag    = d.tag || n.tag || d.type || "pelus";
   const isCall = (d.type === "call") || tag.indexOf("call") === 0;
+  const icon   = d.icon || n.icon || "/icon-192.png";
 
-  const title = isCall ? "📞 Gelen Arama" : (d.title || n.title || "Pelüş Takip 🐾");
-  const body  = isCall ? ((d.fromName || "Biri") + " seni arıyor…") : (d.body || n.body || "");
+  // ── ARAMA: benzersiz, biriktirilmez ──
+  if (isCall) {
+    await self.registration.showNotification("📞 Gelen Arama", {
+      body: (d.fromName || "Biri") + " seni arıyor…",
+      icon, badge: "/icon-192.png", tag,
+      renotify: true, requireInteraction: true, silent: false,
+      vibrate: [500, 250, 500, 250, 500, 250, 500, 250, 500],
+      data: { ...d, link, isCall: true },
+      actions: [ { action: "accept", title: "📞 Cevapla" }, { action: "reject", title: "Reddet" } ],
+    });
+    return;
+  }
 
-  const opts = {
-    body,
-    icon:  d.icon || n.icon || "/icon-192.png",
-    badge: "/icon-192.png",
-    tag,
-    renotify: true,
-    requireInteraction: isCall,
-    silent: false,
-    vibrate: isCall ? [500, 250, 500, 250, 500, 250, 500, 250, 500] : [120, 60, 120],
-    data: { ...d, link, isCall },
-    ...(isCall ? { actions: [ { action: "accept", title: "📞 Cevapla" }, { action: "reject", title: "Reddet" } ] } : {}),
-  };
-  event.waitUntil(self.registration.showNotification(title, opts));
-});
+  // ── DİĞER: aynı tag'de BİRİKTİR ──
+  const fromName = d.fromName || "";
+  const newText  = ((d.body || n.body || "") + "").trim() || "Yeni bildirim";
+
+  // Aynı tag'deki mevcut bildirimi oku → önceki satırları devral
+  let lines = [];
+  try {
+    const existing = await self.registration.getNotifications({ tag });
+    for (const e of existing) {
+      const el = (e.data && Array.isArray(e.data.lines)) ? e.data.lines : null;
+      if (el && el.length) lines = lines.concat(el);
+      else if (e.body)     lines.push(e.body);   // eski tek-satır bildirimden devral
+    }
+  } catch (e) {}
+
+  lines.push(newText);
+
+  // Aşırı uzamasın: son 8 satır, fazlası özetlenir
+  const MAX = 8;
+  let extra = 0, shown = lines;
+  if (lines.length > MAX) { extra = lines.length - MAX; shown = lines.slice(-MAX); }
+  const count = lines.length;
+
+  const body = count > 1
+    ? (extra ? `…ve ${extra} tane daha\n` : "") + shown.map(l => "• " + l).join("\n")
+    : shown[0];
+
+  let title;
+  if (d.type === "message") title = `💬 ${fromName || "Mesaj"}` + (count > 1 ? ` · ${count} mesaj` : "");
+  else                      title = (d.title || n.title || "Pelüş Takip 🐾") + (count > 1 ? ` · ${count}` : "");
+
+  await self.registration.showNotification(title, {
+    body, icon, badge: "/icon-192.png", tag,
+    renotify: true, silent: false,
+    vibrate: [120, 60, 120],
+    data: { ...d, link, lines },   // biriken satırları sakla → sonraki push üstüne ekler
+  });
+}
 
 /* ── Bildirime / aksiyona tıklayınca ── */
 self.addEventListener("notificationclick", event => {
