@@ -1,6 +1,6 @@
 /* ─────────────────────────────────────────────
    firebase-messaging-sw.js  —  BAĞIMSIZ push + önbellek worker
-   SW_VERSION: v1.3.0
+   SW_VERSION: v1.3.1
 
    • firebase kütüphanesi YOK, importScripts YOK → gstatic/DNS riski yok
    • DATA-ONLY push'u DOĞRUDAN işler (titreşim, ses, Cevapla/Reddet)
@@ -9,7 +9,7 @@
    • BU DOSYA index.html ile AYNI KÖKE konur (PWA'nın yayınlandığı adres)
    ───────────────────────────────────────────── */
 
-const SW_VERSION = "v1.3.0";
+const SW_VERSION = "v1.3.1";
 const CACHE = "pelus-shell-" + SW_VERSION;
 const SHELL = ["/", "/index.html", "/icon-192.png", "/icon-512.png", "/manifest.json"];
 
@@ -166,6 +166,7 @@ async function handlePush(event) {
 self.addEventListener("notificationclick", event => {
   const action = event.action;
   const d = event.notification.data || {};
+  const tag = event.notification.tag || "";
   event.notification.close();
 
   if (action === "reject") {
@@ -179,6 +180,13 @@ self.addEventListener("notificationclick", event => {
   const link = d.link || (d.callId ? "/?call=" + encodeURIComponent(d.callId)
                        : d.pubId ? "/?openPub=" + encodeURIComponent(d.pubId) : "/");
   event.waitUntil((async () => {
+    // Aynı kategorideki diğer bildirimleri (varsa) de temizle — sohbet açılınca
+    // bildirim çubuğunda eski satırlar kalmasın
+    try {
+      const same = await self.registration.getNotifications({ tag });
+      same.forEach(nt => { try { nt.close(); } catch (e) {} });
+    } catch (e) {}
+
     const all = await clients.matchAll({ type: "window", includeUncontrolled: true });
     for (const c of all) {
       if ("focus" in c) {
@@ -188,4 +196,44 @@ self.addEventListener("notificationclick", event => {
     }
     return clients.openWindow(link);
   })());
+});
+
+/* ── İstemciden gelen mesajlar (bildirim temizleme) ──
+   Uygulama öne geldiğinde veya bir sohbete girildiğinde SW'ye haber verir,
+   SW bildirim çubuğundaki ilgili bildirimleri kapatır. Aksi halde okunmuş
+   bildirimler orada kalır ve "spam gibi" görünür. */
+self.addEventListener("message", event => {
+  const msg = event.data || {};
+  if (msg.type === "CLEAR_NON_CALL_NOTIFICATIONS") {
+    event.waitUntil((async () => {
+      try {
+        const all = await self.registration.getNotifications();
+        for (const n of all) {
+          const t = (n.tag || "");
+          if (t.indexOf("call") === 0) continue;          // aramaları KAPATMA
+          if (n.data && n.data.isCall) continue;
+          try { n.close(); } catch (e) {}
+        }
+      } catch (e) {}
+    })());
+  } else if (msg.type === "CLEAR_NOTIFICATIONS_FOR_CHAT") {
+    const fromUid = msg.fromUid || "";
+    if (!fromUid) return;
+    event.waitUntil((async () => {
+      try {
+        // mesaj bildirim tag'i sunucuda "msg:{fromUid}" formatında
+        const list = await self.registration.getNotifications({ tag: "msg:" + fromUid });
+        list.forEach(n => { try { n.close(); } catch (e) {} });
+      } catch (e) {}
+    })());
+  } else if (msg.type === "CLEAR_NOTIFICATIONS_BY_TAG") {
+    const tag = msg.tag || "";
+    if (!tag) return;
+    event.waitUntil((async () => {
+      try {
+        const list = await self.registration.getNotifications({ tag });
+        list.forEach(n => { try { n.close(); } catch (e) {} });
+      } catch (e) {}
+    })());
+  }
 });
