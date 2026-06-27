@@ -1,6 +1,6 @@
 /* ─────────────────────────────────────────────
    firebase-messaging-sw.js  —  BAĞIMSIZ push + önbellek worker
-   SW_VERSION: v1.3.1
+   SW_VERSION: v1.3.2
 
    • firebase kütüphanesi YOK, importScripts YOK → gstatic/DNS riski yok
    • DATA-ONLY push'u DOĞRUDAN işler (titreşim, ses, Cevapla/Reddet)
@@ -9,7 +9,7 @@
    • BU DOSYA index.html ile AYNI KÖKE konur (PWA'nın yayınlandığı adres)
    ───────────────────────────────────────────── */
 
-const SW_VERSION = "v1.3.1";
+const SW_VERSION = "v1.3.2";
 const CACHE = "pelus-shell-" + SW_VERSION;
 const SHELL = ["/", "/index.html", "/icon-192.png", "/icon-512.png", "/manifest.json"];
 
@@ -83,31 +83,43 @@ self.addEventListener("fetch", event => {
 });
 
 /* ── Push geldiğinde bildirimi GÖSTER ──
-   • Farklı kategoriler (tag) → ayrı bildirimler (birbirini ezmez)
-   • Aynı kategori (tag) → tek bildirimde BİRİKTİRİLİR (alt alta satırlar)
-   • Eşzamanlı gelen push'lar SIRAYA alınır → "3 mesaj 1'e düşmesi" önlenir
+   • event.data SENKRON okunur (lifecycle bitince geçersizleşir)
+   • Aynı tag'deki push'lar sıraya alınır (biriktirme yarışını çözer)
+   • Farklı tag'ler paralel işlenir (tıkanmaz)
    • Arama → benzersiz tag, biriktirilmez, etkileşim ister
 ─────────────────────────────────────────── */
-let _pushChain = Promise.resolve();
+const _pushLocks = new Map();
 self.addEventListener("push", event => {
-  const work = _pushChain.then(() => handlePush(event)).catch(() => {});
-  _pushChain = work;
+  // SENKRON: event.data'yı şimdi oku — gecikirse geçersizleşir
+  let payload = {};
+  try { payload = event.data ? event.data.json() : {}; }
+  catch (e) {
+    try { payload = { data: { body: event.data.text() } }; } catch (_) {}
+  }
+
+  const d = payload.data || {};
+  const tag = d.tag || (payload.notification && payload.notification.tag) || d.type || "pelus";
+
+  // Aynı tag'de sıraya al; farklı tag'ler birbirini beklemez
+  const prev = _pushLocks.get(tag) || Promise.resolve();
+  const work = prev.then(() => handlePush(payload, tag)).catch(err => {
+    console.error("[SW push] hata:", err && err.message);
+  });
+  _pushLocks.set(tag, work);
+  // İş bittiğinde kilidi temizle (bellek sızıntısı olmasın)
+  work.finally(() => { if (_pushLocks.get(tag) === work) _pushLocks.delete(tag); });
+
   event.waitUntil(work);
 });
 
-async function handlePush(event) {
-  let p = {};
-  try { p = event.data ? event.data.json() : {}; }
-  catch { try { p = { data: { body: event.data.text() } }; } catch (e) {} }
-
-  const n = p.notification || {};
-  const d = p.data || {};
+async function handlePush(payload, tag) {
+  const n = payload.notification || {};
+  const d = payload.data || {};
   const link =
-       (p.fcmOptions && p.fcmOptions.link) ||
-       (p.fcm_options && p.fcm_options.link) ||
+       (payload.fcmOptions && payload.fcmOptions.link) ||
+       (payload.fcm_options && payload.fcm_options.link) ||
        d.link || "/";
-  const tag    = d.tag || n.tag || d.type || "pelus";
-  const isCall = (d.type === "call") || tag.indexOf("call") === 0;
+  const isCall = (d.type === "call") || (tag && tag.indexOf("call") === 0);
   const icon   = d.icon || n.icon || "/icon-192.png";
 
   // ── ARAMA: benzersiz, biriktirilmez ──
