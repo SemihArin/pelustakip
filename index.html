@@ -2900,7 +2900,7 @@
       Çıkış Yap
     </button>
 
-    <div class="side-version-footer">Pelus Takip · v1.6.4</div>
+    <div class="side-version-footer">Pelus Takip · v1.6.5</div>
 
   </div>
 </div>
@@ -7466,15 +7466,14 @@ function _swPost(msg) {
 function _swClearNonCallNotifs() { _swPost({ type: "CLEAR_NON_CALL_NOTIFICATIONS" }); }
 function _swClearChatNotifs(fromUid) { if (fromUid) _swPost({ type: "CLEAR_NOTIFICATIONS_FOR_CHAT", fromUid }); }
 
-// Uygulama her öne gelişte (sekme/PWA açma) aramalar dışındaki bildirimleri temizle
+// Uygulama her öne gelişte (sekme/PWA açma) aramalar dışındaki bildirimleri temizle.
+// Not: İlk yükleme sırasında temizlik YAPMIYORUZ — açılışla aynı anda gelen
+// gerçek bir push'u istemeden silebiliyordu. Visibility/focus olayı zaten
+// kullanıcı uygulamayı her açtığında tetiklenir.
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible") _swClearNonCallNotifs();
 });
 window.addEventListener("focus", _swClearNonCallNotifs);
-// Sayfa zaten görünür açıldıysa (ilk yükleme) bir kez temizle
-if (document.visibilityState === "visible") {
-  setTimeout(_swClearNonCallNotifs, 800);  // SW controller hazır olsun
-}
 
 function _stopChatListeners() {
   Object.values(_presenceListeners).forEach(fn=>fn());
@@ -10462,7 +10461,7 @@ window.addEventListener("offline", () => toast("⚠️ Bağlantı kesildi — ç
    Konsola düşen hatalar Firestore "errorLogs"e yazılır,
    admin panelinde görünür. Spam/loop önlemleri içerir.
 ═══════════════════════════════════════════ */
-const APP_VERSION = "v1.6.4";
+const APP_VERSION = "v1.6.5";
 
 /* ═══════════════════════════════════════════
    SERVICE WORKER'I UZAKTAN GÜNCEL TUT
